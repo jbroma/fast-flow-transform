@@ -1,0 +1,10 @@
+{
+  "name": "juno-flow-strip-loader-win32-x64",
+  "version": "0.1.0",
+  "description": "Platform binary package for juno-flow-strip-loader (win32-x64)",
+  "license": "MIT",
+  "main": "index.js",
+  "os": ["win32"],
+  "cpu": ["x64"],
+  "files": ["index.js", "bin"]
+}

@@ -1,0 +1,11 @@
+# Rust
+/target/
+**/target/
+
+# Node
+node_modules/
+js/**/node_modules/
+
+# Loader packaging outputs
+js/juno-flow-strip-loader/dist/
+js/juno-flow-strip-loader/artifacts/

@@ -1,0 +1,18 @@
+[package]
+name = "juno_flow_strip"
+version = "0.1.0"
+authors = ["Facebook"]
+edition = "2018"
+license = "MIT"
+
+[[bin]]
+name = "juno-flow-strip"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+juno = { path = "../juno" }
+juno_pass = { path = "../juno_pass" }
+juno_support = { path = "../juno_support" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

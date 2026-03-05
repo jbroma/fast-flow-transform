@@ -1,0 +1,38 @@
+{
+  "name": "fft-loader",
+  "version": "0.1.0",
+  "description": "Native Hermes/FFT Flow stripping loader for webpack and rspack",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TODO/fast-flow-transform.git"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "dependencies": {
+    "source-map": "^0.6.1"
+  },
+  "optionalDependencies": {
+    "fft-loader-darwin-arm64": "0.1.0",
+    "fft-loader-darwin-x64": "0.1.0",
+    "fft-loader-linux-arm64": "0.1.0",
+    "fft-loader-linux-x64": "0.1.0",
+    "fft-loader-win32-arm64": "0.1.0",
+    "fft-loader-win32-x64": "0.1.0"
+  },
+  "scripts": {
+    "benchmark": "node bench/compare.js",
+    "build:dist": "node scripts/build-dist.js",
+    "pack:local": "node scripts/pack-local.js",
+    "prepack": "node scripts/build-dist.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "bench",
+    "README.md",
+    "scripts"
+  ]
+}

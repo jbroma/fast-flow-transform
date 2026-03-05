@@ -1,10 +1,12 @@
 [package]
-name = "libcplusplus"
+name = "fft_pass"
 version = "0.1.0"
 authors = ["Fast Flow Transform maintainers <TODO>"]
 edition = "2018"
 license = "MIT"
 
 [dependencies]
+fft = { path = "../fft" }
 
-[build-dependencies]
+[dev-dependencies]
+fft_support = { path = "../fft_support" }

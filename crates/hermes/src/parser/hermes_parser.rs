@@ -11,7 +11,7 @@ use std::mem::MaybeUninit;
 use std::os::raw::c_char;
 use std::os::raw::c_uint;
 
-use juno_support::NullTerminatedBuf;
+use fft_support::NullTerminatedBuf;
 
 use super::node::Node;
 use super::node::NodePtr;

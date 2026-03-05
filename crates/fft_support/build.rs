@@ -61,42 +61,17 @@ fn main() {
         hermes_root.join("CMakeLists.txt").display()
     );
 
-    // Build sourceMap library because it depends on everything we depend on here
-    // via the hermesParser library.
     let dst = cmake::Config::new(&hermes_root)
-        .build_target("hermesSourceMap")
+        .build_target("hermesSupport")
         .build();
-
-    println!("cargo:rustc-link-search={}/build/lib/Parser", dst.display());
-    println!(
-        "cargo:rustc-link-search={}/build/lib/Platform/Unicode",
-        dst.display()
-    );
-    println!(
-        "cargo:rustc-link-search={}/build/lib/SourceMap",
-        dst.display()
-    );
-    println!("cargo:rustc-link-search={}/build/lib/Regex", dst.display());
-    println!("cargo:rustc-link-search={}/build/lib/AST", dst.display());
     println!(
         "cargo:rustc-link-search={}/build/lib/Support",
         dst.display()
     );
+    println!("cargo:rustc-link-lib=hermesSupport");
     println!(
         "cargo:rustc-link-search={}/build/external/dtoa",
         dst.display()
     );
-    println!(
-        "cargo:rustc-link-search={}/build/external/llvh/lib/Support",
-        dst.display()
-    );
-
-    println!("cargo:rustc-link-lib=hermesSourceMap");
-    println!("cargo:rustc-link-lib=hermesAST");
-    println!("cargo:rustc-link-lib=hermesRegex");
-    println!("cargo:rustc-link-lib=hermesParser");
-    println!("cargo:rustc-link-lib=hermesPlatformUnicode");
-    println!("cargo:rustc-link-lib=hermesSupport");
-    println!("cargo:rustc-link-lib=LLVHSupport");
     println!("cargo:rustc-link-lib=dtoa");
 }

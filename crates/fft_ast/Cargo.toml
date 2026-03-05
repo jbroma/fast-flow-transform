@@ -1,5 +1,5 @@
 [package]
-name = "hermes"
+name = "fft_ast"
 version = "0.1.0"
 authors = ["Fast Flow Transform maintainers <TODO>"]
 edition = "2018"
@@ -7,9 +7,6 @@ license = "MIT"
 
 [dependencies]
 fft_support = { path = "../fft_support" }
-libcplusplus = { path = "../libcplusplus" }
 libc = "0.2"
+memoffset = "0.6.1"
 thiserror = "1.0"
-
-[build-dependencies]
-cmake = "0.1"

@@ -51,6 +51,60 @@ dependencies = [
 ]
 
 [[package]]
+name = "fft"
+version = "0.1.0"
+dependencies = [
+ "fft_ast",
+ "fft_support",
+ "hermes",
+ "smallvec",
+ "sourcemap",
+ "thiserror",
+]
+
+[[package]]
+name = "fft_ast"
+version = "0.1.0"
+dependencies = [
+ "fft_support",
+ "libc",
+ "memoffset",
+ "thiserror",
+]
+
+[[package]]
+name = "fft_pass"
+version = "0.1.0"
+dependencies = [
+ "fft",
+ "fft_support",
+]
+
+[[package]]
+name = "fft_strip"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fft",
+ "fft_pass",
+ "fft_support",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "fft_support"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.13.0",
+ "cmake",
+ "libcplusplus",
+ "thiserror",
+ "url",
+]
+
+[[package]]
 name = "form_urlencoded"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -65,7 +119,7 @@ name = "hermes"
 version = "0.1.0"
 dependencies = [
  "cmake",
- "juno_support",
+ "fft_support",
  "libc",
  "libcplusplus",
  "thiserror",
@@ -93,60 +147,6 @@ name = "itoa"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b71991ff56294aa922b450139ee08b3bfc70982c6b2c7562771375cf73542dd4"
-
-[[package]]
-name = "juno"
-version = "0.1.0"
-dependencies = [
- "hermes",
- "juno_ast",
- "juno_support",
- "smallvec",
- "sourcemap",
- "thiserror",
-]
-
-[[package]]
-name = "juno_ast"
-version = "0.1.0"
-dependencies = [
- "juno_support",
- "libc",
- "memoffset",
- "thiserror",
-]
-
-[[package]]
-name = "juno_flow_strip"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "juno",
- "juno_pass",
- "juno_support",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "juno_pass"
-version = "0.1.0"
-dependencies = [
- "juno",
- "juno_support",
-]
-
-[[package]]
-name = "juno_support"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.13.0",
- "cmake",
- "libcplusplus",
- "thiserror",
- "url",
-]
 
 [[package]]
 name = "lazy_static"

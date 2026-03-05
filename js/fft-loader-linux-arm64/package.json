@@ -1,0 +1,10 @@
+{
+  "name": "fft-loader-linux-arm64",
+  "version": "0.1.0",
+  "description": "Platform binary package for fft-loader (linux-arm64)",
+  "license": "MIT",
+  "main": "index.js",
+  "os": ["linux"],
+  "cpu": ["arm64"],
+  "files": ["index.js", "bin"]
+}

@@ -1,13 +1,13 @@
 {
-  "name": "juno-standalone-js",
+  "name": "fft-standalone-js",
   "private": true,
   "workspaces": [
-    "juno-flow-strip-loader",
-    "juno-flow-strip-loader-darwin-arm64",
-    "juno-flow-strip-loader-darwin-x64",
-    "juno-flow-strip-loader-linux-arm64",
-    "juno-flow-strip-loader-linux-x64",
-    "juno-flow-strip-loader-win32-arm64",
-    "juno-flow-strip-loader-win32-x64"
+    "fft-loader",
+    "fft-loader-darwin-arm64",
+    "fft-loader-darwin-x64",
+    "fft-loader-linux-arm64",
+    "fft-loader-linux-x64",
+    "fft-loader-win32-arm64",
+    "fft-loader-win32-x64"
   ]
 }

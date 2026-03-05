@@ -7,5 +7,9 @@ node_modules/
 js/**/node_modules/
 
 # Loader packaging outputs
-js/juno-flow-strip-loader/dist/
-js/juno-flow-strip-loader/artifacts/
+js/fft-loader/dist/
+js/fft-loader/artifacts/
+
+# Locally packed native binaries
+js/fft-loader/bin/fft-strip*
+js/fft-loader-*/bin/fft-strip*

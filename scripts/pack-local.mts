@@ -151,12 +151,8 @@ function printTarballSummary(tarballs: string[]): void {
   );
 }
 
-function buildPackages(
-  corePackageRoot: string,
-  platformPackageRoot: string
-): void {
+function buildPackages(corePackageRoot: string): void {
   run('pnpm', ['run', 'build'], corePackageRoot);
-  run('pnpm', ['run', 'build'], platformPackageRoot);
 }
 
 function packPackages(outputDirectory: string, packageRoots: string[]): void {
@@ -229,7 +225,7 @@ function packTarballs(
   corePackageRoot: string,
   platformPackageRoot: string
 ): void {
-  buildPackages(corePackageRoot, platformPackageRoot);
+  buildPackages(corePackageRoot);
   const outputDirectory = join(corePackageRoot, 'artifacts');
   cleanDirectory(outputDirectory);
   packPackages(outputDirectory, [platformPackageRoot]);

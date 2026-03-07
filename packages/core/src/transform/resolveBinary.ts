@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
@@ -26,14 +26,16 @@ function existingBinary(binaryPath: string): string | null {
   return existsSync(binaryPath) ? binaryPath : null;
 }
 
-function packageBinaryPathFromEntryPath(entryPath: string): string {
-  return resolve(
-    entryPath,
-    '..',
-    '..',
-    'bin',
-    executableNameFor(process.platform)
-  );
+export function packageBinaryPathFromEntryPath(
+  entryPath: string,
+  platform: string = process.platform
+): string {
+  const entryDirectory = dirname(entryPath);
+  if (basename(entryDirectory) === 'dist') {
+    return resolve(entryDirectory, '..', 'bin', executableNameFor(platform));
+  }
+
+  return resolve(entryDirectory, 'bin', executableNameFor(platform));
 }
 
 export function platformPackageNameFor(

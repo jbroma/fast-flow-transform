@@ -14,7 +14,7 @@
   },
   "type": "module",
   "files": [
-    "dist",
+    "index.js",
     "bin"
   ],
   "publishConfig": {
@@ -25,18 +25,11 @@
       "x64"
     ]
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./index.js",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "default": "./index.js"
     }
-  },
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "prepack": "pnpm run build",
-    "typecheck": "tsc -p tsconfig.json"
   },
   "engines": {
     "node": ">=18"

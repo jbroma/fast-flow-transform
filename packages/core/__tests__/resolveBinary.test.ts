@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { platformPackageNameFor } from '../src/transform/resolveBinary.js';
+import {
+  packageBinaryPathFromEntryPath,
+  platformPackageNameFor,
+} from '../src/transform/resolveBinary.js';
 
 describe('platformPackageNameFor', () => {
   it('returns the renamed package for each supported target', () => {
@@ -26,5 +29,20 @@ describe('platformPackageNameFor', () => {
 
   it('returns null for unsupported targets', () => {
     expect(platformPackageNameFor('freebsd', 'x64')).toBeNull();
+  });
+
+  it('derives the binary path from root and dist entry points', () => {
+    expect(
+      packageBinaryPathFromEntryPath(
+        '/repo/bindings/fast-flow-transform-linux-x64/index.js',
+        'linux'
+      )
+    ).toBe('/repo/bindings/fast-flow-transform-linux-x64/bin/fft-strip');
+    expect(
+      packageBinaryPathFromEntryPath(
+        '/repo/bindings/fast-flow-transform-win32-x64/dist/index.js',
+        'win32'
+      )
+    ).toBe('/repo/bindings/fast-flow-transform-win32-x64/bin/fft-strip.exe');
   });
 });

@@ -2,6 +2,8 @@ import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { DefinePlugin } from '@rspack/core';
+
 const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_ROOT = resolve(PACKAGE_ROOT, '../../fixtures/project');
 const require = createRequire(import.meta.url);
@@ -42,6 +44,10 @@ export default {
           },
         ],
       },
+      {
+        test: /\.png$/,
+        type: 'asset/resource',
+      },
     ],
   },
   output: {
@@ -50,6 +56,7 @@ export default {
     library: { type: 'commonjs2' },
     path: resolve(PACKAGE_ROOT, 'dist'),
   },
-  resolve: { extensions: ['.js'] },
+  plugins: [new DefinePlugin({ __DEV__: 'false' })],
+  resolve: { extensions: ['.js', '.ios.js', '.android.js', '.native.js'] },
   target: 'node',
 };

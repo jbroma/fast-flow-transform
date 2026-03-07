@@ -28,6 +28,10 @@ const PLATFORM_PACKAGE_NAMES = [
   'fast-flow-transform-win32-x64',
 ] as const;
 
+function workspaceRootDir(): string {
+  return resolve(fileURLToPath(new URL('..', import.meta.url)));
+}
+
 function run(command: string, args: string[], cwd: string): void {
   const result = spawnSync(command, args, {
     cwd,
@@ -86,10 +90,8 @@ function platformPackageNameFor(platform: string, arch: string): string | null {
 }
 
 function workspaceContext(): WorkspaceContext {
-  const corePackageRoot = resolve(
-    fileURLToPath(new URL('..', import.meta.url))
-  );
-  const workspaceRoot = resolve(corePackageRoot, '..', '..');
+  const root = workspaceRootDir();
+  const corePackageRoot = join(root, 'packages', 'core');
   const platformPackageName = platformPackageNameFor(
     process.platform,
     process.arch
@@ -102,22 +104,17 @@ function workspaceContext(): WorkspaceContext {
 
   return {
     corePackageRoot,
-    platformPackageRoot: join(workspaceRoot, 'bindings', platformPackageName),
+    platformPackageRoot: join(root, 'bindings', platformPackageName),
     targetKey,
-    workspaceRoot,
+    workspaceRoot: root,
   };
 }
 
-function builtBinaryPath(workspaceRoot: string, targetKey: string): string {
+function builtBinaryPath(rootDir: string, targetKey: string): string {
   const overrideBinaryPath = process.env.FFT_STRIP_BINARY;
   const binaryName =
     process.platform === 'win32' ? 'fft-strip.exe' : 'fft-strip';
-  const defaultBinaryPath = join(
-    workspaceRoot,
-    'target',
-    'release',
-    binaryName
-  );
+  const defaultBinaryPath = join(rootDir, 'target', 'release', binaryName);
 
   if (overrideBinaryPath) {
     process.stdout.write(
@@ -127,7 +124,7 @@ function builtBinaryPath(workspaceRoot: string, targetKey: string): string {
   }
 
   process.stdout.write(`Building native binary for ${targetKey}...\n`);
-  run('cargo', ['build', '--release', '-p', 'fft_strip'], workspaceRoot);
+  run('cargo', ['build', '--release', '-p', 'fft_strip'], rootDir);
   return defaultBinaryPath;
 }
 
@@ -205,8 +202,8 @@ function withPackedCoreManifest(
   }
 }
 
-function verifiedBinaryPath(workspaceRoot: string, targetKey: string): string {
-  const binaryPath = builtBinaryPath(workspaceRoot, targetKey);
+function verifiedBinaryPath(rootDir: string, targetKey: string): string {
+  const binaryPath = builtBinaryPath(rootDir, targetKey);
   if (!existsSync(binaryPath)) {
     throw new Error(`Expected built binary not found at ${binaryPath}`);
   }

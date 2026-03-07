@@ -9,11 +9,13 @@
     "format:check": "oxfmt --check . '!bench/fixtures/**/*.js' '!test/fixtures/project/**/*.js'",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
-    "pack:local": "pnpm --filter ./packages/core run pack:local",
-    "test:loader:e2e": "pnpm test:loader:e2e:prepare && pnpm test:loader:e2e:webpack && pnpm test:loader:e2e:rspack",
-    "test:loader:e2e:prepare": "pnpm build:loader && cargo build --release -p fft_strip",
-    "test:loader:e2e:rspack": "pnpm --dir test/bundlers/rspack exec rspack build --config rspack.config.mjs && pnpm --dir test/bundlers/rspack exec vitest --config vitest.config.ts run",
-    "test:loader:e2e:webpack": "pnpm --dir test/bundlers/webpack exec webpack --config webpack.config.mjs && pnpm --dir test/bundlers/webpack exec vitest --config vitest.config.ts run",
+    "pack:local": "node scripts/pack-local.mts",
+    "test:loader:e2e": "pnpm test:loader:e2e:prepare && pnpm test:loader:e2e:webpack:run && pnpm test:loader:e2e:rspack:run",
+    "test:loader:e2e:prepare": "pnpm build:loader && cargo build --release -p fft_strip && node scripts/sync-binary.mts",
+    "test:loader:e2e:rspack": "pnpm test:loader:e2e:prepare && pnpm test:loader:e2e:rspack:run",
+    "test:loader:e2e:rspack:run": "pnpm --dir test/bundlers/rspack exec rspack build --config rspack.config.mjs && pnpm --dir test/bundlers/rspack exec vitest --config vitest.config.ts run",
+    "test:loader:e2e:webpack": "pnpm test:loader:e2e:prepare && pnpm test:loader:e2e:webpack:run",
+    "test:loader:e2e:webpack:run": "pnpm --dir test/bundlers/webpack exec webpack --config webpack.config.mjs && pnpm --dir test/bundlers/webpack exec vitest --config vitest.config.ts run",
     "typecheck": "pnpm -r --if-present run typecheck"
   },
   "devDependencies": {

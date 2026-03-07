@@ -40,7 +40,6 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "pack:local": "node scripts/pack-local.ts",
     "prepack": "pnpm run build",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"

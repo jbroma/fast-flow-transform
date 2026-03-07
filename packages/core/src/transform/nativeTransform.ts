@@ -41,6 +41,17 @@ function stderrSummary(stderr: string): string {
   return stderr ? `\nStderr:\n${stderr}` : '';
 }
 
+function abnormalExitMessage(
+  binaryPath: string,
+  code: number | null,
+  signal: NodeJS.Signals | null,
+  stderr: string
+): string {
+  const exitDetail =
+    code === null ? `signal ${signal ?? 'unknown'}` : `code ${String(code)}`;
+  return `fft-strip worker exited with ${exitDetail} (${binaryPath})${stderrSummary(stderr)}`;
+}
+
 export function runNativeTransform(
   binaryPath: string,
   request: NativeTransformRequest
@@ -72,13 +83,11 @@ export function runNativeTransform(
     child.on('error', (error) => {
       finish(() => reject(error));
     });
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       finish(() => {
         if (code !== 0) {
           reject(
-            new Error(
-              `fft-strip worker exited with code ${String(code)}${stderrSummary(stderr)}`
-            )
+            new Error(abnormalExitMessage(binaryPath, code, signal, stderr))
           );
           return;
         }

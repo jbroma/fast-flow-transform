@@ -1,8 +1,11 @@
+packages:
+  - bench
+  - bindings/*
+  - packages/*
+  - test/bundlers/*
+  - test/fixtures/*
+
 autoInstallPeers: false
 
-packages:
-  - 'bench'
-  - 'bindings/*'
-  - 'packages/*'
-  - 'test/bundlers/*'
-  - 'test/fixtures/*'
+onlyBuiltDependencies:
+  - '@swc/core'

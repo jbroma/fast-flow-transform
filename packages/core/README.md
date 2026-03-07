@@ -98,8 +98,7 @@ On Windows use `target\\release\\fft-strip.exe`.
 You can build tarballs that are installable in other repos:
 
 ```bash
-cd packages/core
-pnpm run pack:local
+pnpm pack:local
 ```
 
 This command will:
@@ -114,7 +113,7 @@ This command will:
 If you already built the native executable, skip Cargo build:
 
 ```bash
-FFT_STRIP_BINARY=/abs/path/to/fft-strip pnpm run pack:local
+FFT_STRIP_BINARY=/abs/path/to/fft-strip pnpm pack:local
 ```
 
 Install elsewhere:

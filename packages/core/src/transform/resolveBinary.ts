@@ -95,8 +95,8 @@ function resolveFromWorkspaceBuild(): string | null {
 export function resolveBinaryPath(): string {
   const binaryPath =
     resolveBinaryFromEnvironment() ??
-    resolveFromOptionalPackage() ??
     resolveFromBundledBinary() ??
+    resolveFromOptionalPackage() ??
     resolveFromWorkspaceBuild();
 
   if (binaryPath) {

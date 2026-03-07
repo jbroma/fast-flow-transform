@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DefinePlugin } from '@rspack/core';
+import webpack from 'webpack';
 
 const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_ROOT = resolve(PACKAGE_ROOT, '../../fixtures/project');
@@ -56,7 +56,7 @@ export default {
     library: { type: 'commonjs2' },
     path: resolve(PACKAGE_ROOT, 'dist'),
   },
-  plugins: [new DefinePlugin({ __DEV__: 'false' })],
+  plugins: [new webpack.DefinePlugin({ __DEV__: 'false' })],
   resolve: { extensions: ['.js', '.ios.js', '.android.js', '.native.js'] },
   target: 'node',
 };

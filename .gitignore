@@ -5,6 +5,8 @@
 # Node
 node_modules/
 **/node_modules/
+.turbo/
+**/.turbo/
 packages/**/node_modules/
 
 # Loader packaging outputs

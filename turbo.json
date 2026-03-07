@@ -1,0 +1,39 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "benchmark": {
+      "cache": false
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "bin/**"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "e2e": {
+      "dependsOn": ["^build", "//#sync-binary"],
+      "outputs": []
+    },
+    "typecheck": {
+      "outputs": []
+    },
+    "//#pack:local:root": {
+      "cache": false
+    },
+    "//#sync-binary": {
+      "inputs": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "crates/**",
+        "scripts/sync-binary.mts"
+      ],
+      "outputs": [
+        "bindings/*/bin/**",
+        "packages/core/bin/**",
+        "target/release/fft-strip*"
+      ]
+    }
+  }
+}

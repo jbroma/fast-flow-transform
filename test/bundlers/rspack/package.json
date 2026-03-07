@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "rspack build --config rspack.config.mjs",
-    "test": "rspack build --config rspack.config.mjs && vitest --config vitest.config.ts run"
+    "e2e": "rspack build --config rspack.config.mjs && vitest --config vitest.config.ts run"
   },
   "dependencies": {},
   "devDependencies": {

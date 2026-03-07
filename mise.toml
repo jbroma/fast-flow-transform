@@ -6,3 +6,11 @@ cmake = "4.1.2"
 
 [env]
 HERMES_SOURCE_DIR = "{{config_root}}/third_party/hermes"
+
+[tasks.rust-test]
+description = "Run all Rust workspace tests"
+run = "cargo test --workspace"
+
+[tasks.rust-build]
+description = "Build the Rust workspace in release mode"
+run = "cargo build --workspace --release"

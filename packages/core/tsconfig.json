@@ -5,12 +5,10 @@
   },
   "include": [
     "__tests__/**/*.ts",
-    "bench/**/*.d.ts",
-    "bench/**/*.ts",
     "scripts/**/*.ts",
     "src/**/*.cts",
     "src/**/*.ts",
     "vitest.config.ts"
   ],
-  "exclude": ["artifacts/**", "bench/fixtures/**", "bin/**", "dist/**"]
+  "exclude": ["artifacts/**", "bin/**", "dist/**"]
 }

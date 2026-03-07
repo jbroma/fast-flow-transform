@@ -13,7 +13,6 @@
   "exclude": [
     "__tests__/**",
     "artifacts/**",
-    "bench/**",
     "bin/**",
     "dist/**",
     "scripts/**",

@@ -2,10 +2,11 @@
   "name": "fast-flow-transform-monorepo",
   "private": true,
   "scripts": {
+    "benchmark": "pnpm --dir bench run benchmark",
     "build:loader": "pnpm --filter ./packages/core run build",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check",
-    "format": "oxfmt . '!test/fixtures/project/**/*.js'",
-    "format:check": "oxfmt --check . '!test/fixtures/project/**/*.js'",
+    "format": "oxfmt . '!bench/fixtures/**/*.js' '!test/fixtures/project/**/*.js'",
+    "format:check": "oxfmt --check . '!bench/fixtures/**/*.js' '!test/fixtures/project/**/*.js'",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "pack:local": "pnpm --filter ./packages/core run pack:local",
@@ -16,14 +17,9 @@
     "typecheck": "pnpm -r --if-present run typecheck"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.4",
-    "@babel/plugin-syntax-flow": "^7.27.1",
-    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
     "@types/node": "^24.0.0",
-    "babel-plugin-transform-flow-enums": "^0.0.2",
     "oxfmt": "0.36.0",
     "oxlint": "1.51.0",
-    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "ultracite": "7.2.5"
   },

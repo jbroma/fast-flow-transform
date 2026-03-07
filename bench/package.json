@@ -1,0 +1,14 @@
+{
+  "name": "@fft/bench",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "benchmark": "node compare.ts"
+  },
+  "dependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/plugin-syntax-flow": "^7.27.1",
+    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
+    "babel-plugin-transform-flow-enums": "^0.0.2"
+  }
+}

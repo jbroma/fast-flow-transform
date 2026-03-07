@@ -39,9 +39,8 @@
     }
   },
   "scripts": {
-    "benchmark": "tsx bench/compare.ts",
     "build": "tsc -p tsconfig.build.json",
-    "pack:local": "tsx scripts/pack-local.ts",
+    "pack:local": "node scripts/pack-local.ts",
     "prepack": "pnpm run build",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"

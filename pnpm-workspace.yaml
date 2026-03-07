@@ -1,6 +1,7 @@
 autoInstallPeers: false
 
 packages:
+  - 'bench'
   - 'bindings/*'
   - 'packages/*'
   - 'test/bundlers/*'

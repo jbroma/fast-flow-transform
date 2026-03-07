@@ -1,16 +1,16 @@
 declare module '@babel/core' {
-  type TransformOptions = {
+  interface TransformOptions {
     babelrc?: boolean;
     configFile?: boolean;
     filename?: string;
     plugins?: unknown[];
     sourceMaps?: boolean;
     sourceType?: string;
-  };
+  }
 
-  type BabelCore = {
+  interface BabelCore {
     transformSync(code: string, options?: TransformOptions): unknown;
-  };
+  }
 
   const babel: BabelCore;
   export default babel;

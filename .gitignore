@@ -11,8 +11,10 @@ packages/**/node_modules/
 packages/**/dist/
 packages/**/artifacts/
 packages/**/bin/
-packages/core/bench/fixtures/sample.js
 test/bundlers/**/dist/
+
+# Benchmark outputs
+bench/report.json
 
 # Locally packed native binaries
 packages/core/bin/fft-strip*

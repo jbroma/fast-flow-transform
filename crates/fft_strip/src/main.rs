@@ -151,6 +151,10 @@ fn run_transform(request: &Request) -> Result<(String, Value), TransformFailure>
         let input = ctx.sm().source_buffer_rc(file_id);
         let mut parser_flags = hparser::ParserFlags::default();
         parser_flags.enable_jsx = true;
+        parser_flags.parse_flow_match = matches!(
+            dialect,
+            ParserDialect::Flow | ParserDialect::FlowDetect | ParserDialect::FlowUnambiguous
+        );
         parser_flags.dialect = dialect;
 
         let parsed = hparser::ParsedJS::parse(parser_flags, &input);
@@ -477,6 +481,91 @@ mod tests {
         let code = String::from_utf8(output).expect("generated code should be UTF-8");
         assert!(!code.contains("match("));
         assert!(code.contains("_fft_match_"));
+    }
+
+    #[test]
+    fn lowers_flow_match_statement_from_source() {
+        let request = Request {
+            id: 1,
+            filename: "input.js".to_string(),
+            code: r#"
+                // @flow
+                function render(mode: number) {
+                    match (mode) {
+                        0 => {
+                            return 10;
+                        }
+                        1 => {
+                            return 20;
+                        }
+                    }
+                }
+            "#
+            .to_string(),
+            dialect: "flow".to_string(),
+            format: "compact".to_string(),
+            react_runtime_target: "18".to_string(),
+            enum_runtime_module: "flow-enums-runtime".to_string(),
+        };
+
+        let (code, map) = run_transform(&request).expect("transform should succeed");
+        assert!(!code.contains("match("));
+        assert!(code.contains("_fft_match_"));
+        assert!(map.is_object(), "expected source map object");
+    }
+
+    #[test]
+    fn strips_unknown_type_annotations() {
+        let request = Request {
+            id: 1,
+            filename: "input.js".to_string(),
+            code: r#"
+                // @flow
+                type Value = unknown;
+                function accept(value: unknown): unknown {
+                    return value;
+                }
+            "#
+            .to_string(),
+            dialect: "flow".to_string(),
+            format: "compact".to_string(),
+            react_runtime_target: "18".to_string(),
+            enum_runtime_module: "flow-enums-runtime".to_string(),
+        };
+
+        let (code, map) = run_transform(&request).expect("transform should succeed");
+        assert!(!code.contains("unknown"));
+        assert!(code.contains("function accept(value)"));
+        assert!(map.is_object(), "expected source map object");
+    }
+
+    #[test]
+    fn lowers_flow_match_expression_from_source() {
+        let request = Request {
+            id: 1,
+            filename: "input.js".to_string(),
+            code: r#"
+                // @flow
+                function render(mode: number) {
+                    return match (mode) {
+                        0 => 'zero',
+                        1 => 'one',
+                        _ => 'other',
+                    };
+                }
+            "#
+            .to_string(),
+            dialect: "flow".to_string(),
+            format: "compact".to_string(),
+            react_runtime_target: "18".to_string(),
+            enum_runtime_module: "flow-enums-runtime".to_string(),
+        };
+
+        let (code, map) = run_transform(&request).expect("transform should succeed");
+        assert!(!code.contains("match("));
+        assert!(code.contains("_fft_match_"));
+        assert!(code.contains("return "));
+        assert!(map.is_object(), "expected source map object");
     }
 
     #[test]

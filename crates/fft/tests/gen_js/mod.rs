@@ -65,6 +65,7 @@ fn test_roundtrip_flow(src1: &str) {
         hparser::ParserFlags {
             strict_mode: false,
             enable_jsx: false,
+            parse_flow_match: false,
             dialect: hparser::ParserDialect::Flow,
             store_doc_block: false,
             store_comments: false,
@@ -78,6 +79,7 @@ fn test_roundtrip_jsx(src1: &str) {
         hparser::ParserFlags {
             strict_mode: false,
             enable_jsx: true,
+            parse_flow_match: false,
             dialect: hparser::ParserDialect::JavaScript,
             store_doc_block: false,
             store_comments: false,

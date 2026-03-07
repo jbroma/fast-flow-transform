@@ -827,6 +827,86 @@ impl GenJS<'_, '_> {
                 self.newline();
                 out!(self, "}}");
             }
+            Node::MatchExpression(MatchExpression {
+                metadata: _,
+                argument,
+                cases,
+            }) => {
+                let tmp_name = format!("_fft_match_{}", self.match_tmp_index);
+                self.match_tmp_index += 1;
+
+                out_token!(self, node, "(()=>{{");
+                self.inc_indent();
+                self.newline();
+                out!(self, "const {}=", tmp_name);
+                argument.visit(ctx, self, Some(Path::new(node, NodeField::argument)));
+                out!(self, ";");
+
+                let mut emitted_branch = false;
+                for case in cases.iter() {
+                    let case_node = match case {
+                        Node::MatchExpressionCase(case_node) => case_node,
+                        _ => continue,
+                    };
+
+                    self.newline();
+                    if emitted_branch {
+                        out!(self, "else");
+                        self.space(ForceSpace::Yes);
+                    }
+
+                    let mut has_condition = false;
+                    if !matches!(case_node.pattern, Node::MatchWildcardPattern(_)) {
+                        has_condition = true;
+                        out!(self, "if(");
+                        out!(self, "{}===", tmp_name);
+                        self.emit_match_pattern_value(
+                            ctx,
+                            case_node.pattern,
+                            Path::new(case, NodeField::pattern),
+                        );
+                    }
+                    if let Some(guard) = case_node.guard {
+                        if has_condition {
+                            out!(self, "&&(");
+                            guard.visit(ctx, self, Some(Path::new(case, NodeField::guard)));
+                            out!(self, ")");
+                            out!(self, ")");
+                        } else {
+                            out!(self, "if(");
+                            guard.visit(ctx, self, Some(Path::new(case, NodeField::guard)));
+                            out!(self, ")");
+                        }
+                    } else if has_condition {
+                        out!(self, ")");
+                    }
+
+                    self.space(ForceSpace::Yes);
+                    out!(self, "return ");
+                    self.print_child(
+                        ctx,
+                        Some(case_node.body),
+                        Path::new(case, NodeField::body),
+                        ChildPos::Anywhere,
+                    );
+                    out!(self, ";");
+                    emitted_branch = true;
+
+                    if matches!(case_node.pattern, Node::MatchWildcardPattern(_))
+                        && case_node.guard.is_none()
+                    {
+                        break;
+                    }
+                }
+
+                if emitted_branch {
+                    self.newline();
+                }
+                out!(self, "return undefined;");
+                self.dec_indent();
+                self.newline();
+                out!(self, "}})()");
+            }
 
             Node::LabeledStatement(LabeledStatement {
                 metadata: _,
@@ -2315,6 +2395,9 @@ impl GenJS<'_, '_> {
             }
             Node::AnyTypeAnnotation(_) => {
                 out_token!(self, node, "any");
+            }
+            Node::UnknownTypeAnnotation(_) => {
+                out_token!(self, node, "unknown");
             }
             Node::MixedTypeAnnotation(_) => {
                 out_token!(self, node, "mixed");
@@ -3843,8 +3926,10 @@ impl GenJS<'_, '_> {
             | Node::NullLiteralTypeAnnotation(_)
             | Node::SymbolTypeAnnotation(_)
             | Node::AnyTypeAnnotation(_)
+            | Node::UnknownTypeAnnotation(_)
             | Node::MixedTypeAnnotation(_)
             | Node::VoidTypeAnnotation(_) => (PRIMARY, Assoc::Ltr),
+            Node::MatchExpression(_) => (PRIMARY, Assoc::Ltr),
             Node::NullableTypeAnnotation(_) => (UNARY, Assoc::Ltr),
             Node::UnionTypeAnnotation(_) => (UNION_TYPE, Assoc::Ltr),
             Node::IntersectionTypeAnnotation(_) => (INTERSECTION_TYPE, Assoc::Ltr),

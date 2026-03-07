@@ -16,6 +16,22 @@ export default {
         test: /\.js$/,
         use: [
           {
+            loader: 'builtin:swc-loader',
+            options: {
+              jsc: {
+                parser: {
+                  syntax: 'ecmascript',
+                  jsx: true,
+                },
+                transform: {
+                  react: {
+                    runtime: 'classic',
+                  },
+                },
+              },
+            },
+          },
+          {
             loader: require.resolve('fast-flow-transform/rspack'),
             options: {
               dialect: 'flow-detect',

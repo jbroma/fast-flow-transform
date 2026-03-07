@@ -5,7 +5,9 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
+  readFileSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +18,15 @@ interface WorkspaceContext {
   targetKey: string;
   workspaceRoot: string;
 }
+
+const PLATFORM_PACKAGE_NAMES = [
+  'fast-flow-transform-darwin-arm64',
+  'fast-flow-transform-darwin-x64',
+  'fast-flow-transform-linux-arm64',
+  'fast-flow-transform-linux-x64',
+  'fast-flow-transform-win32-arm64',
+  'fast-flow-transform-win32-x64',
+] as const;
 
 function run(command: string, args: string[], cwd: string): void {
   const result = spawnSync(command, args, {
@@ -153,7 +164,44 @@ function buildPackages(
 
 function packPackages(outputDirectory: string, packageRoots: string[]): void {
   for (const packageRoot of packageRoots) {
-    run('npm', ['pack', '--pack-destination', outputDirectory], packageRoot);
+    run(
+      'npm',
+      ['pack', '--ignore-scripts', '--pack-destination', outputDirectory],
+      packageRoot
+    );
+  }
+}
+
+function createCorePackageManifest(corePackageRoot: string): string {
+  const packageJsonPath = join(corePackageRoot, 'package.json');
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+    optionalDependencies?: Record<string, string>;
+    version: string;
+  };
+
+  packageJson.optionalDependencies = Object.fromEntries(
+    PLATFORM_PACKAGE_NAMES.map((packageName) => [
+      packageName,
+      packageJson.version,
+    ])
+  );
+
+  return `${JSON.stringify(packageJson, null, 2)}\n`;
+}
+
+function withPackedCoreManifest(
+  corePackageRoot: string,
+  pack: () => void
+): void {
+  const packageJsonPath = join(corePackageRoot, 'package.json');
+  const originalManifest = readFileSync(packageJsonPath, 'utf8');
+
+  writeFileSync(packageJsonPath, createCorePackageManifest(corePackageRoot));
+
+  try {
+    pack();
+  } finally {
+    writeFileSync(packageJsonPath, originalManifest);
   }
 }
 
@@ -187,7 +235,10 @@ function packTarballs(
   buildPackages(corePackageRoot, platformPackageRoot);
   const outputDirectory = join(corePackageRoot, 'artifacts');
   cleanDirectory(outputDirectory);
-  packPackages(outputDirectory, [platformPackageRoot, corePackageRoot]);
+  packPackages(outputDirectory, [platformPackageRoot]);
+  withPackedCoreManifest(corePackageRoot, () => {
+    packPackages(outputDirectory, [corePackageRoot]);
+  });
   printTarballSummary(tarballPaths(outputDirectory));
 }
 

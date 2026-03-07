@@ -13,6 +13,7 @@ This repo uses **Ultracite**, **Oxlint**, and **Oxfmt** for JS/TS work.
 ## Working Rules
 
 - Run `pnpm check` before completion for JS/TS changes.
+- Always request escalated sandbox permissions before running `pnpm install`.
 - Modularize from the start. Do not land large files/functions and split later.
 - Do not create files over `300` lines.
 - Do not create functions over `50` lines.

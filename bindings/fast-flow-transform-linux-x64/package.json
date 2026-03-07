@@ -17,12 +17,14 @@
     "dist",
     "bin"
   ],
-  "os": [
-    "linux"
-  ],
-  "cpu": [
-    "x64"
-  ],
+  "publishConfig": {
+    "os": [
+      "linux"
+    ],
+    "cpu": [
+      "x64"
+    ]
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

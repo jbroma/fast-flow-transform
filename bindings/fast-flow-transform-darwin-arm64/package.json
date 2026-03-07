@@ -17,12 +17,14 @@
     "dist",
     "bin"
   ],
-  "os": [
-    "darwin"
-  ],
-  "cpu": [
-    "arm64"
-  ],
+  "publishConfig": {
+    "os": [
+      "darwin"
+    ],
+    "cpu": [
+      "arm64"
+    ]
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

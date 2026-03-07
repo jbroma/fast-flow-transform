@@ -47,7 +47,10 @@ fn main() {
         "cargo:rerun-if-changed={}",
         hermes_root.join("include").display()
     );
-    println!("cargo:rerun-if-changed={}", hermes_root.join("lib").display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        hermes_root.join("lib").display()
+    );
     println!(
         "cargo:rerun-if-changed={}",
         hermes_root.join("external").display()

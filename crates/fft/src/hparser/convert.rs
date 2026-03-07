@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::str::FromStr;
 
+use fft_support::atom_table;
 use hermes::parser::DataRef;
 use hermes::parser::HermesParser;
 use hermes::parser::NodeLabel;
@@ -23,7 +24,6 @@ use hermes::parser::SMLoc;
 use hermes::utf::is_utf8_continuation;
 use hermes::utf::utf8_with_surrogates_to_string;
 use hermes::utf::utf8_with_surrogates_to_utf16;
-use fft_support::atom_table;
 
 use super::generated_cvt::cvt_node_ptr;
 use crate::ast;

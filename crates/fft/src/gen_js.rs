@@ -3719,17 +3719,29 @@ impl GenJS<'_, '_> {
                         _ => "",
                     }
                 );
-                self.emit_match_pattern_value(ctx, argument, Path::new(pattern_node, NodeField::argument));
+                self.emit_match_pattern_value(
+                    ctx,
+                    argument,
+                    Path::new(pattern_node, NodeField::argument),
+                );
             }
             Node::MatchAsPattern(MatchAsPattern { pattern, .. }) => {
-                self.emit_match_pattern_value(ctx, pattern, Path::new(pattern_node, NodeField::pattern));
+                self.emit_match_pattern_value(
+                    ctx,
+                    pattern,
+                    Path::new(pattern_node, NodeField::pattern),
+                );
             }
             Node::MatchMemberPattern(MatchMemberPattern { base, property, .. }) => {
                 self.emit_match_pattern_value(ctx, base, Path::new(pattern_node, NodeField::base));
                 match property {
                     Node::MatchIdentifierPattern(MatchIdentifierPattern { id, .. }) => {
                         out!(self, ".");
-                        id.visit(ctx, self, Some(Path::new(pattern_node, NodeField::property)));
+                        id.visit(
+                            ctx,
+                            self,
+                            Some(Path::new(pattern_node, NodeField::property)),
+                        );
                     }
                     _ => {
                         out!(self, "[");

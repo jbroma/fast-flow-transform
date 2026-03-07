@@ -98,7 +98,8 @@ impl StripFlow {
             }
         }
 
-        let props_param = self.build_component_props_parameter(gc, n, &params_without_ref, ref_param);
+        let props_param =
+            self.build_component_props_parameter(gc, n, &params_without_ref, ref_param);
 
         let (function_id, forward_ref_declaration) = if ref_param.is_some() {
             let internal_id = Self::build_identifier(
@@ -192,23 +193,25 @@ impl StripFlow {
                         },
                     ));
                 }
-                ComponentParameterKind::Rest(RestElement { metadata, argument }) => match argument {
-                    Node::ObjectPattern(object_pattern) => {
-                        props_properties.extend(object_pattern.properties.iter());
-                    }
-                    _ => {
-                        props_properties.push(builder::RestElement::build_template(
-                            gc,
-                            template::RestElement {
-                                metadata: TemplateMetadata {
-                                    range: metadata.range,
-                                    ..Default::default()
+                ComponentParameterKind::Rest(RestElement { metadata, argument }) => {
+                    match argument {
+                        Node::ObjectPattern(object_pattern) => {
+                            props_properties.extend(object_pattern.properties.iter());
+                        }
+                        _ => {
+                            props_properties.push(builder::RestElement::build_template(
+                                gc,
+                                template::RestElement {
+                                    metadata: TemplateMetadata {
+                                        range: metadata.range,
+                                        ..Default::default()
+                                    },
+                                    argument,
                                 },
-                                argument,
-                            },
-                        ));
+                            ));
+                        }
                     }
-                },
+                }
             }
         }
 
@@ -665,7 +668,11 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
                     );
                 }
                 return node.replace_with_existing(
-                    self.build_default_export(gc, metadata.range, lowered_component.function_declaration),
+                    self.build_default_export(
+                        gc,
+                        metadata.range,
+                        lowered_component.function_declaration,
+                    ),
                     gc,
                     self,
                 );
@@ -682,7 +689,11 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
                         self,
                     );
                 }
-                return node.replace_with_existing(lowered_component.function_declaration, gc, self);
+                return node.replace_with_existing(
+                    lowered_component.function_declaration,
+                    gc,
+                    self,
+                );
             }
             Node::HookDeclaration(n) => {
                 return node.replace_with_new(

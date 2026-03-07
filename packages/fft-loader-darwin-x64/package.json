@@ -15,5 +15,8 @@
   "main": "index.js",
   "os": ["darwin"],
   "cpu": ["x64"],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
   "files": ["index.js", "bin"]
 }

@@ -15,5 +15,8 @@
   "main": "index.js",
   "os": ["win32"],
   "cpu": ["arm64"],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
   "files": ["index.js", "bin"]
 }

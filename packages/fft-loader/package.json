@@ -31,7 +31,8 @@
     "benchmark": "node bench/compare.js",
     "build:dist": "node scripts/build-dist.js",
     "pack:local": "node scripts/pack-local.js",
-    "prepack": "node scripts/build-dist.js"
+    "prepack": "node scripts/build-dist.js",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "files": [
     "dist",

@@ -8,8 +8,7 @@
 	"scripts": {
 		"build:loader": "pnpm --filter fft-loader run build:dist",
 		"pack:local": "pnpm --filter fft-loader run pack:local",
-		"test": "node --test tests/monorepo-layout.test.mjs",
-		"typecheck": "tsc -p tsconfig.json"
+		"typecheck": "pnpm -r --if-present run typecheck"
 	},
 	"devDependencies": {
 		"@types/node": "^24.0.0",

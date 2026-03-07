@@ -77,7 +77,8 @@ This command will:
 1. Build `fft_strip` natively.
 2. Copy the binary into:
    - `fft-loader/bin/` (bundled fallback)
-   - the current platform package (`fft-loader-<platform>-<arch>/bin/`)
+   - the current platform package
+     (`bindings/fft-loader-<platform>-<arch>/bin/`)
 3. Emit `.tgz` files in `fft-loader/artifacts/`.
 
 If you already built the native executable, skip Cargo build:

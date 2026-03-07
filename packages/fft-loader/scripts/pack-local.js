@@ -44,8 +44,9 @@ function copyBinary(binaryPath, targetDir) {
 
 function getWorkspaceContext() {
   const loaderPackageRoot = path.resolve(__dirname, '..');
-  const packagesRoot = path.resolve(loaderPackageRoot, '..');
-  const workspaceRoot = path.resolve(packagesRoot, '..');
+  const workspacePackagesRoot = path.resolve(loaderPackageRoot, '..');
+  const workspaceRoot = path.resolve(workspacePackagesRoot, '..');
+  const platformPackagesRoot = path.join(workspaceRoot, 'bindings');
   const targetKey = `${process.platform}-${process.arch}`;
 
   const platformPackageName = PLATFORM_PACKAGE_BY_TARGET[targetKey];
@@ -55,8 +56,7 @@ function getWorkspaceContext() {
 
   return {
     loaderPackageRoot,
-    packagesRoot,
-    platformPackageRoot: path.join(packagesRoot, platformPackageName),
+    platformPackageRoot: path.join(platformPackagesRoot, platformPackageName),
     targetKey,
     workspaceRoot,
   };

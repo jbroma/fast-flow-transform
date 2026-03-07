@@ -5,6 +5,7 @@
     "third_party/**",
     "target/**",
     "node_modules/**",
+    "bindings/**",
     "packages/**/__tests__/**",
     "packages/**/bench/**",
     "packages/**/dist/**",

@@ -12,4 +12,4 @@ packages/fft-loader/artifacts/
 
 # Locally packed native binaries
 packages/fft-loader/bin/fft-strip*
-packages/fft-loader-*/bin/fft-strip*
+bindings/**/bin/fft-strip*

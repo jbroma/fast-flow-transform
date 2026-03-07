@@ -57,6 +57,6 @@ export default {
     path: resolve(PACKAGE_ROOT, 'dist'),
   },
   plugins: [new webpack.DefinePlugin({ __DEV__: 'false' })],
-  resolve: { extensions: ['.js', '.ios.js', '.android.js', '.native.js'] },
+  resolve: { extensions: ['.ios.js', '.android.js', '.native.js', '.js'] },
   target: 'node',
 };

@@ -160,7 +160,6 @@ impl NodePtr {
 
 impl AsRef<Node> for NodePtr {
     fn as_ref(&self) -> &Node {
-        debug_assert!(!self.ptr.as_ptr().is_null(), "null NodePtr");
         unsafe { self.ptr.as_ref() }
     }
 }

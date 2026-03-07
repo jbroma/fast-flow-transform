@@ -14,3 +14,11 @@ run = "cargo test --workspace"
 [tasks.rust-build]
 description = "Build the Rust workspace in release mode"
 run = "cargo build --workspace --release"
+
+[tasks.rust-fmt]
+description = "Format the Rust workspace with rustfmt"
+run = "cargo fmt --all"
+
+[tasks.rust-fmt-check]
+description = "Check Rust workspace formatting with rustfmt"
+run = "cargo fmt --all --check"

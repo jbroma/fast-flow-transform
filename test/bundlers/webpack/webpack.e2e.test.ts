@@ -2,11 +2,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-import { describe, it } from '@vitest/runner';
-import { createExpect } from 'vitest';
-
 const require = createRequire(import.meta.url);
-const expect = createExpect();
 const BUNDLE_PATH = fileURLToPath(new URL('dist/bundle.cjs', import.meta.url));
 const EXPECTED_PACKAGE = 'react-native';
 

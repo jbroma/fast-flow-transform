@@ -2,6 +2,7 @@ packages:
   - bench
   - bindings/*
   - packages/*
+  - test/cli
   - test/bundlers/*
   - test/fixtures/*
 

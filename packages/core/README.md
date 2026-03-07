@@ -6,6 +6,7 @@ A programmatic Flow type stripper with webpack and rspack loader adapters.
 
 - Native parse + transform + codegen + source map pipeline
 - Small programmatic API for one-shot transforms
+- CLI for transforming files with the same option set
 - Dedicated webpack and rspack loader entrypoints
 - Optional source map merging when you need emitted maps
 
@@ -19,6 +20,35 @@ const result = await transform({
   source: 'const answer: number = 42;',
   sourcemap: true,
 });
+```
+
+## CLI Usage
+
+```bash
+fast-flow-transform src/input.js --out-file dist/output.js
+```
+
+The CLI reads the input file, calls the same `transform(...)` API exposed by the
+package, and writes:
+
+- transformed code to `--out-file`
+- a source map to `--source-map-file` or `--out-file.map`
+
+Useful flags:
+
+```bash
+fast-flow-transform src/input.js \
+  --out-file dist/output.js \
+  --dialect flow-detect \
+  --format pretty \
+  --react-runtime-target 19 \
+  --enum-runtime-module flow-enums-runtime
+```
+
+If you want code on stdout instead of a file, disable source maps:
+
+```bash
+fast-flow-transform src/input.js --no-source-map
 ```
 
 ## Webpack Usage

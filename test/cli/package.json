@@ -1,0 +1,13 @@
+{
+  "name": "@fft-tests/cli",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "vitest --config vitest.config.ts run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "fast-flow-transform": "workspace:*",
+    "vitest": "^4.0.16"
+  }
+}

@@ -12,6 +12,9 @@
     "type": "git",
     "url": "git+https://github.com/jbroma/fast-flow-transform.git"
   },
+  "bin": {
+    "fast-flow-transform": "./dist/cli.js"
+  },
   "files": [
     "dist",
     "bin",
@@ -48,7 +51,7 @@
     "source-map": "^0.6.1"
   },
   "devDependencies": {
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.16"
   },
   "optionalDependencies": {
     "fast-flow-transform-darwin-arm64": "workspace:*",

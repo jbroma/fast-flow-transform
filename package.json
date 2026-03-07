@@ -1,18 +1,16 @@
 {
-  "name": "fast-flow-transform-workspace",
+  "name": "fast-flow-transform-monorepo",
   "private": true,
-  "workspaces": [
-    "bindings/*",
-    "packages/*"
-  ],
   "scripts": {
     "build:loader": "pnpm --filter ./packages/core run build",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check",
-    "format": "oxfmt .",
-    "format:check": "oxfmt --check .",
+    "format": "oxfmt . '!test/fixtures/project/**/*.js'",
+    "format:check": "oxfmt --check . '!test/fixtures/project/**/*.js'",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "pack:local": "pnpm --filter ./packages/core run pack:local",
+    "test:loader:e2e": "pnpm test:loader:e2e:prepare && pnpm --filter @fft-tests/webpack run test && pnpm --filter @fft-tests/rspack run test",
+    "test:loader:e2e:prepare": "pnpm build:loader && cargo build --release -p fft_strip",
     "typecheck": "pnpm -r --if-present run typecheck"
   },
   "devDependencies": {
@@ -25,8 +23,7 @@
     "oxlint": "1.51.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "ultracite": "7.2.5",
-    "vitest": "^3.2.4"
+    "ultracite": "7.2.5"
   },
   "packageManager": "pnpm@10.29.2"
 }

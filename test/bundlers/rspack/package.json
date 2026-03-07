@@ -1,0 +1,17 @@
+{
+  "name": "@fft-tests/rspack",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rspack build --config rspack.config.mjs",
+    "test": "pnpm build && vitest --config vitest.config.ts run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@rspack/cli": "^1.5.6",
+    "@rspack/core": "^1.5.6",
+    "@vitest/runner": "^3.2.4",
+    "fast-flow-transform": "workspace:*",
+    "vitest": "^3.2.4"
+  }
+}

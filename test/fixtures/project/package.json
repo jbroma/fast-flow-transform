@@ -1,0 +1,5 @@
+{
+  "name": "@fft-fixtures/flow-dependency-project",
+  "private": true,
+  "type": "module"
+}

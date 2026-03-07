@@ -9,7 +9,7 @@
     "sourceMap": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.cts", "src/**/*.ts"],
   "exclude": [
     "__tests__/**",
     "artifacts/**",

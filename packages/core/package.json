@@ -24,6 +24,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./webpack": {
+      "types": "./dist/webpack.d.ts",
+      "import": "./dist/webpack.js",
+      "require": "./dist/webpack.cjs",
+      "default": "./dist/webpack.js"
+    },
+    "./rspack": {
+      "types": "./dist/rspack.d.ts",
+      "import": "./dist/rspack.js",
+      "require": "./dist/rspack.cjs",
+      "default": "./dist/rspack.js"
     }
   },
   "scripts": {
@@ -36,6 +48,9 @@
   },
   "dependencies": {
     "source-map": "^0.6.1"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
   },
   "optionalDependencies": {
     "fast-flow-transform-darwin-arm64": "0.1.0",

@@ -4,12 +4,15 @@
 
 # Node
 node_modules/
+**/node_modules/
 packages/**/node_modules/
 
 # Loader packaging outputs
-packages/core/dist/
-packages/core/artifacts/
+packages/**/dist/
+packages/**/artifacts/
+packages/**/bin/
 packages/core/bench/fixtures/sample.js
+test/bundlers/**/dist/
 
 # Locally packed native binaries
 packages/core/bin/fft-strip*

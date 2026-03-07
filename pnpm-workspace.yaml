@@ -3,3 +3,5 @@ autoInstallPeers: false
 packages:
   - 'bindings/*'
   - 'packages/*'
+  - 'test/bundlers/*'
+  - 'test/fixtures/loader/flow-dependency/*'

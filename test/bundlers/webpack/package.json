@@ -1,0 +1,17 @@
+{
+  "name": "@fft-tests/webpack",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "webpack --config webpack.config.mjs",
+    "test": "pnpm build && vitest --config vitest.config.ts run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@vitest/runner": "^3.2.4",
+    "fast-flow-transform": "workspace:*",
+    "vitest": "^3.2.4",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1"
+  }
+}

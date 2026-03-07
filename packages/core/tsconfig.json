@@ -8,6 +8,7 @@
     "bench/**/*.d.ts",
     "bench/**/*.ts",
     "scripts/**/*.ts",
+    "src/**/*.cts",
     "src/**/*.ts",
     "vitest.config.ts"
   ],

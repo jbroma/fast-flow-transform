@@ -3,14 +3,9 @@
   "extends": ["./node_modules/ultracite/config/oxlint/core/.oxlintrc.json"],
   "ignorePatterns": [
     "third_party/**",
-    "target/**",
-    "node_modules/**",
     "bindings/**",
     "packages/**/__tests__/**",
     "packages/**/bench/**",
-    "packages/**/dist/**",
-    "packages/**/artifacts/**",
-    "packages/**/bin/**",
     "packages/fft-loader/bench/fixtures/**"
   ],
   "rules": {

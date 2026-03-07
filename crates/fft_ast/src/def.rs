@@ -554,6 +554,7 @@ macro_rules! nodekind_defs {
             NullLiteralTypeAnnotation[FlowType],
             SymbolTypeAnnotation[FlowType],
             AnyTypeAnnotation[FlowType],
+            UnknownTypeAnnotation[FlowType],
             MixedTypeAnnotation[FlowType],
             VoidTypeAnnotation[FlowType],
             FunctionTypeAnnotation[FlowType] {

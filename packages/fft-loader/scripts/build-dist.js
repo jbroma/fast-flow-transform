@@ -24,7 +24,7 @@ function copyRecursive(fromPath, toPath) {
   const stat = fs.lstatSync(fromPath);
   if (stat.isDirectory()) {
     if (!fs.existsSync(toPath)) {
-      fs.mkdirSync(toPath, {recursive: true});
+      fs.mkdirSync(toPath, { recursive: true });
     }
     for (const entry of fs.readdirSync(fromPath)) {
       copyRecursive(path.join(fromPath, entry), path.join(toPath, entry));
@@ -41,7 +41,7 @@ function main() {
   const distDir = path.join(packageRoot, 'dist');
 
   rmRecursive(distDir);
-  fs.mkdirSync(distDir, {recursive: true});
+  fs.mkdirSync(distDir, { recursive: true });
   copyRecursive(srcDir, distDir);
 
   process.stdout.write(`Built dist directory: ${distDir}\n`);

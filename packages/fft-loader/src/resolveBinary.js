@@ -39,7 +39,7 @@ function stageBinaryForExecution(binaryPath) {
   }
 
   const stagedDirectory = path.join(os.tmpdir(), 'fft-loader');
-  fs.mkdirSync(stagedDirectory, {recursive: true});
+  fs.mkdirSync(stagedDirectory, { recursive: true });
 
   const extension = process.platform === 'win32' ? '.exe' : '';
   const fingerprint = crypto
@@ -49,7 +49,7 @@ function stageBinaryForExecution(binaryPath) {
     .slice(0, 24);
   const stagedPath = path.join(
     stagedDirectory,
-    `fft-strip-${fingerprint}${extension}`,
+    `fft-strip-${fingerprint}${extension}`
   );
 
   if (!fs.existsSync(stagedPath)) {
@@ -77,7 +77,7 @@ function resolveFromOptionalPackage() {
     if (binaryPath != null && fs.existsSync(binaryPath)) {
       return binaryPath;
     }
-  } catch (_error) {
+  } catch {
     // Optional package may not be installed for the current platform.
   }
 
@@ -90,7 +90,7 @@ function resolveFromWorkspaceBuild() {
   const localPath = path.resolve(
     __dirname,
     '../../../target/release',
-    executableName,
+    executableName
   );
   if (fs.existsSync(localPath)) {
     return localPath;
@@ -112,9 +112,7 @@ function resolveBinaryPath() {
   const fromEnv = process.env.FFT_STRIP_BINARY;
   if (fromEnv != null && fromEnv.length > 0) {
     if (!fs.existsSync(fromEnv)) {
-      throw new Error(
-        `FFT_STRIP_BINARY points to a missing file: ${fromEnv}`,
-      );
+      throw new Error(`FFT_STRIP_BINARY points to a missing file: ${fromEnv}`);
     }
     return stageBinaryForExecution(fromEnv);
   }
@@ -136,7 +134,7 @@ function resolveBinaryPath() {
 
   throw new Error(
     `Unable to resolve fft-strip binary for ${process.platform}-${process.arch}. ` +
-      'Install matching optional package or set FFT_STRIP_BINARY.',
+      'Install matching optional package or set FFT_STRIP_BINARY.'
   );
 }
 

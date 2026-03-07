@@ -29,11 +29,11 @@ class NativeWorker {
       crlfDelay: Infinity,
     });
 
-    this._reader.on('line', line => {
+    this._reader.on('line', (line) => {
       this._onResponseLine(line);
     });
 
-    this._child.stderr.on('data', chunk => {
+    this._child.stderr.on('data', (chunk) => {
       const message = chunk.toString('utf8');
       this._stderrTail.push(message);
       if (this._stderrTail.length > 16) {
@@ -41,16 +41,16 @@ class NativeWorker {
       }
     });
 
-    this._child.on('error', error => {
+    this._child.on('error', (error) => {
       this._failAllPending(error);
     });
 
-    this._child.on('exit', code => {
+    this._child.on('exit', (code) => {
       this._isClosed = true;
       this._failAllPending(
         new Error(
-          `fft-strip worker exited with code ${String(code)}${this._stderrSummary()}`,
-        ),
+          `fft-strip worker exited with code ${String(code)}${this._stderrSummary()}`
+        )
       );
     });
   }
@@ -80,8 +80,8 @@ class NativeWorker {
     } catch (error) {
       this._failAllPending(
         new Error(
-          `fft-strip worker emitted invalid JSON: ${String(error)}${this._stderrSummary()}`,
-        ),
+          `fft-strip worker emitted invalid JSON: ${String(error)}${this._stderrSummary()}`
+        )
       );
       return;
     }
@@ -100,7 +100,9 @@ class NativeWorker {
       return;
     }
 
-    pending.reject(response.error || new Error('Unknown fft-strip worker error'));
+    pending.reject(
+      response.error || new Error('Unknown fft-strip worker error')
+    );
   }
 
   request(payload) {
@@ -109,7 +111,7 @@ class NativeWorker {
     }
 
     return new Promise((resolve, reject) => {
-      this._pending.set(payload.id, {resolve, reject});
+      this._pending.set(payload.id, { resolve, reject });
       try {
         this._child.stdin.write(JSON.stringify(payload));
         this._child.stdin.write('\n');
@@ -135,7 +137,10 @@ class NativeWorker {
 class NativePool {
   constructor(binaryPath, threads) {
     this._binaryPath = binaryPath;
-    this._workers = Array.from({length: threads}, () => new NativeWorker(binaryPath));
+    this._workers = Array.from(
+      { length: threads },
+      () => new NativeWorker(binaryPath)
+    );
     this._index = 0;
   }
 
@@ -149,7 +154,8 @@ class NativePool {
   }
 
   transform(request) {
-    const id = nextRequestId++;
+    const id = nextRequestId;
+    nextRequestId += 1;
     const workerIndex = this._index % this._workers.length;
     this._index += 1;
 

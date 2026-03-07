@@ -13,8 +13,8 @@ function resolveRuntimeModule(name) {
   return require(path.resolve(__dirname, '..', 'src', name));
 }
 
-const {getPool, closeAllPools} = resolveRuntimeModule('pool');
-const {resolveBinaryPath} = resolveRuntimeModule('resolveBinary');
+const { getPool, closeAllPools } = resolveRuntimeModule('pool');
+const { resolveBinaryPath } = resolveRuntimeModule('resolveBinary');
 
 function durationMs(startNs, endNs) {
   return Number(endNs - startNs) / 1e6;
@@ -27,7 +27,7 @@ function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-async function runNativeBenchmark({code, filename, iterations}) {
+async function runNativeBenchmark({ code, filename, iterations }) {
   const binaryPath = resolveBinaryPath();
   const pool = getPool(binaryPath, 1);
 
@@ -63,15 +63,18 @@ async function runNativeBenchmark({code, filename, iterations}) {
   };
 }
 
-function runBabelBenchmark({code, filename, iterations}) {
+function runBabelBenchmark({ code, filename, iterations }) {
   const transformOnce = () => {
     babel.transformSync(code, {
       filename,
       babelrc: false,
       configFile: false,
       plugins: [
-        ['@babel/plugin-syntax-flow', {enums: true}],
-        ['@babel/plugin-transform-flow-strip-types', {allowDeclareFields: true}],
+        ['@babel/plugin-syntax-flow', { enums: true }],
+        [
+          '@babel/plugin-transform-flow-strip-types',
+          { allowDeclareFields: true },
+        ],
         'babel-plugin-transform-flow-enums',
       ],
       sourceMaps: true,
@@ -115,7 +118,7 @@ async function main() {
         code,
         filename: fixturePath,
         iterations,
-      }),
+      })
     ),
   ]);
 
@@ -147,7 +150,7 @@ async function main() {
   });
 }
 
-main().catch(error => {
+main().catch((error) => {
   closeAllPools();
   console.error(error);
   process.exitCode = 1;

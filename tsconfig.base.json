@@ -1,22 +1,22 @@
 {
-	"compilerOptions": {
-		"allowJs": true,
-		"checkJs": false,
-		"exactOptionalPropertyTypes": true,
-		"forceConsistentCasingInFileNames": true,
-		"isolatedModules": true,
-		"lib": ["esnext"],
-		"module": "nodenext",
-		"moduleDetection": "force",
-		"moduleResolution": "nodenext",
-		"noEmit": true,
-		"noUncheckedIndexedAccess": true,
-		"noUncheckedSideEffectImports": true,
-		"resolveJsonModule": true,
-		"skipLibCheck": true,
-		"strict": true,
-		"target": "esnext",
-		"types": [],
-		"verbatimModuleSyntax": true
-	}
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "lib": ["esnext"],
+    "module": "nodenext",
+    "moduleDetection": "force",
+    "moduleResolution": "nodenext",
+    "noEmit": true,
+    "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "esnext",
+    "types": [],
+    "verbatimModuleSyntax": true
+  }
 }

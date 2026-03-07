@@ -1,17 +1,25 @@
 {
 	"name": "fast-flow-transform",
 	"private": true,
-	"packageManager": "pnpm@10.29.2",
 	"workspaces": [
 		"packages/*"
 	],
 	"scripts": {
 		"build:loader": "pnpm --filter fft-loader run build:dist",
+		"check": "pnpm typecheck && pnpm lint && pnpm format:check",
+		"format": "oxfmt .",
+		"format:check": "oxfmt --check .",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix .",
 		"pack:local": "pnpm --filter fft-loader run pack:local",
 		"typecheck": "pnpm -r --if-present run typecheck"
 	},
 	"devDependencies": {
 		"@types/node": "^24.0.0",
-		"typescript": "^5.9.3"
-	}
+		"oxfmt": "0.36.0",
+		"oxlint": "1.51.0",
+		"typescript": "^5.9.3",
+		"ultracite": "7.2.5"
+	},
+	"packageManager": "pnpm@10.29.2"
 }

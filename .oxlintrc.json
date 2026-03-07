@@ -1,0 +1,55 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": ["./node_modules/ultracite/config/oxlint/core/.oxlintrc.json"],
+  "ignorePatterns": [
+    "third_party/**",
+    "target/**",
+    "node_modules/**",
+    "packages/**/__tests__/**",
+    "packages/**/bench/**",
+    "packages/**/dist/**",
+    "packages/**/artifacts/**",
+    "packages/**/bin/**",
+    "packages/fft-loader/bench/fixtures/**"
+  ],
+  "rules": {
+    "eslint/eqeqeq": "off",
+    "eslint/func-style": "off",
+    "eslint/max-lines": [
+      "error",
+      {
+        "max": 300,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "eslint/max-lines-per-function": [
+      "error",
+      {
+        "max": 50,
+        "skipBlankLines": true,
+        "skipComments": true,
+        "IIFEs": true
+      }
+    ],
+    "eslint/complexity": [
+      "error",
+      {
+        "max": 15,
+        "variant": "modified"
+      }
+    ],
+    "eslint/max-classes-per-file": "off",
+    "eslint/max-depth": ["error", 3],
+    "eslint/no-eq-null": "off",
+    "eslint/no-negated-condition": "off",
+    "eslint/sort-keys": "off",
+    "promise/avoid-new": "off",
+    "promise/no-callback-in-promise": "off",
+    "promise/prefer-await-to-callbacks": "off",
+    "promise/prefer-await-to-then": "off",
+    "unicorn/filename-case": "off",
+    "unicorn/prefer-node-protocol": "off",
+    "unicorn/prefer-optional-catch-binding": "off"
+  }
+}

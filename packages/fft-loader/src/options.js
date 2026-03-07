@@ -13,6 +13,56 @@ const DIALECTS = new Set(['flow', 'flow-detect', 'flow-unambiguous']);
 const FORMATS = new Set(['compact', 'pretty']);
 const REACT_TARGETS = new Set(['18', '19']);
 
+function validateStringOption(validValues, optionName, value) {
+  if (validValues.has(String(value))) {
+    return;
+  }
+  throw new Error(
+    `Invalid fft-loader option \`${optionName}\`: ${String(value)}`
+  );
+}
+
+function validateThreads(threads) {
+  if (threads == null) {
+    return;
+  }
+  if (Number.isInteger(threads) && threads > 0) {
+    return;
+  }
+  throw new Error(`Invalid fft-loader option \`threads\`: ${String(threads)}`);
+}
+
+function validateOptions(options) {
+  if (!DIALECTS.has(options.dialect)) {
+    throw new Error(
+      `Invalid fft-loader option \`dialect\`: ${String(options.dialect)}`
+    );
+  }
+
+  validateStringOption(FORMATS, 'format', options.format);
+  validateStringOption(
+    REACT_TARGETS,
+    'reactRuntimeTarget',
+    options.reactRuntimeTarget
+  );
+
+  if (
+    typeof options.enumRuntimeModule !== 'string' ||
+    options.enumRuntimeModule.length === 0
+  ) {
+    throw new Error(
+      'Invalid fft-loader option `enumRuntimeModule`: expected non-empty string'
+    );
+  }
+
+  if (options.sourcemap !== true) {
+    throw new Error(
+      'fft-loader requires `sourcemap: true`; source maps are always emitted'
+    );
+  }
+  validateThreads(options.threads);
+}
+
 function parseOptions(rawOptions) {
   const incoming = rawOptions == null ? {} : rawOptions;
   const options = {
@@ -20,48 +70,7 @@ function parseOptions(rawOptions) {
     ...incoming,
   };
 
-  if (!DIALECTS.has(options.dialect)) {
-    throw new Error(
-      `Invalid fft-loader option \`dialect\`: ${String(
-        options.dialect,
-      )}`,
-    );
-  }
-
-  if (!FORMATS.has(options.format)) {
-    throw new Error(
-      `Invalid fft-loader option \`format\`: ${String(options.format)}`,
-    );
-  }
-
-  if (!REACT_TARGETS.has(String(options.reactRuntimeTarget))) {
-    throw new Error(
-      `Invalid fft-loader option \`reactRuntimeTarget\`: ${String(
-        options.reactRuntimeTarget,
-      )}`,
-    );
-  }
-
-  if (typeof options.enumRuntimeModule !== 'string' || options.enumRuntimeModule.length === 0) {
-    throw new Error(
-      'Invalid fft-loader option `enumRuntimeModule`: expected non-empty string',
-    );
-  }
-
-  if (options.sourcemap !== true) {
-    throw new Error(
-      'fft-loader requires `sourcemap: true`; source maps are always emitted',
-    );
-  }
-
-  if (options.threads != null) {
-    if (!Number.isInteger(options.threads) || options.threads <= 0) {
-      throw new Error(
-        `Invalid fft-loader option \`threads\`: ${String(options.threads)}`,
-      );
-    }
-  }
-
+  validateOptions(options);
   return {
     dialect: options.dialect,
     format: options.format,

@@ -22,13 +22,13 @@ function run(command, args, cwd) {
 
   if (result.status !== 0) {
     throw new Error(
-      `Command failed (${String(result.status)}): ${command} ${args.join(' ')}`,
+      `Command failed (${String(result.status)}): ${command} ${args.join(' ')}`
     );
   }
 }
 
 function ensureDirectory(targetPath) {
-  fs.mkdirSync(targetPath, {recursive: true});
+  fs.mkdirSync(targetPath, { recursive: true });
 }
 
 function copyBinary(binaryPath, targetDir) {
@@ -42,10 +42,10 @@ function copyBinary(binaryPath, targetDir) {
   return destinationPath;
 }
 
-function main() {
-  const packageRoot = path.resolve(__dirname, '..');
-  const jsRoot = path.resolve(packageRoot, '..');
-  const repoRoot = path.resolve(jsRoot, '..');
+function getWorkspaceContext() {
+  const loaderPackageRoot = path.resolve(__dirname, '..');
+  const packagesRoot = path.resolve(loaderPackageRoot, '..');
+  const workspaceRoot = path.resolve(packagesRoot, '..');
   const targetKey = `${process.platform}-${process.arch}`;
 
   const platformPackageName = PLATFORM_PACKAGE_BY_TARGET[targetKey];
@@ -53,13 +53,23 @@ function main() {
     throw new Error(`Unsupported local packaging target: ${targetKey}`);
   }
 
-  const workspaceRoot = repoRoot;
-  const binaryName = process.platform === 'win32' ? 'fft-strip.exe' : 'fft-strip';
+  return {
+    loaderPackageRoot,
+    packagesRoot,
+    platformPackageRoot: path.join(packagesRoot, platformPackageName),
+    targetKey,
+    workspaceRoot,
+  };
+}
+
+function resolveBuiltBinaryPath(workspaceRoot, targetKey) {
+  const binaryName =
+    process.platform === 'win32' ? 'fft-strip.exe' : 'fft-strip';
   const defaultBuiltBinaryPath = path.join(
     workspaceRoot,
     'target',
     'release',
-    binaryName,
+    binaryName
   );
   const overrideBinaryPath = process.env.FFT_STRIP_BINARY;
   const builtBinaryPath =
@@ -74,20 +84,36 @@ function main() {
     process.stdout.write(`Using existing native binary: ${builtBinaryPath}\n`);
   }
 
+  return builtBinaryPath;
+}
+
+function printTarballSummary(tarballs) {
+  process.stdout.write('\nCreated tarballs:\n');
+  for (const tarball of tarballs) {
+    process.stdout.write(`- ${tarball}\n`);
+  }
+
+  process.stdout.write('\nInstall in another project with:\n');
+  process.stdout.write(
+    `npm install ${tarballs.map((p) => `'${p}'`).join(' ')}\n`
+  );
+}
+
+function main() {
+  const { loaderPackageRoot, platformPackageRoot, targetKey, workspaceRoot } =
+    getWorkspaceContext();
+  const builtBinaryPath = resolveBuiltBinaryPath(workspaceRoot, targetKey);
   if (!fs.existsSync(builtBinaryPath)) {
     throw new Error(`Expected built binary not found at ${builtBinaryPath}`);
   }
 
-  const platformPackageRoot = path.join(jsRoot, platformPackageName);
-  const loaderPackageRoot = packageRoot;
-
   const platformBinaryPath = copyBinary(
     builtBinaryPath,
-    path.join(platformPackageRoot, 'bin'),
+    path.join(platformPackageRoot, 'bin')
   );
   const loaderBinaryPath = copyBinary(
     builtBinaryPath,
-    path.join(loaderPackageRoot, 'bin'),
+    path.join(loaderPackageRoot, 'bin')
   );
 
   process.stdout.write(`Copied binary to: ${platformBinaryPath}\n`);
@@ -106,16 +132,10 @@ function main() {
 
   const tarballs = fs
     .readdirSync(outputDir)
-    .filter(name => name.endsWith('.tgz'))
-    .map(name => path.join(outputDir, name));
+    .filter((name) => name.endsWith('.tgz'))
+    .map((name) => path.join(outputDir, name));
 
-  process.stdout.write('\nCreated tarballs:\n');
-  for (const tarball of tarballs) {
-    process.stdout.write(`- ${tarball}\n`);
-  }
-
-  process.stdout.write('\nInstall in another project with:\n');
-  process.stdout.write(`npm install ${tarballs.map(p => `'${p}'`).join(' ')}\n`);
+  printTarballSummary(tarballs);
 }
 
 main();

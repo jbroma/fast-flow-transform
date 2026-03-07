@@ -1,0 +1,32 @@
+// Ultracite-inspired oxfmt configuration for this repo's JS/TS surface.
+// https://oxc.rs/docs/guide/usage/formatter/config-file-reference.html
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "third_party/**",
+    "target/**",
+    "node_modules/**",
+    "packages/**/dist/**",
+    "packages/**/artifacts/**",
+    "packages/**/bin/**",
+    "packages/fft-loader/bench/fixtures/**",
+  ],
+  "printWidth": 80,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "quoteProps": "as-needed",
+  "jsxSingleQuote": false,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "bracketSameLine": false,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "experimentalSortPackageJson": true,
+  "experimentalSortImports": {
+    "ignoreCase": true,
+    "newlinesBetween": true,
+    "order": "asc",
+  },
+}

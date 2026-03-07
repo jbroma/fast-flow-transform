@@ -1,19 +1,29 @@
 'use strict';
 
-const {SourceMapConsumer, SourceMapGenerator} = require('source-map');
+const { SourceMapConsumer, SourceMapGenerator } = require('source-map');
 
-function createSingleMappingMap({file, source, generatedLine, generatedColumn, originalLine, originalColumn}) {
-  const generator = new SourceMapGenerator({file});
+function createSingleMappingMap({
+  file,
+  source,
+  generatedLine,
+  generatedColumn,
+  originalLine,
+  originalColumn,
+}) {
+  const generator = new SourceMapGenerator({ file });
   generator.addMapping({
-    generated: {line: generatedLine, column: generatedColumn},
+    generated: { line: generatedLine, column: generatedColumn },
     source,
-    original: {line: originalLine, column: originalColumn},
+    original: { line: originalLine, column: originalColumn },
   });
   return generator.toJSON();
 }
 
-function runLoader(loader, {source, inputMap, options, resourcePath, useQueryFallback}) {
-  const meta = {tag: 'meta'};
+function runLoader(
+  loader,
+  { source, inputMap, options, resourcePath, useQueryFallback }
+) {
+  const meta = { tag: 'meta' };
   return new Promise((resolve, reject) => {
     const context = {
       resourcePath,
@@ -24,7 +34,7 @@ function runLoader(loader, {source, inputMap, options, resourcePath, useQueryFal
             reject(error);
             return;
           }
-          resolve({code, map, meta: returnedMeta});
+          resolve({ code, map, meta: returnedMeta });
         };
       },
     };
@@ -63,11 +73,11 @@ describe('fft-loader', () => {
       Promise.resolve({
         code: 'const answer = 42;\n',
         map: nativeMap,
-      }),
+      })
     );
 
     jest.doMock('../src/pool', () => ({
-      getPool: jest.fn(() => ({transform: poolTransform})),
+      getPool: jest.fn(() => ({ transform: poolTransform })),
     }));
 
     const inputMap = createSingleMappingMap({
@@ -98,7 +108,10 @@ describe('fft-loader', () => {
     expect(result.code).toBe('const answer = 42;\n');
 
     const mergedConsumer = new SourceMapConsumer(result.map);
-    const mergedPosition = mergedConsumer.originalPositionFor({line: 1, column: 0});
+    const mergedPosition = mergedConsumer.originalPositionFor({
+      line: 1,
+      column: 0,
+    });
     expect(mergedPosition.source).toBe('/tmp/original.js');
     expect(mergedPosition.line).toBe(5);
     expect(mergedPosition.column).toBe(7);
@@ -124,11 +137,11 @@ describe('fft-loader', () => {
           originalLine: 1,
           originalColumn: 0,
         }),
-      }),
+      })
     );
 
     jest.doMock('../src/pool', () => ({
-      getPool: jest.fn(() => ({transform: poolTransform})),
+      getPool: jest.fn(() => ({ transform: poolTransform })),
     }));
 
     const loader = require('../src/index');
@@ -157,11 +170,11 @@ describe('fft-loader', () => {
         message: 'Unexpected token',
         line: 2,
         column: 10,
-      }),
+      })
     );
 
     jest.doMock('../src/pool', () => ({
-      getPool: jest.fn(() => ({transform: poolTransform})),
+      getPool: jest.fn(() => ({ transform: poolTransform })),
     }));
 
     const loader = require('../src/index');
@@ -170,12 +183,12 @@ describe('fft-loader', () => {
       runLoader(loader, {
         source: 'const value = ;',
         inputMap: null,
-        options: {sourcemap: true},
+        options: { sourcemap: true },
         resourcePath: '/tmp/bad.js',
         useQueryFallback: false,
-      }),
+      })
     ).rejects.toThrow(
-      'fft-strip transform failed (/tmp/bad.js:2:10): Unexpected token',
+      'fft-strip transform failed (/tmp/bad.js:2:10): Unexpected token'
     );
   });
 });

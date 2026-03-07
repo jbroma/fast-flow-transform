@@ -2,21 +2,28 @@
   "name": "fft-loader-darwin-x64",
   "version": "0.1.0",
   "description": "Platform binary package for fft-loader (darwin-x64)",
-  "author": "Jakub Romanczyk <j.romanczyk@gmail.com>",
+  "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
+  "bugs": {
+    "url": "https://github.com/jbroma/fast-flow-transform/issues"
+  },
   "license": "MIT",
+  "author": "Jakub Romanczyk <j.romanczyk@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jbroma/fast-flow-transform.git"
   },
-  "bugs": {
-    "url": "https://github.com/jbroma/fast-flow-transform/issues"
-  },
-  "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
+  "files": [
+    "index.js",
+    "bin"
+  ],
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "main": "index.js",
-  "os": ["darwin"],
-  "cpu": ["x64"],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
-  },
-  "files": ["index.js", "bin"]
+  }
 }

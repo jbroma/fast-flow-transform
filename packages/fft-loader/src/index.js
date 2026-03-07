@@ -3,10 +3,10 @@
 const crypto = require('crypto');
 const fs = require('fs');
 
-const {mergeSourceMaps} = require('./mergeSourceMaps');
-const {parseOptions, stableOptionsKey} = require('./options');
-const {getPool} = require('./pool');
-const {resolveBinaryPath} = require('./resolveBinary');
+const { mergeSourceMaps } = require('./mergeSourceMaps');
+const { parseOptions, stableOptionsKey } = require('./options');
+const { getPool } = require('./pool');
+const { resolveBinaryPath } = require('./resolveBinary');
 
 const PACKAGE_VERSION = require('../package.json').version;
 const TRANSFORM_CACHE = new Map();
@@ -27,7 +27,7 @@ function getBinaryVersion(binaryPath) {
 
   const stat = fs.statSync(binaryPath);
   version = `${PACKAGE_VERSION}:${binaryPath}:${String(stat.size)}:${String(
-    stat.mtimeMs,
+    stat.mtimeMs
   )}`;
   BINARY_VERSION_CACHE.set(binaryPath, version);
   return version;
@@ -82,6 +82,87 @@ function getRawLoaderOptions(loaderContext) {
   return {};
 }
 
+function createTransformRequest(resourcePath, code, options) {
+  return {
+    filename: resourcePath,
+    code,
+    dialect: options.dialect,
+    format: options.format,
+    reactRuntimeTarget: options.reactRuntimeTarget,
+    enumRuntimeModule: options.enumRuntimeModule,
+  };
+}
+
+function withCallback(callback, operation) {
+  try {
+    return operation();
+  } catch (error) {
+    callback(error);
+    return null;
+  }
+}
+
+function transformSource(
+  pool,
+  request,
+  inputSourceMap,
+  resourcePath,
+  cacheKey
+) {
+  return pool.transform(request).then((nativeResult) => {
+    const mergedMap = mergeSourceMaps(
+      inputSourceMap,
+      nativeResult.map,
+      resourcePath
+    );
+    const result = {
+      code: nativeResult.code,
+      map: mergedMap,
+    };
+    TRANSFORM_CACHE.set(cacheKey, result);
+    return result;
+  });
+}
+
+function getLoaderState(
+  loaderContext,
+  callback,
+  code,
+  resourcePath,
+  inputSourceMap
+) {
+  const options = withCallback(callback, () =>
+    parseOptions(getRawLoaderOptions(loaderContext))
+  );
+  if (options == null) {
+    return null;
+  }
+
+  const binaryPath = withCallback(callback, resolveBinaryPath);
+  if (binaryPath == null) {
+    return null;
+  }
+
+  const cacheKey = withCallback(callback, () =>
+    buildCacheKey({
+      code,
+      filename: resourcePath,
+      options,
+      binaryVersion: getBinaryVersion(binaryPath),
+      inputSourceMap,
+    })
+  );
+  if (cacheKey == null) {
+    return null;
+  }
+
+  return {
+    binaryPath,
+    cacheKey,
+    options,
+  };
+}
+
 function flowStripLoader(source, inputSourceMap, meta) {
   const callback = this.async();
   const resourcePath = this.resourcePath || '<unknown>';
@@ -90,31 +171,20 @@ function flowStripLoader(source, inputSourceMap, meta) {
     this.cacheable(true);
   }
 
-  const code = Buffer.isBuffer(source) ? source.toString('utf8') : String(source);
-
-  let options;
-  let binaryPath;
-  try {
-    options = parseOptions(getRawLoaderOptions(this));
-    binaryPath = resolveBinaryPath();
-  } catch (error) {
-    callback(error);
+  const code = Buffer.isBuffer(source)
+    ? source.toString('utf8')
+    : String(source);
+  const loaderState = getLoaderState(
+    this,
+    callback,
+    code,
+    resourcePath,
+    inputSourceMap
+  );
+  if (loaderState == null) {
     return;
   }
-
-  let cacheKey;
-  try {
-    cacheKey = buildCacheKey({
-      code,
-      filename: resourcePath,
-      options,
-      binaryVersion: getBinaryVersion(binaryPath),
-      inputSourceMap,
-    });
-  } catch (error) {
-    callback(error);
-    return;
-  }
+  const { binaryPath, cacheKey, options } = loaderState;
 
   const cached = TRANSFORM_CACHE.get(cacheKey);
   if (cached != null) {
@@ -123,29 +193,17 @@ function flowStripLoader(source, inputSourceMap, meta) {
   }
 
   const pool = getPool(binaryPath, options.threads);
-  pool
-    .transform({
-      filename: resourcePath,
-      code,
-      dialect: options.dialect,
-      format: options.format,
-      reactRuntimeTarget: options.reactRuntimeTarget,
-      enumRuntimeModule: options.enumRuntimeModule,
+  transformSource(
+    pool,
+    createTransformRequest(resourcePath, code, options),
+    inputSourceMap,
+    resourcePath,
+    cacheKey
+  )
+    .then((nativeResult) => {
+      callback(null, nativeResult.code, nativeResult.map, meta);
     })
-    .then(nativeResult => {
-      const mergedMap = mergeSourceMaps(
-        inputSourceMap,
-        nativeResult.map,
-        resourcePath,
-      );
-      const result = {
-        code: nativeResult.code,
-        map: mergedMap,
-      };
-      TRANSFORM_CACHE.set(cacheKey, result);
-      callback(null, result.code, result.map, meta);
-    })
-    .catch(error => {
+    .catch((error) => {
       callback(toLoaderError(error, resourcePath));
     });
 }

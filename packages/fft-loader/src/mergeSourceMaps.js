@@ -1,27 +1,17 @@
 'use strict';
 
-const {SourceMapConsumer, SourceMapGenerator} = require('source-map');
+const { SourceMapConsumer, SourceMapGenerator } = require('source-map');
 
 function sourceContentFor(consumer, source) {
   try {
     return consumer.sourceContentFor(source, true);
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
 
-function mergeSourceMaps(inputMap, outputMap, generatedFile) {
-  if (inputMap == null) {
-    return outputMap;
-  }
-
-  const outputConsumer = new SourceMapConsumer(outputMap);
-  const inputConsumer = new SourceMapConsumer(inputMap);
-  const merged = new SourceMapGenerator({
-    file: outputMap.file || generatedFile,
-  });
-
-  outputConsumer.eachMapping(mapping => {
+function addMergedMappings(merged, inputConsumer, outputConsumer) {
+  outputConsumer.eachMapping((mapping) => {
     if (mapping.originalLine == null || mapping.originalColumn == null) {
       return;
     }
@@ -53,28 +43,39 @@ function mergeSourceMaps(inputMap, outputMap, generatedFile) {
       name: upstream.name || mapping.name || undefined,
     });
   });
+}
 
-  for (const source of outputConsumer.sources) {
-    const content = sourceContentFor(outputConsumer, source);
+function copySourceContent(fromConsumer, merged) {
+  for (const source of fromConsumer.sources) {
+    const content = sourceContentFor(fromConsumer, source);
     if (content != null) {
       merged.setSourceContent(source, content);
     }
   }
+}
 
-  for (const source of inputConsumer.sources) {
-    const content = sourceContentFor(inputConsumer, source);
-    if (content != null) {
-      merged.setSourceContent(source, content);
-    }
+function destroyConsumer(consumer) {
+  if (typeof consumer.destroy === 'function') {
+    consumer.destroy();
+  }
+}
+
+function mergeSourceMaps(inputMap, outputMap, generatedFile) {
+  if (inputMap == null) {
+    return outputMap;
   }
 
-  if (typeof outputConsumer.destroy === 'function') {
-    outputConsumer.destroy();
-  }
-  if (typeof inputConsumer.destroy === 'function') {
-    inputConsumer.destroy();
-  }
+  const outputConsumer = new SourceMapConsumer(outputMap);
+  const inputConsumer = new SourceMapConsumer(inputMap);
+  const merged = new SourceMapGenerator({
+    file: outputMap.file || generatedFile,
+  });
 
+  addMergedMappings(merged, inputConsumer, outputConsumer);
+  copySourceContent(outputConsumer, merged);
+  copySourceContent(inputConsumer, merged);
+  destroyConsumer(outputConsumer);
+  destroyConsumer(inputConsumer);
   return merged.toJSON();
 }
 

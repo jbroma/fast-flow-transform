@@ -1,6 +1,6 @@
 {
   "name": "fast-flow-transform-win32-x64",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Platform binary package for fast-flow-transform (win32-x64)",
   "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
   "bugs": {

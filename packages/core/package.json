@@ -1,7 +1,7 @@
 {
   "name": "fast-flow-transform",
   "version": "0.0.1",
-  "description": "Native Hermes/FFT Flow stripping loader for webpack and rspack",
+  "description": "Native Hermes/FFT Flow stripping transform with webpack and rspack adapters",
   "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
   "bugs": {
     "url": "https://github.com/jbroma/fast-flow-transform/issues"

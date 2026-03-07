@@ -3,23 +3,32 @@ import type { RawSourceMap } from 'source-map';
 export type Dialect = 'flow' | 'flow-detect' | 'flow-unambiguous';
 export type Format = 'compact' | 'pretty';
 export type ReactRuntimeTarget = '18' | '19';
+export type SourceMapLike = RawSourceMap;
 
-export interface LoaderOptions {
+export interface TransformOptions {
   dialect: Dialect;
   enumRuntimeModule: string;
   format: Format;
   reactRuntimeTarget: ReactRuntimeTarget;
-  sourcemap: true;
-  threads: number | undefined;
+  sourcemap: boolean;
 }
 
-export type LoaderOptionsInput = Partial<LoaderOptions> & {
+export type TransformOptionsInput = Partial<TransformOptions> & {
   reactRuntimeTarget?: number | string;
 };
 
-export type SourceMapLike = RawSourceMap;
+export interface TransformInput extends TransformOptionsInput {
+  filename: string;
+  inputSourceMap?: SourceMapLike | null;
+  source: string | Buffer;
+}
 
-export interface TransformRequest {
+export interface TransformResult {
+  code: string;
+  map?: SourceMapLike;
+}
+
+export interface NativeTransformRequest {
   code: string;
   dialect: Dialect;
   enumRuntimeModule: string;
@@ -28,7 +37,7 @@ export interface TransformRequest {
   reactRuntimeTarget: ReactRuntimeTarget;
 }
 
-export interface TransformResult {
+export interface NativeTransformResult {
   code: string;
   map: SourceMapLike;
 }

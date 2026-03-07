@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { platformPackageNameFor } from '../src/resolveBinary.js';
+import { platformPackageNameFor } from '../src/transform/resolveBinary.js';
 
 describe('platformPackageNameFor', () => {
   it('returns the renamed package for each supported target', () => {

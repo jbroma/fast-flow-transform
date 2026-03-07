@@ -1,18 +1,30 @@
 # fast-flow-transform
 
-A webpack/rspack loader that strips Flow types through a native Hermes/FFT binary.
+A programmatic Flow type stripper with webpack and rspack loader adapters.
 
 ## Features
 
 - Native parse + transform + codegen + source map pipeline
-- One loader implementation for webpack and rspack
-- Persistent worker process pool for low warm-build overhead
-- Deterministic in-memory cache keying over source/options/binary version
+- Small programmatic API for one-shot transforms
+- Dedicated webpack and rspack loader entrypoints
+- Optional source map merging when you need emitted maps
 
-## Usage
+## Programmatic Usage
+
+```ts
+import transform from 'fast-flow-transform';
+
+const result = await transform({
+  filename: '/abs/path/input.js',
+  source: 'const answer: number = 42;',
+  sourcemap: true,
+});
+```
+
+## Webpack Usage
 
 ```js
-// webpack.config.js or rspack.config.js
+// webpack.config.js
 module.exports = {
   module: {
     rules: [
@@ -20,15 +32,33 @@ module.exports = {
         test: /\\.[jt]sx?$/,
         use: [
           {
-            loader: 'fast-flow-transform',
+            loader: 'fast-flow-transform/webpack',
             options: {
               dialect: 'flow-detect',
               format: 'compact',
               reactRuntimeTarget: '18',
               enumRuntimeModule: 'flow-enums-runtime',
-              sourcemap: true,
-              threads: 4,
             },
+          },
+        ],
+      },
+    ],
+  },
+};
+```
+
+## Rspack Usage
+
+```js
+// rspack.config.js
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\\.[jt]sx?$/,
+        use: [
+          {
+            loader: 'fast-flow-transform/rspack',
           },
         ],
       },
@@ -57,7 +87,7 @@ pnpm run build
 cd ../..
 cargo build --release -p fft_strip
 
-# 3) Point loader to local binary for an integration test.
+# 3) Point the package to the local binary.
 export FFT_STRIP_BINARY="$PWD/target/release/fft-strip"
 ```
 

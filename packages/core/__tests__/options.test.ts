@@ -1,25 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseOptions } from '../src/options.js';
+import { parseOptions } from '../src/transform/options.js';
 
 describe('parseOptions', () => {
   it('normalizes default values for a minimal options object', () => {
-    expect(parseOptions({ sourcemap: true })).toEqual({
+    expect(parseOptions({})).toEqual({
       dialect: 'flow-detect',
       enumRuntimeModule: 'flow-enums-runtime',
       format: 'compact',
       reactRuntimeTarget: '18',
       sourcemap: true,
-      threads: undefined,
     });
   });
 
-  it('rejects invalid thread counts', () => {
-    expect(() =>
+  it('accepts sourcemap false', () => {
+    expect(
       parseOptions({
-        sourcemap: true,
-        threads: 0,
+        sourcemap: false,
       })
-    ).toThrow('Invalid fast-flow-transform option `threads`: 0');
+    ).toEqual({
+      dialect: 'flow-detect',
+      enumRuntimeModule: 'flow-enums-runtime',
+      format: 'compact',
+      reactRuntimeTarget: '18',
+      sourcemap: false,
+    });
   });
 });

@@ -1,1 +1,1 @@
-export { default } from './loader.js';
+export { default } from './webpack.js';

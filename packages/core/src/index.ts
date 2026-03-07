@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { statSync } from 'node:fs';
 
+import { registerPoolCleanup } from './compilerCleanup.js';
+import type { PoolCleanupLoaderContext } from './compilerCleanup.js';
 import { mergeSourceMaps } from './mergeSourceMaps.js';
 import { parseOptions, stableOptionsKey } from './options.js';
 import { packageVersion } from './packageVersion.js';
@@ -22,7 +24,7 @@ type LoaderCallback = (
   meta?: unknown
 ) => void;
 
-interface LoaderContext {
+interface LoaderContext extends PoolCleanupLoaderContext {
   async(): LoaderCallback;
   cacheable?: (cacheable?: boolean) => void;
   getOptions?: () => LoaderOptionsInput;
@@ -273,6 +275,7 @@ function flowStripLoader(
   const { callback, resourcePath } = loaderRuntime(this);
 
   this.cacheable?.(true);
+  registerPoolCleanup(this);
 
   const code = sourceText(source);
   const state = loaderState(this, callback, code, resourcePath, inputSourceMap);

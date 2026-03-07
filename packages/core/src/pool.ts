@@ -58,6 +58,19 @@ function completePendingRequest(
   pending.reject(response.error ?? new Error('Unknown fft-strip worker error'));
 }
 
+function unrefHandle(handle: unknown): void {
+  if (
+    !handle ||
+    typeof handle !== 'object' ||
+    !('unref' in handle) ||
+    typeof handle.unref !== 'function'
+  ) {
+    return;
+  }
+
+  handle.unref();
+}
+
 class NativeWorker {
   readonly #child: ChildProcessWithoutNullStreams;
   readonly #pending = new Map<number, PendingRequest>();
@@ -70,6 +83,10 @@ class NativeWorker {
       stdio: ['pipe', 'pipe', 'pipe'],
       windowsHide: true,
     });
+    unrefHandle(this.#child);
+    unrefHandle(this.#child.stdin);
+    unrefHandle(this.#child.stdout);
+    unrefHandle(this.#child.stderr);
     this.#reader = createInterface({
       crlfDelay: Infinity,
       input: this.#child.stdout,

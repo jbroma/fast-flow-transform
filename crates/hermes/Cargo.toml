@@ -1,9 +1,11 @@
 [package]
 name = "hermes"
 version = "0.1.0"
-authors = ["Fast Flow Transform maintainers <TODO>"]
+authors = ["Jakub Romanczyk <j.romanczyk@gmail.com>"]
+description = "Rust bindings for the Hermes parser used by fast-flow-transform"
 edition = "2018"
 license = "MIT"
+repository = "https://github.com/jbroma/fast-flow-transform"
 
 [dependencies]
 fft_support = { path = "../fft_support" }

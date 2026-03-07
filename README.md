@@ -1,30 +1,25 @@
 # fast-flow-transform
 
-## Layout
+`fast-flow-transform` (`fft`) is a Flow-stripping JavaScript transform focused
+on turning Flow-typed JS into plain JS in the fastest, most minimal, and most
+compatible way possible.
 
-- `crates/`:
-    - `hermes` (bridge crate)
-    - `libcplusplus`
-    - `fft_support`
-    - `fft_ast`
-    - `fft`
-    - `fft_pass`
-    - `fft_strip`
-- `js/`:
-    - `fft-loader`
-    - platform binary packages (`fft-loader-*`)
-- `scripts/`:
-    - helper scripts for Hermes sync / bridge regeneration
+FFT builds on top of the unsupported Juno tooling from Hermes, but it is its
+own project with its own packaging, workspace layout, and integration surface.
 
 ## What this gives you
 
+- A Flow-to-JavaScript pipeline optimized for speed, low output churn, and
+  compatibility.
 - Cargo workspace for the native transform binary (`fft-strip`).
 - Local npm workspace for loader and platform packages.
 - A clean subtree that can be copied to a new git repository.
 
-## Next step after extraction
+## Attribution And Licensing
 
-1. Add Hermes as submodule at `third_party/hermes`.
-2. Update `crates/hermes/build.rs` include/source paths to point at `third_party/hermes`.
-3. Run `cargo build -p fft_strip --release`.
-4. Run `npm run pack:local` from `js/fft-loader`.
+- FFT builds on top of Hermes Juno:
+  <https://github.com/facebook/hermes/tree/static_h/unsupported/juno>
+- Vendored Hermes source lives in `third_party/hermes` as an upstream submodule.
+- FFT's own MIT license lives in [LICENSE](./LICENSE).
+- Hermes/Juno third-party license details live in
+  [THIRD_PARTY_LICENSES](./THIRD_PARTY_LICENSES).

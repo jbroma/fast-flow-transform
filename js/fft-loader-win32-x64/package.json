@@ -2,7 +2,16 @@
   "name": "fft-loader-win32-x64",
   "version": "0.1.0",
   "description": "Platform binary package for fft-loader (win32-x64)",
+  "author": "Jakub Romanczyk <j.romanczyk@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbroma/fast-flow-transform.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jbroma/fast-flow-transform/issues"
+  },
+  "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
   "main": "index.js",
   "os": ["win32"],
   "cpu": ["x64"],

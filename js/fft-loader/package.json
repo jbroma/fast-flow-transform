@@ -3,11 +3,16 @@
   "version": "0.1.0",
   "description": "Native Hermes/FFT Flow stripping loader for webpack and rspack",
   "main": "dist/index.js",
+  "author": "Jakub Romanczyk <j.romanczyk@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TODO/fast-flow-transform.git"
+    "url": "git+https://github.com/jbroma/fast-flow-transform.git"
   },
+  "bugs": {
+    "url": "https://github.com/jbroma/fast-flow-transform/issues"
+  },
+  "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
   "engines": {
     "node": ">=12"
   },

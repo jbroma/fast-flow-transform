@@ -1,9 +1,11 @@
 [package]
 name = "fft"
 version = "0.1.0"
-authors = ["Fast Flow Transform maintainers <TODO>"]
+authors = ["Jakub Romanczyk <j.romanczyk@gmail.com>"]
+description = "JavaScript transform library derived from Hermes Juno"
 edition = "2018"
 license = "MIT"
+repository = "https://github.com/jbroma/fast-flow-transform"
 
 [dependencies]
 hermes = { path = "../hermes" }

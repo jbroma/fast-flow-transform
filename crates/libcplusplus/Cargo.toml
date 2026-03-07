@@ -1,9 +1,11 @@
 [package]
 name = "libcplusplus"
 version = "0.1.0"
-authors = ["Fast Flow Transform maintainers <TODO>"]
+authors = ["Jakub Romanczyk <j.romanczyk@gmail.com>"]
+description = "C++ runtime linkage helpers for fast-flow-transform"
 edition = "2018"
 license = "MIT"
+repository = "https://github.com/jbroma/fast-flow-transform"
 
 [dependencies]
 

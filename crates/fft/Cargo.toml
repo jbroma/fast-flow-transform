@@ -1,6 +1,6 @@
 [package]
 name = "fft"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Jakub Romanczyk <j.romanczyk@gmail.com>"]
 description = "JavaScript transform library derived from Hermes Juno"
 edition = "2018"

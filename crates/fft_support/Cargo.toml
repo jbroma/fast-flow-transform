@@ -1,6 +1,6 @@
 [package]
 name = "fft_support"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Jakub Romanczyk <j.romanczyk@gmail.com>"]
 description = "Support utilities for fast-flow-transform and Hermes bindings"
 edition = "2018"

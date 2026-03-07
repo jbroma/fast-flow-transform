@@ -52,7 +52,7 @@ dependencies = [
 
 [[package]]
 name = "fft"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "fft_ast",
  "fft_support",
@@ -64,7 +64,7 @@ dependencies = [
 
 [[package]]
 name = "fft_ast"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "fft_support",
  "libc",
@@ -74,7 +74,7 @@ dependencies = [
 
 [[package]]
 name = "fft_pass"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "fft",
  "fft_support",
@@ -82,7 +82,7 @@ dependencies = [
 
 [[package]]
 name = "fft_strip"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "fft",
@@ -94,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "fft_support"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -116,7 +116,7 @@ dependencies = [
 
 [[package]]
 name = "hermes"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cmake",
  "fft_support",
@@ -162,7 +162,7 @@ checksum = "7b2f96d100e1cf1929e7719b7edb3b90ab5298072638fccd77be9ce942ecdfce"
 
 [[package]]
 name = "libcplusplus"
-version = "0.1.0"
+version = "0.0.1"
 
 [[package]]
 name = "matches"

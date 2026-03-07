@@ -60,52 +60,61 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.12.0)(terser@5.46.0)(tsx@4.21.0)
+    optionalDependencies:
+      fast-flow-transform-darwin-arm64:
+        specifier: workspace:*
+        version: link:../../bindings/fast-flow-transform-darwin-arm64
+      fast-flow-transform-darwin-x64:
+        specifier: workspace:*
+        version: link:../../bindings/fast-flow-transform-darwin-x64
+      fast-flow-transform-linux-arm64:
+        specifier: workspace:*
+        version: link:../../bindings/fast-flow-transform-linux-arm64
+      fast-flow-transform-linux-x64:
+        specifier: workspace:*
+        version: link:../../bindings/fast-flow-transform-linux-x64
+      fast-flow-transform-win32-arm64:
+        specifier: workspace:*
+        version: link:../../bindings/fast-flow-transform-win32-arm64
+      fast-flow-transform-win32-x64:
+        specifier: workspace:*
+        version: link:../../bindings/fast-flow-transform-win32-x64
 
   test/bundlers/rspack:
-    dependencies:
+    devDependencies:
       '@rspack/cli':
         specifier: ^1.5.6
         version: 1.7.7(@rspack/core@1.7.7)(@types/express@4.17.25)(webpack@5.105.4)
       '@rspack/core':
         specifier: ^1.5.6
         version: 1.7.7
-      fast-flow-transform:
-        specifier: workspace:*
-        version: link:../../../packages/core
-    devDependencies:
       '@vitest/runner':
         specifier: ^3.2.4
         version: 3.2.4
+      fast-flow-transform:
+        specifier: workspace:*
+        version: link:../../../packages/core
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.12.0)(terser@5.46.0)(tsx@4.21.0)
 
   test/bundlers/webpack:
-    dependencies:
+    devDependencies:
+      '@vitest/runner':
+        specifier: ^3.2.4
+        version: 3.2.4
       fast-flow-transform:
         specifier: workspace:*
         version: link:../../../packages/core
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.12.0)(terser@5.46.0)(tsx@4.21.0)
       webpack:
         specifier: ^5.102.1
         version: 5.105.4(webpack-cli@6.0.1)
       webpack-cli:
         specifier: ^6.0.1
         version: 6.0.1(webpack@5.105.4)
-    devDependencies:
-      '@vitest/runner':
-        specifier: ^3.2.4
-        version: 3.2.4
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.12.0)(terser@5.46.0)(tsx@4.21.0)
-
-  test/fixtures/loader/flow-dependency/dependency: {}
-
-  test/fixtures/loader/flow-dependency/project:
-    dependencies:
-      fixture-flow-dependency:
-        specifier: workspace:*
-        version: link:../dependency
 
 packages:
 

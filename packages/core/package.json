@@ -53,12 +53,12 @@
     "vitest": "^3.2.4"
   },
   "optionalDependencies": {
-    "fast-flow-transform-darwin-arm64": "0.1.0",
-    "fast-flow-transform-darwin-x64": "0.1.0",
-    "fast-flow-transform-linux-arm64": "0.1.0",
-    "fast-flow-transform-linux-x64": "0.1.0",
-    "fast-flow-transform-win32-arm64": "0.1.0",
-    "fast-flow-transform-win32-x64": "0.1.0"
+    "fast-flow-transform-darwin-arm64": "workspace:*",
+    "fast-flow-transform-darwin-x64": "workspace:*",
+    "fast-flow-transform-linux-arm64": "workspace:*",
+    "fast-flow-transform-linux-x64": "workspace:*",
+    "fast-flow-transform-win32-arm64": "workspace:*",
+    "fast-flow-transform-win32-x64": "workspace:*"
   },
   "engines": {
     "node": ">=18"

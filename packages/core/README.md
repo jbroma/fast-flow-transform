@@ -1,13 +1,13 @@
 # fast-flow-transform
 
-A programmatic Flow type stripper with webpack and rspack loader adapters.
+A programmatic Flow type stripper with webpack, rspack, and rsbuild adapters.
 
 ## Features
 
 - Native parse + transform + codegen + source map pipeline
 - Small programmatic API for one-shot transforms
 - CLI for transforming files with the same option set
-- Dedicated webpack and rspack loader entrypoints
+- Dedicated webpack, rspack, and rsbuild entrypoints
 - Optional source map merging when you need emitted maps
 
 ## Programmatic Usage
@@ -96,6 +96,58 @@ module.exports = {
   },
 };
 ```
+
+## Rsbuild Usage
+
+```ts
+// rsbuild.config.ts
+import { defineConfig } from '@rsbuild/core';
+import pluginFastFlowTransformRsbuild from 'fast-flow-transform/rsbuild';
+
+export default defineConfig({
+  plugins: [
+    pluginFastFlowTransformRsbuild({
+      dialect: 'flow-detect',
+      format: 'compact',
+      reactRuntimeTarget: '18',
+    }),
+  ],
+  source: {
+    // Rsbuild skips most node_modules by default. Include any Flow-heavy
+    // dependencies you need compiled.
+    include: [{ not: /[\\/]core-js[\\/]/ }],
+  },
+  tools: {
+    bundlerChain: (chain, { CHAIN_ID }) => {
+      // If your JS sources or dependencies contain JSX, align SWC's parser.
+      chain.module
+        .rule(CHAIN_ID.RULE.JS)
+        .use(CHAIN_ID.USE.SWC)
+        .tap((options) => ({
+          ...options,
+          jsc: {
+            ...options.jsc,
+            parser: {
+              decorators: true,
+              jsx: true,
+              syntax: 'ecmascript',
+            },
+            transform: {
+              ...options.jsc?.transform,
+              react: {
+                runtime: 'classic',
+              },
+            },
+          },
+        }));
+    },
+  },
+});
+```
+
+If you need lower-level control, `fast-flow-transform/rsbuild` also exposes the
+named `applyFastFlowTransformRsbuild` helper for wiring directly inside your own
+`tools.bundlerChain` logic.
 
 If you need to override binary resolution during development, set:
 

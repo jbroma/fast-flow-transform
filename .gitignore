@@ -21,3 +21,7 @@ bench/report.json
 # Locally packed native binaries
 packages/core/bin/fft-strip*
 bindings/**/bin/fft-strip*
+
+# macOS
+.DS_Store
+**/.DS_Store

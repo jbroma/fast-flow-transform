@@ -4,12 +4,12 @@
 
 # Node
 node_modules/
-js/**/node_modules/
+packages/**/node_modules/
 
 # Loader packaging outputs
-js/fft-loader/dist/
-js/fft-loader/artifacts/
+packages/fft-loader/dist/
+packages/fft-loader/artifacts/
 
 # Locally packed native binaries
-js/fft-loader/bin/fft-strip*
-js/fft-loader-*/bin/fft-strip*
+packages/fft-loader/bin/fft-strip*
+packages/fft-loader-*/bin/fft-strip*

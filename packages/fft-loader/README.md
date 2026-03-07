@@ -48,10 +48,10 @@ FFT_STRIP_BINARY=/absolute/path/to/fft-strip
 From the repo root:
 
 ```bash
-cd js/fft-loader
+cd packages/fft-loader
 
 # 1) Build/copy dist files for npm package shape.
-npm run build:dist
+pnpm run build:dist
 
 # 2) Build native binary in the standalone workspace root.
 cd ../..
@@ -68,8 +68,8 @@ On Windows use `target\\release\\fft-strip.exe`.
 You can build tarballs that are installable in other repos:
 
 ```bash
-cd js/fft-loader
-npm run pack:local
+cd packages/fft-loader
+pnpm run pack:local
 ```
 
 This command will:
@@ -83,11 +83,11 @@ This command will:
 If you already built the native executable, skip Cargo build:
 
 ```bash
-FFT_STRIP_BINARY=/abs/path/to/fft-strip npm run pack:local
+FFT_STRIP_BINARY=/abs/path/to/fft-strip pnpm run pack:local
 ```
 
 Install elsewhere:
 
 ```bash
-npm install /abs/path/to/fft-loader/artifacts/*.tgz
+pnpm add /abs/path/to/fft-loader/artifacts/*.tgz
 ```

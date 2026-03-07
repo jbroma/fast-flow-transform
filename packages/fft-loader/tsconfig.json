@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "bench/**/*.js",
+    "scripts/**/*.js",
+    "src/**/*.js"
+  ],
+  "exclude": [
+    "__tests__/**",
+    "artifacts/**",
+    "bin/**",
+    "dist/**"
+  ]
+}

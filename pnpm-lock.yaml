@@ -1,0 +1,63 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.12.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/fft-loader:
+    dependencies:
+      source-map:
+        specifier: ^0.6.1
+        version: 0.6.1
+
+  packages/fft-loader-darwin-arm64: {}
+
+  packages/fft-loader-darwin-x64: {}
+
+  packages/fft-loader-linux-arm64: {}
+
+  packages/fft-loader-linux-x64: {}
+
+  packages/fft-loader-win32-arm64: {}
+
+  packages/fft-loader-win32-x64: {}
+
+packages:
+
+  '@types/node@24.12.0':
+    resolution: {integrity: sha512-GYDxsZi3ChgmckRT9HPU0WEhKLP08ev/Yfcq2AstjrDASOYCSXeyjDsHg4v5t4jOj7cyDX3vmprafKlWIG9MXQ==}
+
+  source-map@0.6.1:
+    resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
+    engines: {node: '>=0.10.0'}
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+
+snapshots:
+
+  '@types/node@24.12.0':
+    dependencies:
+      undici-types: 7.16.0
+
+  source-map@0.6.1: {}
+
+  typescript@5.9.3: {}
+
+  undici-types@7.16.0: {}

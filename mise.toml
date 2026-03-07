@@ -1,0 +1,8 @@
+[tools]
+node = "24"
+pnpm = "10.29.2"
+rust = "1.88.0"
+cmake = "4.1.2"
+
+[env]
+HERMES_SOURCE_DIR = "{{config_root}}/third_party/hermes"

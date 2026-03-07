@@ -1,0 +1,42 @@
+{
+  "name": "fast-flow-transform-darwin-x64",
+  "version": "0.1.0",
+  "description": "Platform binary package for fast-flow-transform (darwin-x64)",
+  "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
+  "bugs": {
+    "url": "https://github.com/jbroma/fast-flow-transform/issues"
+  },
+  "license": "MIT",
+  "author": "Jakub Romanczyk <j.romanczyk@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbroma/fast-flow-transform.git"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

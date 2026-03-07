@@ -12,8 +12,9 @@ own project with its own packaging, workspace layout, and integration surface.
 - A Flow-to-JavaScript pipeline optimized for speed, low output churn, and
   compatibility.
 - Cargo workspace for the native transform binary (`fft-strip`).
-- Root `pnpm` workspace for active packages under `packages/`.
-- Binary wrapper packages kept in `bindings/` outside the workspace.
+- Root `pnpm` workspace for active packages under `packages/` and `bindings/`.
+- The publishable loader package now lives at `packages/core` and is published as
+  `fast-flow-transform`.
 - A clean subtree that can be copied to a new git repository.
 
 ## Attribution And Licensing

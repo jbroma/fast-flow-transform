@@ -1,25 +1,32 @@
 {
-	"name": "fast-flow-transform",
-	"private": true,
-	"workspaces": [
-		"packages/*"
-	],
-	"scripts": {
-		"build:loader": "pnpm --filter fft-loader run build:dist",
-		"check": "pnpm typecheck && pnpm lint && pnpm format:check",
-		"format": "oxfmt .",
-		"format:check": "oxfmt --check .",
-		"lint": "oxlint .",
-		"lint:fix": "oxlint --fix .",
-		"pack:local": "pnpm --filter fft-loader run pack:local",
-		"typecheck": "pnpm -r --if-present run typecheck"
-	},
-	"devDependencies": {
-		"@types/node": "^24.0.0",
-		"oxfmt": "0.36.0",
-		"oxlint": "1.51.0",
-		"typescript": "^5.9.3",
-		"ultracite": "7.2.5"
-	},
-	"packageManager": "pnpm@10.29.2"
+  "name": "fast-flow-transform-workspace",
+  "private": true,
+  "workspaces": [
+    "bindings/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:loader": "pnpm --filter ./packages/core run build",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "pack:local": "pnpm --filter ./packages/core run pack:local",
+    "typecheck": "pnpm -r --if-present run typecheck"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/plugin-syntax-flow": "^7.27.1",
+    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
+    "@types/node": "^24.0.0",
+    "babel-plugin-transform-flow-enums": "^0.0.2",
+    "oxfmt": "0.36.0",
+    "oxlint": "1.51.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "ultracite": "7.2.5",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.29.2"
 }

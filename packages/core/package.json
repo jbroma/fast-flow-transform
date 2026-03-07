@@ -1,0 +1,51 @@
+{
+  "name": "fast-flow-transform",
+  "version": "0.1.0",
+  "description": "Native Hermes/FFT Flow stripping loader for webpack and rspack",
+  "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
+  "bugs": {
+    "url": "https://github.com/jbroma/fast-flow-transform/issues"
+  },
+  "license": "MIT",
+  "author": "Jakub Romanczyk <j.romanczyk@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbroma/fast-flow-transform.git"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "benchmark": "tsx bench/compare.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "pack:local": "tsx scripts/pack-local.ts",
+    "prepack": "pnpm run build",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "source-map": "^0.6.1"
+  },
+  "optionalDependencies": {
+    "fast-flow-transform-darwin-arm64": "0.1.0",
+    "fast-flow-transform-darwin-x64": "0.1.0",
+    "fast-flow-transform-linux-arm64": "0.1.0",
+    "fast-flow-transform-linux-x64": "0.1.0",
+    "fast-flow-transform-win32-arm64": "0.1.0",
+    "fast-flow-transform-win32-x64": "0.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

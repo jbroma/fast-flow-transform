@@ -1,4 +1,5 @@
 autoInstallPeers: false
 
 packages:
+  - 'bindings/*'
   - 'packages/*'

@@ -7,9 +7,10 @@ node_modules/
 packages/**/node_modules/
 
 # Loader packaging outputs
-packages/fft-loader/dist/
-packages/fft-loader/artifacts/
+packages/core/dist/
+packages/core/artifacts/
+packages/core/bench/fixtures/sample.js
 
 # Locally packed native binaries
-packages/fft-loader/bin/fft-strip*
+packages/core/bin/fft-strip*
 bindings/**/bin/fft-strip*

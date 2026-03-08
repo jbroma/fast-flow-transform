@@ -2443,6 +2443,20 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             };
             ast::builder::UnknownTypeAnnotation::build_template(gc, template)
         }
+        NodeKind::NeverTypeAnnotation => {
+            let mut template = ast::template::NeverTypeAnnotation {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::NeverTypeAnnotation::build_template(gc, template)
+        }
         NodeKind::MixedTypeAnnotation => {
             let mut template = ast::template::MixedTypeAnnotation {
                 metadata: ast::TemplateMetadata {

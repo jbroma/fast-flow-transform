@@ -537,6 +537,32 @@ fn as_expressions_and_components() {
 }
 
 #[test]
+fn infer_conditional_types() {
+    assert_strip(
+        r#"
+            type InferType<T> = T extends infer U ? U : empty;
+            const asInfer = 'infer' as InferType<string>;
+        "#,
+        r#"
+            const asInfer = 'infer';
+        "#,
+    );
+}
+
+#[test]
+fn never_types() {
+    assert_strip(
+        r#"
+            type NeverValue = never;
+            const asNever = 'never' as NeverValue;
+        "#,
+        r#"
+            const asNever = 'never';
+        "#,
+    );
+}
+
+#[test]
 fn components_react_runtime_19() {
     assert_strip_with_options(
         r#"

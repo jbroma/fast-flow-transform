@@ -557,6 +557,7 @@ macro_rules! nodekind_defs {
             UnknownTypeAnnotation[FlowType],
             MixedTypeAnnotation[FlowType],
             VoidTypeAnnotation[FlowType],
+            NeverTypeAnnotation[FlowType],
             FunctionTypeAnnotation[FlowType] {
                 params: NodeList<'a>[FunctionTypeParam],
                 this: Option<&'a Node<'a>>[FunctionTypeParam],
@@ -626,7 +627,7 @@ macro_rules! nodekind_defs {
                 element_type: &'a Node<'a>[FlowType],
             },
             InferTypeAnnotation[FlowType] {
-                type_parameter: &'a Node<'a>[FlowType],
+                type_parameter: &'a Node<'a>[TypeParameter],
             },
             UnionTypeAnnotation[FlowType] {
                 types: NodeList<'a>[FlowType],

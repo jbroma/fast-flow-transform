@@ -37,6 +37,64 @@ describe('programmatic transform', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock('../src/transform/nativeBinding.js', () => ({
+      loadNativeBinding: vi.fn(() => null),
+    }));
+  });
+
+  it('prefers the in-process native binding when available', async () => {
+    vi.doMock('../src/transform/resolveBinary.js', () => ({
+      resolveBinaryPath: vi.fn(() => process.execPath),
+    }));
+
+    const runNativeTransform = vi.fn(() =>
+      Promise.resolve({
+        code: 'const fallback = true;\n',
+        map: createSingleMappingMap({
+          file: 'generated.js',
+          generatedColumn: 0,
+          generatedLine: 1,
+          originalColumn: 0,
+          originalLine: 1,
+          source: '/tmp/input.js',
+        }),
+      })
+    );
+
+    vi.doMock('../src/transform/nativeTransform.js', () => ({
+      runNativeTransform,
+    }));
+
+    const loadNativeBinding = vi.fn(() => ({
+      transform: vi.fn(() => ({
+        code: 'const bound = true;\n',
+        map: createSingleMappingMap({
+          file: 'generated.js',
+          generatedColumn: 0,
+          generatedLine: 1,
+          originalColumn: 0,
+          originalLine: 1,
+          source: '/tmp/input.js',
+        }),
+      })),
+    }));
+
+    vi.doMock('../src/transform/nativeBinding.js', () => ({
+      loadNativeBinding,
+    }));
+
+    const { default: transform } = await importTransform();
+    const result = await transform({
+      filename: '/tmp/input.js',
+      source: 'const bound: boolean = true;',
+      sourcemap: false,
+    });
+
+    expect(loadNativeBinding).toHaveBeenCalledTimes(1);
+    expect(runNativeTransform).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      code: 'const bound = true;\n',
+    });
   });
 
   it('defaults sourcemap to true and merges source maps', async () => {

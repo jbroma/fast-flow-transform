@@ -11,17 +11,16 @@ use std::io::Write;
 
 use anyhow::Context;
 use anyhow::anyhow;
+#[cfg(test)]
 use fft::ast;
+#[cfg(test)]
 use fft::gen_js;
-use fft::hparser;
-use fft::hparser::ParserDialect;
-use fft_pass::PassManager;
-use fft_pass::strip_flow::ReactRuntimeTarget;
-use fft_pass::strip_flow::StripFlowOptions;
-use fft_support::NullTerminatedBuf;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
+use fft_strip::TransformFailure;
+use fft_strip::TransformRequest;
+use fft_strip::transform;
 
 #[derive(Debug, Deserialize)]
 struct Request {
@@ -38,6 +37,8 @@ struct Request {
     #[serde(rename = "enumRuntimeModule")]
     #[serde(default = "default_enum_runtime_module")]
     enum_runtime_module: String,
+    #[serde(default = "default_sourcemap")]
+    sourcemap: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -64,23 +65,6 @@ struct ErrorPayload {
     column: Option<u32>,
 }
 
-#[derive(Debug)]
-struct TransformFailure {
-    message: String,
-    line: Option<u32>,
-    column: Option<u32>,
-}
-
-impl TransformFailure {
-    fn from_anyhow(error: anyhow::Error) -> Self {
-        Self {
-            message: format!("{:#}", error),
-            line: None,
-            column: None,
-        }
-    }
-}
-
 fn default_dialect() -> String {
     "flow-detect".to_string()
 }
@@ -97,138 +81,35 @@ fn default_enum_runtime_module() -> String {
     "flow-enums-runtime".to_string()
 }
 
-fn parse_dialect(value: &str) -> Result<ParserDialect, TransformFailure> {
-    match value {
-        "flow" => Ok(ParserDialect::Flow),
-        "flow-detect" => Ok(ParserDialect::FlowDetect),
-        "flow-unambiguous" => Ok(ParserDialect::FlowUnambiguous),
-        _ => Err(TransformFailure {
-            message: format!(
-                "invalid dialect '{}', expected flow | flow-detect | flow-unambiguous",
-                value
-            ),
-            line: None,
-            column: None,
-        }),
-    }
+fn default_sourcemap() -> bool {
+    true
 }
 
-fn parse_format(value: &str) -> Result<gen_js::Pretty, TransformFailure> {
-    match value {
-        "compact" => Ok(gen_js::Pretty::No),
-        "pretty" => Ok(gen_js::Pretty::Yes),
-        _ => Err(TransformFailure {
-            message: format!("invalid format '{}', expected compact | pretty", value),
-            line: None,
-            column: None,
-        }),
-    }
-}
-
-fn parse_react_runtime_target(value: &str) -> Result<ReactRuntimeTarget, TransformFailure> {
-    match value {
-        "18" => Ok(ReactRuntimeTarget::V18),
-        "19" => Ok(ReactRuntimeTarget::V19),
-        _ => Err(TransformFailure {
-            message: format!("invalid reactRuntimeTarget '{}', expected 18 | 19", value),
-            line: None,
-            column: None,
-        }),
+fn transform_failure(error: anyhow::Error) -> TransformFailure {
+    TransformFailure {
+        message: format!("{:#}", error),
+        line: None,
+        column: None,
     }
 }
 
 fn run_transform(request: &Request) -> Result<(String, Value), TransformFailure> {
-    let requested_dialect = parse_dialect(request.dialect.as_str())?;
-    let pretty = parse_format(request.format.as_str())?;
-    let react_runtime_target = parse_react_runtime_target(request.react_runtime_target.as_str())?;
-
-    let transform_once = |dialect: ParserDialect| -> Result<(String, Value), TransformFailure> {
-        let mut ctx = ast::Context::new();
-        let file_id = ctx.sm_mut().add_source(
-            request.filename.clone(),
-            NullTerminatedBuf::from_str_copy(request.code.as_str()),
-        );
-        let input = ctx.sm().source_buffer_rc(file_id);
-        let mut parser_flags = hparser::ParserFlags::default();
-        parser_flags.enable_jsx = true;
-        parser_flags.parse_flow_match = matches!(
-            dialect,
-            ParserDialect::Flow | ParserDialect::FlowDetect | ParserDialect::FlowUnambiguous
-        );
-        parser_flags.dialect = dialect;
-
-        let parsed = hparser::ParsedJS::parse(parser_flags, &input);
-
-        if let Some((loc, message)) = parsed.first_error() {
-            return Err(TransformFailure {
-                message,
-                line: Some(loc.line),
-                column: Some(loc.col),
-            });
-        }
-
-        let ast = {
-            let gc = ast::GCLock::new(&mut ctx);
-            parsed
-                .to_ast(&gc, file_id)
-                .map(|node| ast::NodeRc::from_node(&gc, node))
-        };
-
-        let ast = match ast {
-            Some(node) => node,
-            None => {
-                return Err(TransformFailure {
-                    message: "failed to convert parser AST".to_string(),
-                    line: None,
-                    column: None,
-                });
-            }
-        };
-
-        let transformed = PassManager::strip_flow_with_options(StripFlowOptions {
-            react_runtime_target,
-            enum_runtime_module: request.enum_runtime_module.clone(),
-        })
-        .run(&mut ctx, ast);
-
-        let mut output = Vec::<u8>::new();
-        let generated_map = gen_js::generate(
-            &mut output,
-            &mut ctx,
-            &transformed,
-            gen_js::Opt {
-                pretty,
-                ..gen_js::Opt::new()
-            },
-        )
-        .map_err(|error| TransformFailure::from_anyhow(anyhow!(error)))?;
-
-        let mut map_bytes = Vec::<u8>::new();
-        generated_map
-            .to_writer(&mut map_bytes)
-            .map_err(|error| TransformFailure::from_anyhow(anyhow!(error)))?;
-        let map = serde_json::from_slice::<Value>(map_bytes.as_slice())
-            .map_err(|error| TransformFailure::from_anyhow(anyhow!(error)))?;
-        let code = String::from_utf8(output).map_err(|error| TransformFailure {
-            message: format!("generated output is not UTF-8: {}", error),
-            line: None,
-            column: None,
-        })?;
-
-        Ok((code, map))
+    let result = transform(&TransformRequest {
+        filename: request.filename.clone(),
+        code: request.code.clone(),
+        dialect: request.dialect.clone(),
+        format: request.format.clone(),
+        react_runtime_target: request.react_runtime_target.clone(),
+        enum_runtime_module: request.enum_runtime_module.clone(),
+        sourcemap: request.sourcemap,
+    })?;
+    let map = match result.map_json {
+        Some(map_json) => serde_json::from_str::<Value>(&map_json)
+            .map_err(|error| transform_failure(anyhow!(error)))?,
+        None => Value::Null,
     };
 
-    if requested_dialect == ParserDialect::FlowDetect {
-        match transform_once(ParserDialect::FlowDetect) {
-            Ok(result) => Ok(result),
-            Err(primary_error) => match transform_once(ParserDialect::Flow) {
-                Ok(result) => Ok(result),
-                Err(_) => Err(primary_error),
-            },
-        }
-    } else {
-        transform_once(requested_dialect)
-    }
+    Ok((result.code, map))
 }
 
 fn request_id_for_error(input: &str) -> u64 {
@@ -316,6 +197,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let (code, map) = run_transform(&request).expect("transform should succeed");
@@ -333,6 +215,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "@acme/runtime".to_string(),
+            sourcemap: true,
         };
 
         let (code, _) = run_transform(&request).expect("transform should succeed");
@@ -349,6 +232,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let error = run_transform(&request).expect_err("transform should fail");
@@ -507,6 +391,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let (code, map) = run_transform(&request).expect("transform should succeed");
@@ -532,6 +417,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let (code, map) = run_transform(&request).expect("transform should succeed");
@@ -560,6 +446,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let (code, map) = run_transform(&request).expect("transform should succeed");
@@ -587,6 +474,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let (code, _) = run_transform(&request).expect("transform should succeed");
@@ -604,6 +492,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let (_code, map) = run_transform(&request).expect("transform should succeed");
@@ -625,6 +514,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let (code, _) = run_transform(&request).expect("transform should succeed");
@@ -646,6 +536,7 @@ mod tests {
             format: "compact".to_string(),
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
+            sourcemap: true,
         };
 
         let (code, _) = run_transform(&request).expect("transform should succeed");

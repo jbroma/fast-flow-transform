@@ -35,11 +35,12 @@ export interface NativeTransformRequest {
   filename: string;
   format: Format;
   reactRuntimeTarget: ReactRuntimeTarget;
+  sourcemap: boolean;
 }
 
 export interface NativeTransformResult {
   code: string;
-  map: SourceMapLike;
+  map?: SourceMapLike;
 }
 
 export interface NativeErrorLike {

@@ -1,4 +1,5 @@
 import { mergeSourceMaps } from './mergeSourceMaps.js';
+import { loadNativeBinding } from './nativeBinding.js';
 import { runNativeTransform } from './nativeTransform.js';
 import { parseOptions } from './options.js';
 import { resolveBinaryPath } from './resolveBinary.js';
@@ -36,6 +37,16 @@ function transformErrorMessage(
 
 function toTransformError(error: unknown, filename: string): Error {
   if (error instanceof Error) {
+    const nativeError = error as Error & NativeErrorLike;
+    if (
+      typeof nativeError.line === 'number' ||
+      typeof nativeError.column === 'number'
+    ) {
+      return new Error(transformErrorMessage(nativeError, filename), {
+        cause: error,
+      });
+    }
+
     return error;
   }
 
@@ -55,17 +66,22 @@ function transformRequest(
     filename: input.filename,
     format: options.format,
     reactRuntimeTarget: options.reactRuntimeTarget,
+    sourcemap: options.sourcemap,
   };
 }
 
 function outputMap(
   options: TransformOptions,
   inputSourceMap: SourceMapLike | null | undefined,
-  nativeMap: SourceMapLike,
+  nativeMap: SourceMapLike | undefined,
   filename: string
 ): SourceMapLike | undefined {
   if (!options.sourcemap) {
     return undefined;
+  }
+
+  if (!nativeMap) {
+    throw new Error('Native transform completed without a source map.');
   }
 
   return inputSourceMap
@@ -77,13 +93,13 @@ export async function transform(
   input: TransformInput
 ): Promise<TransformResult> {
   const options = parseOptions(input as TransformOptionsInput);
-  const binaryPath = resolveBinaryPath();
+  const request = transformRequest(input, options);
+  const nativeBinding = loadNativeBinding();
 
   try {
-    const result = await runNativeTransform(
-      binaryPath,
-      transformRequest(input, options)
-    );
+    const result = nativeBinding
+      ? await nativeBinding.transform(request)
+      : await runNativeTransform(resolveBinaryPath(), request);
     const map = outputMap(
       options,
       input.inputSourceMap,

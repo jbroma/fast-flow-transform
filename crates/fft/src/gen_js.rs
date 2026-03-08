@@ -27,6 +27,9 @@ pub struct Opt<'s> {
     /// Whether to pretty-print the generated JS.
     pub pretty: Pretty,
 
+    /// Whether to emit source map data while generating code.
+    pub sourcemap: bool,
+
     /// How to annotate the generated source.
     pub annotation: Annotation<'s>,
 
@@ -44,6 +47,7 @@ impl Default for Opt<'_> {
     fn default() -> Self {
         Opt {
             pretty: Pretty::Yes,
+            sourcemap: true,
             annotation: Annotation::No,
             force_async_arrow_space: true,
             doc_block: None,
@@ -236,7 +240,7 @@ struct GenJS<'s, 'w> {
     cur_token: Option<RawToken>,
 
     /// Build a source map as we go along.
-    sourcemap: SourceMapBuilder,
+    sourcemap: Option<SourceMapBuilder>,
 
     /// Some(err) if an error has occurred when writing, else None.
     error: Option<io::Error>,
@@ -274,6 +278,7 @@ impl GenJS<'_, '_> {
         root: &'gc Node<'gc>,
         opt: Opt,
     ) -> io::Result<SourceMap> {
+        let emit_sourcemap = opt.sourcemap;
         let mut gen_js = GenJS {
             out: BufWriter::new(writer),
             opt,
@@ -282,14 +287,14 @@ impl GenJS<'_, '_> {
             position: SourceLoc { line: 1, col: 1 },
             cur_token: None,
             // FIXME: Pass in file name here.
-            sourcemap: SourceMapBuilder::new(None),
+            sourcemap: emit_sourcemap.then(|| SourceMapBuilder::new(None)),
             error: None,
             match_tmp_index: 0,
         };
         for i in 0..ctx.sm().num_sources() {
-            gen_js
-                .sourcemap
-                .add_source(ctx.sm().source_name(SourceId(i as u32)));
+            if let Some(sourcemap) = &mut gen_js.sourcemap {
+                sourcemap.add_source(ctx.sm().source_name(SourceId(i as u32)));
+            }
         }
 
         if let Some(doc_block) = gen_js.opt.doc_block.clone() {
@@ -311,7 +316,12 @@ impl GenJS<'_, '_> {
             None => gen_js
                 .out
                 .flush()
-                .and(Ok(gen_js.sourcemap.into_sourcemap())),
+                .and(Ok(
+                    gen_js
+                        .sourcemap
+                        .unwrap_or_else(|| SourceMapBuilder::new(None))
+                        .into_sourcemap(),
+                )),
             Some(err) => Err(err),
         }
     }
@@ -4239,6 +4249,10 @@ impl GenJS<'_, '_> {
 
     /// Adds the current location as a segment pointing to the start of `node`.
     fn add_segment(&mut self, node: &Node) {
+        if self.sourcemap.is_none() {
+            return;
+        }
+
         // Convert from 1-indexed to 0-indexed as expected by source map.
         // Use `wrapping_sub` in case the line/col are invalid (0) to ensure
         // the overflow goes to `u32::MAX`.
@@ -4256,8 +4270,8 @@ impl GenJS<'_, '_> {
 
     /// Add the `cur_token` to the sourcemap and set `cur_token` to `None`.
     fn flush_cur_token(&mut self) {
-        if let Some(cur) = self.cur_token {
-            self.sourcemap.add_raw(
+        if let (Some(cur), Some(sourcemap)) = (self.cur_token, &mut self.sourcemap) {
+            sourcemap.add_raw(
                 cur.dst_line,
                 cur.dst_col,
                 cur.src_line,

@@ -240,6 +240,7 @@ function main(): void {
     workspaceContext();
   const binaryPath = verifiedBinaryPath(workspaceRoot, targetKey);
 
+  run('pnpm', ['sync-binding'], workspaceRoot);
   copyPackageBinaries(binaryPath, corePackageRoot, platformPackageRoot);
   packTarballs(corePackageRoot, platformPackageRoot);
 }

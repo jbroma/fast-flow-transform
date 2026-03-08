@@ -14,8 +14,7 @@
   },
   "type": "module",
   "files": [
-    "index.js",
-    "bin"
+    "fast-flow-transform.darwin-arm64.node"
   ],
   "publishConfig": {
     "os": [
@@ -25,12 +24,7 @@
       "arm64"
     ]
   },
-  "main": "./index.js",
-  "exports": {
-    ".": {
-      "default": "./index.js"
-    }
-  },
+  "main": "./fast-flow-transform.darwin-arm64.node",
   "engines": {
     "node": ">=18"
   }

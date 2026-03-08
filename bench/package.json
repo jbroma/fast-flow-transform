@@ -3,12 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "benchmark": "node compare.ts"
+    "benchmark": "node compare.ts",
+    "prebenchmark": "pnpm --filter fast-flow-transform build",
+    "pretest": "pnpm --filter fast-flow-transform build",
+    "test": "vitest run --globals compare.test.ts"
   },
   "dependencies": {
     "@babel/core": "^7.28.4",
-    "@babel/plugin-syntax-flow": "^7.27.1",
     "@babel/plugin-transform-flow-strip-types": "^7.27.1",
-    "babel-plugin-transform-flow-enums": "^0.0.2"
+    "babel-plugin-syntax-hermes-parser": "0.32.0",
+    "fast-flow-transform": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.16"
   }
 }

@@ -32,15 +32,19 @@ importers:
       '@babel/core':
         specifier: ^7.28.4
         version: 7.29.0
-      '@babel/plugin-syntax-flow':
-        specifier: ^7.27.1
-        version: 7.28.6(@babel/core@7.29.0)
       '@babel/plugin-transform-flow-strip-types':
         specifier: ^7.27.1
         version: 7.27.1(@babel/core@7.29.0)
-      babel-plugin-transform-flow-enums:
-        specifier: ^0.0.2
-        version: 0.0.2(@babel/core@7.29.0)
+      babel-plugin-syntax-hermes-parser:
+        specifier: 0.32.0
+        version: 0.32.0
+      fast-flow-transform:
+        specifier: workspace:*
+        version: link:../packages/core
+    devDependencies:
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.18(@types/node@24.12.0)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2)
 
   bindings/fast-flow-transform-darwin-arm64: {}
 
@@ -2382,9 +2386,6 @@ packages:
 
   babel-plugin-syntax-hermes-parser@0.32.0:
     resolution: {integrity: sha512-m5HthL++AbyeEA2FcdwOLfVFvWYECOBObLHNqdR8ceY4TsEdn4LdX2oTvbB2QJSSElE2AWA/b2MXZ/PF/CqLZg==}
-
-  babel-plugin-transform-flow-enums@0.0.2:
-    resolution: {integrity: sha512-g4aaCrDDOsWjbm0PUUeVnkcVd6AKJsVc/MbnPhEotEpkeJQP6b8nzewohQi7+QS8UyPehOhGWn0nOwjvWpmMvQ==}
 
   babel-preset-current-node-syntax@1.2.0:
     resolution: {integrity: sha512-E/VlAEzRrsLEb2+dv8yp3bo4scof3l9nR4lrld+Iy5NyVqgVYUJnDAmunkhPMisRI32Qc4iRiz425d8vM++2fg==}
@@ -6740,12 +6741,6 @@ snapshots:
   babel-plugin-syntax-hermes-parser@0.32.0:
     dependencies:
       hermes-parser: 0.32.0
-
-  babel-plugin-transform-flow-enums@0.0.2(@babel/core@7.29.0):
-    dependencies:
-      '@babel/plugin-syntax-flow': 7.28.6(@babel/core@7.29.0)
-    transitivePeerDependencies:
-      - '@babel/core'
 
   babel-preset-current-node-syntax@1.2.0(@babel/core@7.29.0):
     dependencies:

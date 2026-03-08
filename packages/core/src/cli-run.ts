@@ -6,7 +6,7 @@ import { basename, dirname, relative } from 'node:path';
 
 import { HELP_TEXT, parseCliArgs } from './cli-args.js';
 import type { CliCommand, UnparsedCliOptions } from './cli-args.js';
-import programmaticTransform from './index.js';
+import fft from './index.js';
 import { parseOptions } from './transform/options.js';
 import type {
   SourceMapLike,
@@ -39,7 +39,7 @@ const DEFAULT_RUNTIME: CliRuntime = {
   readFile: (path) => fsReadFile(path, 'utf8'),
   stderr: process.stderr,
   stdout: process.stdout,
-  transform: programmaticTransform,
+  transform: fft,
   writeFile: (path, content) => fsWriteFile(path, content),
 };
 

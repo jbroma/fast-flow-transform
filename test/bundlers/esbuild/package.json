@@ -1,0 +1,15 @@
+{
+  "name": "@fft-tests/esbuild",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "e2e": "node build.mjs && vitest --config vitest.config.ts run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.3",
+    "fast-flow-transform": "workspace:*",
+    "vitest": "^4.0.16"
+  }
+}

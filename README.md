@@ -11,8 +11,8 @@ own project with its own packaging, workspace layout, and integration surface.
 
 - A Flow-to-JavaScript pipeline optimized for speed, low output churn, and
   compatibility.
-- First-class webpack, rspack, rsbuild, and Parcel integration for bundler
-  pipelines.
+- First-class webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown, and
+  esbuild integration for bundler pipelines.
 - Cargo workspace for the native transform binary (`fft-strip`).
 - Root `pnpm` workspace for active packages under `packages/` and `bindings/`.
 - The publishable loader package now lives at `packages/core` and is published as

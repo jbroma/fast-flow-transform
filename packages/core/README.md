@@ -1,14 +1,18 @@
 # fast-flow-transform
 
-A programmatic Flow type stripper with webpack, rspack, rsbuild, and Parcel adapters.
+A programmatic Flow type stripper with webpack, rspack, rsbuild, Parcel, Vite,
+Rollup, Rolldown, and esbuild adapters.
 
 ## Features
 
 - Native parse + transform + codegen + source map pipeline
 - Small programmatic API for one-shot transforms
 - CLI for transforming files with the same option set
-- Dedicated webpack, rspack, rsbuild, and Parcel entrypoints
+- Dedicated webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown, and
+  esbuild entrypoints
 - Optional source map merging when you need emitted maps
+- FFT strips Flow syntax only. JSX stays in the output for the bundler's own
+  JSX pipeline to handle.
 
 ## Programmatic Usage
 
@@ -182,6 +186,83 @@ default Parcel transformer instead:
 
 ```js
 export { default } from 'fast-flow-transform/parcel';
+```
+
+## Vite Usage
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite';
+import fastFlowTransformVite from 'fast-flow-transform/vite';
+
+export default defineConfig({
+  plugins: [
+    fastFlowTransformVite({
+      dialect: 'flow-detect',
+      format: 'compact',
+      reactRuntimeTarget: '18',
+    }),
+  ],
+});
+```
+
+It does not lower JSX itself. Vite's normal JSX handling remains responsible
+for that phase.
+
+## Rollup Usage
+
+```ts
+import fastFlowTransformRollup from 'fast-flow-transform/rollup';
+
+export default {
+  plugins: [
+    fastFlowTransformRollup({
+      dialect: 'flow-detect',
+      format: 'compact',
+    }),
+  ],
+};
+```
+
+If your graph still contains JSX after Flow stripping, add your preferred
+Rollup JSX transform separately. FFT does not lower JSX.
+
+## Rolldown Usage
+
+```ts
+import fastFlowTransformRolldown from 'fast-flow-transform/rolldown';
+
+await build({
+  input: 'src/index.js',
+  plugins: [
+    fastFlowTransformRolldown({
+      dialect: 'flow-detect',
+      format: 'compact',
+    }),
+  ],
+});
+```
+
+Rolldown already supports mixed ESM and CommonJS graphs natively, so you should
+not pair this adapter with `@rollup/plugin-commonjs`.
+
+## esbuild Usage
+
+```ts
+import { build } from 'esbuild';
+import fastFlowTransformEsbuild from 'fast-flow-transform/esbuild';
+
+await build({
+  bundle: true,
+  entryPoints: ['src/index.js'],
+  outfile: 'dist/out.js',
+  plugins: [
+    fastFlowTransformEsbuild({
+      dialect: 'flow-detect',
+      format: 'compact',
+    }),
+  ],
+});
 ```
 
 If you need to override binary resolution during development, set:

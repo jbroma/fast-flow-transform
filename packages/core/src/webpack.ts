@@ -1,4 +1,4 @@
-import programmaticTransform from './index.js';
+import fft from './index.js';
 import type {
   SourceMapLike,
   TransformOptionsInput,
@@ -62,7 +62,7 @@ function fastFlowTransformLoader(
     ...(inputSourceMap === undefined ? {} : { inputSourceMap }),
   };
 
-  programmaticTransform(request)
+  fft(request)
     .then((result) => {
       callback(null, result.code, result.map ?? null, meta);
     })

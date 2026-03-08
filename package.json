@@ -15,8 +15,12 @@
     "sync-binary": "cargo build --release -p fft_strip && node scripts/sync-binary.mts",
     "e2e": "turbo run e2e --log-prefix=none --filter=@fft-tests/*",
     "e2e:parcel": "turbo run e2e --log-prefix=none --filter=@fft-tests/parcel",
+    "e2e:esbuild": "turbo run e2e --log-prefix=none --filter=@fft-tests/esbuild",
+    "e2e:rolldown": "turbo run e2e --log-prefix=none --filter=@fft-tests/rolldown",
+    "e2e:rollup": "turbo run e2e --log-prefix=none --filter=@fft-tests/rollup",
     "e2e:rsbuild": "turbo run e2e --log-prefix=none --filter=@fft-tests/rsbuild",
     "e2e:rspack": "turbo run e2e --log-prefix=none --filter=@fft-tests/rspack",
+    "e2e:vite": "turbo run e2e --log-prefix=none --filter=@fft-tests/vite",
     "e2e:webpack": "turbo run e2e --log-prefix=none --filter=@fft-tests/webpack",
     "typecheck": "turbo run typecheck --log-prefix=none"
   },

@@ -28,3 +28,8 @@ bindings/**/bin/fft-strip*
 
 # Parcel cache
 .parcel-cache
+**/.parcel-cache
+
+# Vite cache
+.vite-cache
+**/.vite-cache

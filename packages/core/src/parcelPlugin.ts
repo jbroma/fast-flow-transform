@@ -1,7 +1,7 @@
 import { Transformer } from '@parcel/plugin';
 import SourceMap from '@parcel/source-map';
 
-import programmaticTransform from './index.js';
+import fft from './index.js';
 import type {
   SourceMapLike,
   TransformOptionsInput,
@@ -76,7 +76,7 @@ export function createFastFlowTransformParcel(
     async transform({ asset, options: parcelOptions }) {
       const parcelAsset = asset as ParcelMutableAsset;
       const sourcemap = resolvedSourceMapOption(parcelAsset, options);
-      const result = await programmaticTransform({
+      const result = await fft({
         ...options,
         filename: parcelAsset.filePath,
         inputSourceMap: await inputSourceMapFor(parcelAsset, sourcemap),

@@ -1,4 +1,4 @@
-export { default, transform } from './transform/index.js';
+export { default, default as fft, transform } from './transform/index.js';
 export type {
   Dialect,
   Format,

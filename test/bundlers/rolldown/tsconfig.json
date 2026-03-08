@@ -1,0 +1,7 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["rolldown.config.mjs", "rolldown.e2e.test.ts", "vitest.config.ts"]
+}

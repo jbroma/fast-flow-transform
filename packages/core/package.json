@@ -1,7 +1,7 @@
 {
   "name": "fast-flow-transform",
   "version": "0.0.1",
-  "description": "Native Hermes/FFT Flow stripping transform with webpack, rspack, rsbuild, and Parcel adapters",
+  "description": "Native Hermes/FFT Flow stripping transform with webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown, and esbuild adapters",
   "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
   "bugs": {
     "url": "https://github.com/jbroma/fast-flow-transform/issues"
@@ -46,6 +46,26 @@
       "require": "./dist/rsbuild.cjs",
       "default": "./dist/rsbuild.js"
     },
+    "./rollup": {
+      "types": "./dist/rollup.d.ts",
+      "import": "./dist/rollup.js",
+      "default": "./dist/rollup.js"
+    },
+    "./rolldown": {
+      "types": "./dist/rolldown.d.ts",
+      "import": "./dist/rolldown.js",
+      "default": "./dist/rolldown.js"
+    },
+    "./esbuild": {
+      "types": "./dist/esbuild.d.ts",
+      "import": "./dist/esbuild.js",
+      "default": "./dist/esbuild.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "import": "./dist/vite.js",
+      "default": "./dist/vite.js"
+    },
     "./parcel": {
       "types": "./dist/parcel.d.ts",
       "import": "./dist/parcel.js",
@@ -53,7 +73,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\" && tsc -p tsconfig.build.json",
     "prepack": "pnpm run build",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
@@ -61,10 +81,21 @@
   "dependencies": {
     "@parcel/plugin": "^2.16.1",
     "@parcel/source-map": "^2.1.1",
+    "esbuild": "^0.27.3",
     "source-map": "^0.6.1"
   },
   "devDependencies": {
+    "rollup": "^4.59.0",
+    "vite": "^7.3.1",
     "vitest": "^4.0.16"
+  },
+  "peerDependencies": {
+    "vite": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
   },
   "optionalDependencies": {
     "fast-flow-transform-darwin-arm64": "workspace:*",

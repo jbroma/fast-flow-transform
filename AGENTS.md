@@ -14,6 +14,14 @@ This repo uses **Ultracite**, **Oxlint**, and **Oxfmt** for JS/TS work.
 
 - Run `pnpm check` before completion for JS/TS changes.
 - Always request escalated sandbox permissions before running `pnpm install`.
+- Treat Hermes `ESTree.def` at `third_party/hermes/include/hermes/AST/ESTree.def`
+  as the source of truth for generated Rust bindings and AST shape decisions. Do
+  not hand-maintain schema drift in generated files or patch around Hermes with
+  repo-local field injections.
+- After updating the Hermes submodule at `third_party/hermes`, run
+  `pnpm codegen:rust` and commit the refreshed generated files, especially
+  `crates/hermes/src/parser/generated_ffi.rs` and
+  `crates/fft/src/hparser/generated_cvt.rs`.
 - Modularize from the start. Do not land large files/functions and split later.
 - Do not create files over `300` lines.
 - Do not create functions over `50` lines.

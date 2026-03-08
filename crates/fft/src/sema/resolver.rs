@@ -446,6 +446,7 @@ impl<'gc> Resolver<'gc, '_> {
                     template::BlockStatement {
                         metadata: Default::default(),
                         body: NodeList::new(lock),
+                        implicit: false,
                     },
                 ),
                 type_parameters: None,

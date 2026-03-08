@@ -426,7 +426,6 @@ impl GenJS<'_, '_> {
 
             Node::ArrowFunctionExpression(ArrowFunctionExpression {
                 metadata: _,
-                id: _,
                 params,
                 body,
                 type_parameters,
@@ -633,7 +632,11 @@ impl GenJS<'_, '_> {
             }
             Node::EmptyStatement(_) => {}
 
-            Node::BlockStatement(BlockStatement { metadata: _, body }) => {
+            Node::BlockStatement(BlockStatement {
+                metadata: _,
+                body,
+                implicit: _,
+            }) => {
                 if body.is_empty() {
                     out!(self, "{{}}");
                 } else {
@@ -1175,14 +1178,14 @@ impl GenJS<'_, '_> {
             Node::ImportExpression(ImportExpression {
                 metadata: _,
                 source,
-                attributes,
+                options,
             }) => {
                 out_token!(self, node, "import(");
                 source.visit(ctx, self, Some(Path::new(node, NodeField::source)));
-                if let Some(attributes) = attributes {
+                if let Some(options) = options {
                     out!(self, ",");
                     self.space(ForceSpace::No);
-                    attributes.visit(ctx, self, Some(Path::new(node, NodeField::attributes)));
+                    options.visit(ctx, self, Some(Path::new(node, NodeField::options)));
                 }
                 out!(self, ")");
             }
@@ -1737,7 +1740,7 @@ impl GenJS<'_, '_> {
                 id,
                 type_parameters,
                 super_class,
-                super_type_parameters,
+                super_type_arguments,
                 implements,
                 decorators,
                 body,
@@ -1747,7 +1750,7 @@ impl GenJS<'_, '_> {
                 id,
                 type_parameters,
                 super_class,
-                super_type_parameters,
+                super_type_arguments,
                 implements,
                 decorators,
                 body,
@@ -1776,11 +1779,11 @@ impl GenJS<'_, '_> {
                     out!(self, " extends ");
                     super_class.visit(ctx, self, Some(Path::new(node, NodeField::super_class)));
                 }
-                if let Some(super_type_parameters) = super_type_parameters {
-                    super_type_parameters.visit(
+                if let Some(super_type_arguments) = super_type_arguments {
+                    super_type_arguments.visit(
                         ctx,
                         self,
-                        Some(Path::new(node, NodeField::super_type_parameters)),
+                        Some(Path::new(node, NodeField::super_type_arguments)),
                     );
                 }
                 if !implements.is_empty() {
@@ -1819,12 +1822,17 @@ impl GenJS<'_, '_> {
                 value,
                 computed,
                 is_static,
+                decorators,
                 declare,
                 optional,
                 variance,
                 type_annotation,
                 ts_modifiers: None,
             }) => {
+                for decorator in decorators.iter() {
+                    decorator.visit(ctx, self, Some(Path::new(node, NodeField::decorators)));
+                    self.force_newline();
+                }
                 if *declare {
                     out!(self, "declare ");
                 }
@@ -1866,12 +1874,17 @@ impl GenJS<'_, '_> {
                 key,
                 value,
                 is_static,
+                decorators,
                 declare,
                 optional,
                 variance,
                 type_annotation,
                 ts_modifiers: None,
             }) => {
+                for decorator in decorators.iter() {
+                    decorator.visit(ctx, self, Some(Path::new(node, NodeField::decorators)));
+                    self.force_newline();
+                }
                 if let Some(variance) = variance {
                     variance.visit(ctx, self, Some(Path::new(node, NodeField::variance)));
                 }
@@ -1910,6 +1923,7 @@ impl GenJS<'_, '_> {
                 kind,
                 computed,
                 is_static,
+                decorators,
             }) => {
                 let (is_async, generator, params, body, return_type, predicate, type_parameters) =
                     match value {
@@ -1936,6 +1950,10 @@ impl GenJS<'_, '_> {
                             unreachable!("Invalid method value");
                         }
                     };
+                for decorator in decorators.iter() {
+                    decorator.visit(ctx, self, Some(Path::new(node, NodeField::decorators)));
+                    self.force_newline();
+                }
                 if *is_static {
                     out!(self, "static ");
                 }
@@ -1979,7 +1997,7 @@ impl GenJS<'_, '_> {
                 metadata: _,
                 specifiers,
                 source,
-                assertions,
+                attributes,
                 import_kind,
             }) => {
                 out_token!(self, node, "import ");
@@ -2009,17 +2027,17 @@ impl GenJS<'_, '_> {
                     out!(self, "from ");
                 }
                 source.visit(ctx, self, Some(Path::new(node, NodeField::source)));
-                if let Some(assertions) = assertions {
-                    if !assertions.is_empty() {
-                        out!(self, " assert {{");
-                        for (i, attribute) in assertions.iter().enumerate() {
+                if let Some(attributes) = attributes {
+                    if !attributes.is_empty() {
+                        out!(self, " with {{");
+                        for (i, attribute) in attributes.iter().enumerate() {
                             if i > 0 {
                                 self.comma();
                             }
                             attribute.visit(
                                 ctx,
                                 self,
-                                Some(Path::new(node, NodeField::assertions)),
+                                Some(Path::new(node, NodeField::attributes)),
                             );
                         }
                         out!(self, "}}");
@@ -2512,15 +2530,15 @@ impl GenJS<'_, '_> {
             }
             Node::TupleTypeAnnotation(TupleTypeAnnotation {
                 metadata: _,
-                types,
+                element_types,
                 inexact: _,
             }) => {
                 out!(self, "[");
-                for (i, ty) in types.iter().enumerate() {
+                for (i, ty) in element_types.iter().enumerate() {
                     if i > 0 {
                         self.comma();
                     }
-                    ty.visit(ctx, self, Some(Path::new(node, NodeField::types)));
+                    ty.visit(ctx, self, Some(Path::new(node, NodeField::element_types)));
                 }
                 out!(self, "]");
             }
@@ -2655,6 +2673,8 @@ impl GenJS<'_, '_> {
                 id,
                 type_parameters,
                 impltype,
+                lower_bound,
+                upper_bound,
                 supertype,
             }) => {
                 out_token!(self, node, "opaque type ");
@@ -2670,6 +2690,14 @@ impl GenJS<'_, '_> {
                     out!(self, ":");
                     self.space(ForceSpace::No);
                     supertype.visit(ctx, self, Some(Path::new(node, NodeField::supertype)));
+                }
+                if let Some(lower_bound) = lower_bound {
+                    out!(self, " super ");
+                    lower_bound.visit(ctx, self, Some(Path::new(node, NodeField::lower_bound)));
+                }
+                if let Some(upper_bound) = upper_bound {
+                    out!(self, " extends ");
+                    upper_bound.visit(ctx, self, Some(Path::new(node, NodeField::upper_bound)));
                 }
                 if self.opt.pretty == Pretty::Yes {
                     out!(self, " = ");
@@ -2711,6 +2739,8 @@ impl GenJS<'_, '_> {
                 id,
                 type_parameters,
                 impltype,
+                lower_bound,
+                upper_bound,
                 supertype,
             }) => {
                 if matches!(path,
@@ -2732,6 +2762,14 @@ impl GenJS<'_, '_> {
                     out!(self, ":");
                     self.space(ForceSpace::No);
                     supertype.visit(ctx, self, Some(Path::new(node, NodeField::supertype)));
+                }
+                if let Some(lower_bound) = lower_bound {
+                    out!(self, " super ");
+                    lower_bound.visit(ctx, self, Some(Path::new(node, NodeField::lower_bound)));
+                }
+                if let Some(upper_bound) = upper_bound {
+                    out!(self, " extends ");
+                    upper_bound.visit(ctx, self, Some(Path::new(node, NodeField::upper_bound)));
                 }
                 if let Some(impltype) = impltype {
                     if self.opt.pretty == Pretty::Yes {
@@ -3375,6 +3413,19 @@ impl GenJS<'_, '_> {
                 );
                 init.visit(ctx, self, Some(Path::new(node, NodeField::init)));
             }
+            Node::Decorator(Decorator { expression, .. }) => {
+                out!(self, "@");
+                expression.visit(ctx, self, Some(Path::new(node, NodeField::expression)));
+            }
+            Node::UndefinedTypeAnnotation(_) => {
+                out!(self, "undefined");
+            }
+            Node::SHBuiltin(_) => {
+                out!(self, "$SHBuiltin");
+            }
+            Node::ImplicitCheckedCast(ImplicitCheckedCast { argument, .. }) => {
+                argument.visit(ctx, self, Some(Path::new(node, NodeField::argument)));
+            }
 
             _ => {
                 unimplemented!("Cannot generate node kind: {}", node.name());
@@ -3719,7 +3770,12 @@ impl GenJS<'_, '_> {
         force_block: ForceBlock,
         path: Path<'gc>,
     ) -> bool {
-        if let Node::BlockStatement(BlockStatement { metadata: _, body }) = &node {
+        if let Node::BlockStatement(BlockStatement {
+            metadata: _,
+            body,
+            implicit: _,
+        }) = &node
+        {
             if body.is_empty() {
                 self.space(ForceSpace::No);
                 out!(self, "{{}}");

@@ -235,6 +235,7 @@ fn test_visit() {
                         .build(&gc),
                     ],
                 ),
+                implicit: false,
             }
             .build(&gc),
         )
@@ -482,6 +483,23 @@ fn test_replace_var_decls() {
             _ => panic!("Transformation failed: {:#?}", transformed.node(&gc)),
         };
     }
+}
+
+#[test]
+fn test_arrow_functions_have_no_id() {
+    let mut ctx = Context::new();
+    let ast =
+        hparser::parse_with_flags(Default::default(), "const f = async (x) => x;", &mut ctx)
+            .unwrap();
+
+    let gc = GCLock::new(&mut ctx);
+    let program = node_cast!(Node::Program, ast.node(&gc));
+    let decl = node_cast!(Node::VariableDeclaration, program.body.head().unwrap());
+    let declarator = node_cast!(Node::VariableDeclarator, decl.declarations.head().unwrap());
+    let init = declarator.init.unwrap();
+    let _arrow = node_cast!(Node::ArrowFunctionExpression, init);
+
+    assert!(init.function_like_id().is_none());
 }
 
 #[test]

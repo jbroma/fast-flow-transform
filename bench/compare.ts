@@ -4,8 +4,10 @@ import {
   runBenchmarks,
   writeBenchmarkReport,
 } from './benchmark.ts';
+import { configureBenchmarkBinary } from './native.ts';
 
 async function main(): Promise<void> {
+  configureBenchmarkBinary();
   const input = resolveBenchmarkInput();
   const report = await runBenchmarks(input);
   const reportPath = writeBenchmarkReport(report, input.jsonPath);

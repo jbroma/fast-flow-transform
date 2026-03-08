@@ -132,6 +132,7 @@ fn test_error() {
                             },
                         )],
                     ),
+                    implicit: false,
                 },
             ),
         )
@@ -208,6 +209,8 @@ fn test_flow() {
     validate_src_flow("function foo(a: number): number %checks { return a; }").unwrap();
     validate_src_flow("function foo(a: number): number %checks(a[1]) { return a; }").unwrap();
     validate_src_flow("type InferType<T> = T extends infer U ? U : empty;").unwrap();
+    validate_src_flow("type MaybeUndefined = undefined;").unwrap();
+    validate_src_flow("opaque type Counter super empty extends Box<T> = Container<T>;").unwrap();
     validate_src_flow(
         "class A<T> extends B<T> {
             foo: number;

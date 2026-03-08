@@ -528,6 +528,7 @@ fn test_types() {
     test_roundtrip_flow("type A = mixed");
     test_roundtrip_flow("type A = any");
     test_roundtrip_flow("type A = void");
+    test_roundtrip_flow("type A = undefined");
     test_roundtrip_flow("type A = null");
     test_roundtrip_flow("type A = number => number");
     test_roundtrip_flow("type A = X.Y");
@@ -577,6 +578,7 @@ fn test_declare() {
     test_roundtrip_flow("declare export var x: number;");
     test_roundtrip_flow("declare opaque type x;");
     test_roundtrip_flow("declare export opaque type x: y;");
+    test_roundtrip_flow("opaque type Counter super empty extends Box<T> = Container<T>;");
     test_roundtrip_flow("declare type x = number;");
     test_roundtrip_flow("declare interface Foo {}");
     test_roundtrip_flow("declare class A extends B {}");
@@ -586,6 +588,7 @@ fn test_declare() {
     test_roundtrip_flow("declare module.exports: number;");
     test_roundtrip_flow("declare export function foo(): number;");
 }
+
 
 #[test]
 fn test_enum() {

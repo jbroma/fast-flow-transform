@@ -102,7 +102,6 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             ast::builder::FunctionExpression::build_template(gc, template)
         }
         NodeKind::ArrowFunctionExpression => {
-            let id = None;
             let params = cvt_node_list(cvt, gc, hermes_get_ArrowFunctionExpression_params(n));
             let body = cvt_node_ptr(cvt, gc, hermes_get_ArrowFunctionExpression_body(n));
             let type_parameters = cvt_node_ptr_opt(
@@ -121,7 +120,6 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                     range,
                     ..Default::default()
                 },
-                id,
                 params,
                 body,
                 type_parameters,
@@ -177,6 +175,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 cvt_node_ptr_opt(cvt, gc, hermes_get_ComponentDeclaration_typeParameters(n));
             let renders_type =
                 cvt_node_ptr_opt(cvt, gc, hermes_get_ComponentDeclaration_rendersType(n));
+            let is_async = hermes_get_ComponentDeclaration_async(n);
             let mut template = ast::template::ComponentDeclaration {
                 metadata: ast::TemplateMetadata {
                     range,
@@ -187,6 +186,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 body,
                 type_parameters,
                 renders_type,
+                is_async,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
                 template.metadata.range.start
@@ -202,6 +202,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             let type_parameters =
                 cvt_node_ptr_opt(cvt, gc, hermes_get_HookDeclaration_typeParameters(n));
             let return_type = cvt_node_ptr_opt(cvt, gc, hermes_get_HookDeclaration_returnType(n));
+            let is_async = hermes_get_HookDeclaration_async(n);
             let mut template = ast::template::HookDeclaration {
                 metadata: ast::TemplateMetadata {
                     range,
@@ -212,6 +213,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 body,
                 type_parameters,
                 return_type,
+                is_async,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
                 template.metadata.range.start
@@ -368,12 +370,14 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
         }
         NodeKind::BlockStatement => {
             let body = cvt_node_list(cvt, gc, hermes_get_BlockStatement_body(n));
+            let implicit = hermes_get_BlockStatement_implicit(n);
             let mut template = ast::template::BlockStatement {
                 metadata: ast::TemplateMetadata {
                     range,
                     ..Default::default()
                 },
                 body,
+                implicit,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
                 template.metadata.range.start
@@ -821,14 +825,14 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
         }
         NodeKind::ImportExpression => {
             let source = cvt_node_ptr(cvt, gc, hermes_get_ImportExpression_source(n));
-            let attributes = cvt_node_ptr_opt(cvt, gc, hermes_get_ImportExpression_options(n));
+            let options = cvt_node_ptr_opt(cvt, gc, hermes_get_ImportExpression_options(n));
             let mut template = ast::template::ImportExpression {
                 metadata: ast::TemplateMetadata {
                     range,
                     ..Default::default()
                 },
                 source,
-                attributes,
+                options,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
                 template.metadata.range.start
@@ -1285,12 +1289,28 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             };
             ast::builder::Property::build_template(gc, template)
         }
+        NodeKind::Decorator => {
+            let expression = cvt_node_ptr(cvt, gc, hermes_get_Decorator_expression(n));
+            let mut template = ast::template::Decorator {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                expression,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::Decorator::build_template(gc, template)
+        }
         NodeKind::ClassDeclaration => {
             let id = cvt_node_ptr_opt(cvt, gc, hermes_get_ClassDeclaration_id(n));
             let type_parameters =
                 cvt_node_ptr_opt(cvt, gc, hermes_get_ClassDeclaration_typeParameters(n));
             let super_class = cvt_node_ptr_opt(cvt, gc, hermes_get_ClassDeclaration_superClass(n));
-            let super_type_parameters =
+            let super_type_arguments =
                 cvt_node_ptr_opt(cvt, gc, hermes_get_ClassDeclaration_superTypeArguments(n));
             let implements = cvt_node_list(cvt, gc, hermes_get_ClassDeclaration_implements(n));
             let decorators = cvt_node_list(cvt, gc, hermes_get_ClassDeclaration_decorators(n));
@@ -1303,7 +1323,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 id,
                 type_parameters,
                 super_class,
-                super_type_parameters,
+                super_type_arguments,
                 implements,
                 decorators,
                 body,
@@ -1320,7 +1340,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             let type_parameters =
                 cvt_node_ptr_opt(cvt, gc, hermes_get_ClassExpression_typeParameters(n));
             let super_class = cvt_node_ptr_opt(cvt, gc, hermes_get_ClassExpression_superClass(n));
-            let super_type_parameters =
+            let super_type_arguments =
                 cvt_node_ptr_opt(cvt, gc, hermes_get_ClassExpression_superTypeArguments(n));
             let implements = cvt_node_list(cvt, gc, hermes_get_ClassExpression_implements(n));
             let decorators = cvt_node_list(cvt, gc, hermes_get_ClassExpression_decorators(n));
@@ -1333,7 +1353,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 id,
                 type_parameters,
                 super_class,
-                super_type_parameters,
+                super_type_arguments,
                 implements,
                 decorators,
                 body,
@@ -1366,6 +1386,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             let value = cvt_node_ptr_opt(cvt, gc, hermes_get_ClassProperty_value(n));
             let computed = hermes_get_ClassProperty_computed(n);
             let is_static = hermes_get_ClassProperty_static(n);
+            let decorators = cvt_node_list(cvt, gc, hermes_get_ClassProperty_decorators(n));
             let declare = hermes_get_ClassProperty_declare(n);
             let optional = hermes_get_ClassProperty_optional(n);
             let variance = cvt_node_ptr_opt(cvt, gc, hermes_get_ClassProperty_variance(n));
@@ -1381,6 +1402,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 value,
                 computed,
                 is_static,
+                decorators,
                 declare,
                 optional,
                 variance,
@@ -1398,6 +1420,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             let key = cvt_node_ptr(cvt, gc, hermes_get_ClassPrivateProperty_key(n));
             let value = cvt_node_ptr_opt(cvt, gc, hermes_get_ClassPrivateProperty_value(n));
             let is_static = hermes_get_ClassPrivateProperty_static(n);
+            let decorators = cvt_node_list(cvt, gc, hermes_get_ClassPrivateProperty_decorators(n));
             let declare = hermes_get_ClassPrivateProperty_declare(n);
             let optional = hermes_get_ClassPrivateProperty_optional(n);
             let variance = cvt_node_ptr_opt(cvt, gc, hermes_get_ClassPrivateProperty_variance(n));
@@ -1413,6 +1436,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 key,
                 value,
                 is_static,
+                decorators,
                 declare,
                 optional,
                 variance,
@@ -1432,6 +1456,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             let kind = cvt_enum(hermes_get_MethodDefinition_kind(n));
             let computed = hermes_get_MethodDefinition_computed(n);
             let is_static = hermes_get_MethodDefinition_static(n);
+            let decorators = cvt_node_list(cvt, gc, hermes_get_MethodDefinition_decorators(n));
             let mut template = ast::template::MethodDefinition {
                 metadata: ast::TemplateMetadata {
                     range,
@@ -1442,6 +1467,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 kind,
                 computed,
                 is_static,
+                decorators,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
                 template.metadata.range.start
@@ -1453,7 +1479,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
         NodeKind::ImportDeclaration => {
             let specifiers = cvt_node_list(cvt, gc, hermes_get_ImportDeclaration_specifiers(n));
             let source = cvt_node_ptr(cvt, gc, hermes_get_ImportDeclaration_source(n));
-            let assertions = cvt_node_list_opt(cvt, gc, hermes_get_ImportDeclaration_attributes(n));
+            let attributes = cvt_node_list_opt(cvt, gc, hermes_get_ImportDeclaration_attributes(n));
             let import_kind = cvt_enum(hermes_get_ImportDeclaration_importKind(n));
             let mut template = ast::template::ImportDeclaration {
                 metadata: ast::TemplateMetadata {
@@ -1462,7 +1488,7 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 },
                 specifiers,
                 source,
-                assertions,
+                attributes,
                 import_kind,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
@@ -1935,6 +1961,28 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             };
             ast::builder::MatchMemberPattern::build_template(gc, template)
         }
+        NodeKind::MatchInstancePattern => {
+            let target_constructor = cvt_node_ptr(
+                cvt,
+                gc,
+                hermes_get_MatchInstancePattern_targetConstructor(n),
+            );
+            let properties = cvt_node_ptr(cvt, gc, hermes_get_MatchInstancePattern_properties(n));
+            let mut template = ast::template::MatchInstancePattern {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                target_constructor,
+                properties,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::MatchInstancePattern::build_template(gc, template)
+        }
         NodeKind::MatchObjectPatternProperty => {
             let key = cvt_node_ptr(cvt, gc, hermes_get_MatchObjectPatternProperty_key(n));
             let pattern = cvt_node_ptr(cvt, gc, hermes_get_MatchObjectPatternProperty_pattern(n));
@@ -1954,6 +2002,25 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 cvt.cvt_smloc(nr.source_range.end.pred())
             };
             ast::builder::MatchObjectPatternProperty::build_template(gc, template)
+        }
+        NodeKind::MatchInstanceObjectPattern => {
+            let properties =
+                cvt_node_list(cvt, gc, hermes_get_MatchInstanceObjectPattern_properties(n));
+            let rest = cvt_node_ptr_opt(cvt, gc, hermes_get_MatchInstanceObjectPattern_rest(n));
+            let mut template = ast::template::MatchInstanceObjectPattern {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                properties,
+                rest,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::MatchInstanceObjectPattern::build_template(gc, template)
         }
         NodeKind::MatchRestPattern => {
             let argument = cvt_node_ptr_opt(cvt, gc, hermes_get_MatchRestPattern_argument(n));
@@ -2429,34 +2496,6 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             };
             ast::builder::AnyTypeAnnotation::build_template(gc, template)
         }
-        NodeKind::UnknownTypeAnnotation => {
-            let mut template = ast::template::UnknownTypeAnnotation {
-                metadata: ast::TemplateMetadata {
-                    range,
-                    ..Default::default()
-                },
-            };
-            template.metadata.range.end = if nr.source_range.is_empty() {
-                template.metadata.range.start
-            } else {
-                cvt.cvt_smloc(nr.source_range.end.pred())
-            };
-            ast::builder::UnknownTypeAnnotation::build_template(gc, template)
-        }
-        NodeKind::NeverTypeAnnotation => {
-            let mut template = ast::template::NeverTypeAnnotation {
-                metadata: ast::TemplateMetadata {
-                    range,
-                    ..Default::default()
-                },
-            };
-            template.metadata.range.end = if nr.source_range.is_empty() {
-                template.metadata.range.start
-            } else {
-                cvt.cvt_smloc(nr.source_range.end.pred())
-            };
-            ast::builder::NeverTypeAnnotation::build_template(gc, template)
-        }
         NodeKind::MixedTypeAnnotation => {
             let mut template = ast::template::MixedTypeAnnotation {
                 metadata: ast::TemplateMetadata {
@@ -2498,6 +2537,48 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 cvt.cvt_smloc(nr.source_range.end.pred())
             };
             ast::builder::VoidTypeAnnotation::build_template(gc, template)
+        }
+        NodeKind::NeverTypeAnnotation => {
+            let mut template = ast::template::NeverTypeAnnotation {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::NeverTypeAnnotation::build_template(gc, template)
+        }
+        NodeKind::UnknownTypeAnnotation => {
+            let mut template = ast::template::UnknownTypeAnnotation {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::UnknownTypeAnnotation::build_template(gc, template)
+        }
+        NodeKind::UndefinedTypeAnnotation => {
+            let mut template = ast::template::UndefinedTypeAnnotation {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::UndefinedTypeAnnotation::build_template(gc, template)
         }
         NodeKind::FunctionTypeAnnotation => {
             let params = cvt_node_list(cvt, gc, hermes_get_FunctionTypeAnnotation_params(n));
@@ -2729,14 +2810,15 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             ast::builder::QualifiedTypeofIdentifier::build_template(gc, template)
         }
         NodeKind::TupleTypeAnnotation => {
-            let types = cvt_node_list(cvt, gc, hermes_get_TupleTypeAnnotation_elementTypes(n));
+            let element_types =
+                cvt_node_list(cvt, gc, hermes_get_TupleTypeAnnotation_elementTypes(n));
             let inexact = hermes_get_TupleTypeAnnotation_inexact(n);
             let mut template = ast::template::TupleTypeAnnotation {
                 metadata: ast::TemplateMetadata {
                     range,
                     ..Default::default()
                 },
-                types,
+                element_types,
                 inexact,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
@@ -3002,6 +3084,8 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             let type_parameters =
                 cvt_node_ptr_opt(cvt, gc, hermes_get_OpaqueType_typeParameters(n));
             let impltype = cvt_node_ptr(cvt, gc, hermes_get_OpaqueType_impltype(n));
+            let lower_bound = cvt_node_ptr_opt(cvt, gc, hermes_get_OpaqueType_lowerBound(n));
+            let upper_bound = cvt_node_ptr_opt(cvt, gc, hermes_get_OpaqueType_upperBound(n));
             let supertype = cvt_node_ptr_opt(cvt, gc, hermes_get_OpaqueType_supertype(n));
             let mut template = ast::template::OpaqueType {
                 metadata: ast::TemplateMetadata {
@@ -3011,6 +3095,8 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 id,
                 type_parameters,
                 impltype,
+                lower_bound,
+                upper_bound,
                 supertype,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
@@ -3069,6 +3155,8 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             let type_parameters =
                 cvt_node_ptr_opt(cvt, gc, hermes_get_DeclareOpaqueType_typeParameters(n));
             let impltype = cvt_node_ptr_opt(cvt, gc, hermes_get_DeclareOpaqueType_impltype(n));
+            let lower_bound = cvt_node_ptr_opt(cvt, gc, hermes_get_DeclareOpaqueType_lowerBound(n));
+            let upper_bound = cvt_node_ptr_opt(cvt, gc, hermes_get_DeclareOpaqueType_upperBound(n));
             let supertype = cvt_node_ptr_opt(cvt, gc, hermes_get_DeclareOpaqueType_supertype(n));
             let mut template = ast::template::DeclareOpaqueType {
                 metadata: ast::TemplateMetadata {
@@ -3078,6 +3166,8 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 id,
                 type_parameters,
                 impltype,
+                lower_bound,
+                upper_bound,
                 supertype,
             };
             template.metadata.range.end = if nr.source_range.is_empty() {
@@ -3937,6 +4027,158 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
             };
             ast::builder::ComponentParameter::build_template(gc, template)
         }
+        NodeKind::RecordDeclaration => {
+            let id = cvt_node_ptr(cvt, gc, hermes_get_RecordDeclaration_id(n));
+            let type_parameters =
+                cvt_node_ptr_opt(cvt, gc, hermes_get_RecordDeclaration_typeParameters(n));
+            let implements = cvt_node_list(cvt, gc, hermes_get_RecordDeclaration_implements(n));
+            let body = cvt_node_ptr(cvt, gc, hermes_get_RecordDeclaration_body(n));
+            let mut template = ast::template::RecordDeclaration {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                id,
+                type_parameters,
+                implements,
+                body,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::RecordDeclaration::build_template(gc, template)
+        }
+        NodeKind::RecordDeclarationImplements => {
+            let id = cvt_node_ptr(cvt, gc, hermes_get_RecordDeclarationImplements_id(n));
+            let type_arguments = cvt_node_ptr_opt(
+                cvt,
+                gc,
+                hermes_get_RecordDeclarationImplements_typeArguments(n),
+            );
+            let mut template = ast::template::RecordDeclarationImplements {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                id,
+                type_arguments,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::RecordDeclarationImplements::build_template(gc, template)
+        }
+        NodeKind::RecordDeclarationBody => {
+            let elements = cvt_node_list(cvt, gc, hermes_get_RecordDeclarationBody_elements(n));
+            let mut template = ast::template::RecordDeclarationBody {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                elements,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::RecordDeclarationBody::build_template(gc, template)
+        }
+        NodeKind::RecordDeclarationProperty => {
+            let key = cvt_node_ptr(cvt, gc, hermes_get_RecordDeclarationProperty_key(n));
+            let type_annotation = cvt_node_ptr(
+                cvt,
+                gc,
+                hermes_get_RecordDeclarationProperty_typeAnnotation(n),
+            );
+            let default_value = cvt_node_ptr_opt(
+                cvt,
+                gc,
+                hermes_get_RecordDeclarationProperty_defaultValue(n),
+            );
+            let mut template = ast::template::RecordDeclarationProperty {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                key,
+                type_annotation,
+                default_value,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::RecordDeclarationProperty::build_template(gc, template)
+        }
+        NodeKind::RecordDeclarationStaticProperty => {
+            let key = cvt_node_ptr(cvt, gc, hermes_get_RecordDeclarationStaticProperty_key(n));
+            let type_annotation = cvt_node_ptr(
+                cvt,
+                gc,
+                hermes_get_RecordDeclarationStaticProperty_typeAnnotation(n),
+            );
+            let value = cvt_node_ptr(cvt, gc, hermes_get_RecordDeclarationStaticProperty_value(n));
+            let mut template = ast::template::RecordDeclarationStaticProperty {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                key,
+                type_annotation,
+                value,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::RecordDeclarationStaticProperty::build_template(gc, template)
+        }
+        NodeKind::RecordExpression => {
+            let record_constructor =
+                cvt_node_ptr(cvt, gc, hermes_get_RecordExpression_recordConstructor(n));
+            let type_arguments =
+                cvt_node_ptr_opt(cvt, gc, hermes_get_RecordExpression_typeArguments(n));
+            let properties = cvt_node_ptr(cvt, gc, hermes_get_RecordExpression_properties(n));
+            let mut template = ast::template::RecordExpression {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                record_constructor,
+                type_arguments,
+                properties,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::RecordExpression::build_template(gc, template)
+        }
+        NodeKind::RecordExpressionProperties => {
+            let properties =
+                cvt_node_list(cvt, gc, hermes_get_RecordExpressionProperties_properties(n));
+            let mut template = ast::template::RecordExpressionProperties {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                properties,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::RecordExpressionProperties::build_template(gc, template)
+        }
         NodeKind::TSTypeAnnotation => {
             let type_annotation =
                 cvt_node_ptr(cvt, gc, hermes_get_TSTypeAnnotation_typeAnnotation(n));
@@ -4750,6 +4992,36 @@ pub unsafe fn cvt_node_ptr<'parser, 'gc>(
                 cvt.cvt_smloc(nr.source_range.end.pred())
             };
             ast::builder::TSModifiers::build_template(gc, template)
+        }
+        NodeKind::SHBuiltin => {
+            let mut template = ast::template::SHBuiltin {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::SHBuiltin::build_template(gc, template)
+        }
+        NodeKind::ImplicitCheckedCast => {
+            let argument = cvt_node_ptr(cvt, gc, hermes_get_ImplicitCheckedCast_argument(n));
+            let mut template = ast::template::ImplicitCheckedCast {
+                metadata: ast::TemplateMetadata {
+                    range,
+                    ..Default::default()
+                },
+                argument,
+            };
+            template.metadata.range.end = if nr.source_range.is_empty() {
+                template.metadata.range.start
+            } else {
+                cvt.cvt_smloc(nr.source_range.end.pred())
+            };
+            ast::builder::ImplicitCheckedCast::build_template(gc, template)
         }
         _ => {
             cvt.report_invalid_node(gc, n, range);

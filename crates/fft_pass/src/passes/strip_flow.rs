@@ -140,7 +140,7 @@ impl StripFlow {
                 return_type: None,
                 predicate: None,
                 generator: false,
-                is_async: false,
+                is_async: n.is_async,
             },
         );
 
@@ -538,7 +538,7 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
             Node::ClassDeclaration(n) => {
                 let mut builder = builder::ClassDeclaration::from_node(n);
                 builder.implements(NodeList::new(gc));
-                builder.super_type_parameters(None);
+                builder.super_type_arguments(None);
                 builder.type_parameters(None);
                 return node.replace_with_new(
                     builder::Builder::ClassDeclaration(builder),
@@ -549,7 +549,7 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
             Node::ClassExpression(n) => {
                 let mut builder = builder::ClassExpression::from_node(n);
                 builder.implements(NodeList::new(gc));
-                builder.super_type_parameters(None);
+                builder.super_type_arguments(None);
                 builder.type_parameters(None);
                 return node.replace_with_new(builder::Builder::ClassExpression(builder), gc, self);
             }
@@ -711,7 +711,7 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
                                 return_type: None,
                                 predicate: None,
                                 generator: false,
-                                is_async: false,
+                                is_async: n.is_async,
                             },
                         ),
                     ),

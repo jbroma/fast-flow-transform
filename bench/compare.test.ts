@@ -9,6 +9,7 @@ import {
   runBenchmarks,
   writeBenchmarkReport,
 } from './benchmark.ts';
+import { configureBenchmarkBinary, workspaceBinaryPath } from './native.ts';
 import { summarizeRuns } from './stats.ts';
 
 function assertMinimalBabelOptions(
@@ -108,6 +109,27 @@ describe('benchmark candidate config', () => {
         { allowDeclareFields: true },
       ],
     ]);
+  });
+});
+
+describe('benchmark native binary selection', () => {
+  it('prefers an explicit FFT_STRIP_BINARY override', () => {
+    const env: NodeJS.ProcessEnv = {
+      FFT_STRIP_BINARY: '/tmp/custom-fft-strip',
+    };
+
+    expect(configureBenchmarkBinary(env, () => true)).toBeNull();
+    expect(env.FFT_STRIP_BINARY).toBe('/tmp/custom-fft-strip');
+  });
+
+  it('points benchmarks at the local release binary when available', () => {
+    const env: NodeJS.ProcessEnv = {};
+    const expectedPath = workspaceBinaryPath();
+
+    expect(configureBenchmarkBinary(env, (path) => path === expectedPath)).toBe(
+      expectedPath
+    );
+    expect(env.FFT_STRIP_BINARY).toBe(expectedPath);
   });
 });
 

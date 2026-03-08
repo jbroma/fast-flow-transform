@@ -49,7 +49,6 @@ macro_rules! nodekind_defs {
                 is_async: bool,
             },
             ArrowFunctionExpression[Expression] {
-                id: Option<&'a Node<'a>>[Identifier],
                 params: NodeList<'a>[Pattern],
                 body: &'a Node<'a>[Expression, BlockStatement],
                 type_parameters: Option<&'a Node<'a>>[TypeParameterDeclaration],
@@ -74,6 +73,7 @@ macro_rules! nodekind_defs {
                 body: &'a Node<'a>[BlockStatement],
                 type_parameters: Option<&'a Node<'a>>[TypeParameterDeclaration],
                 renders_type: Option<&'a Node<'a>>[TypeAnnotation],
+                is_async: bool,
             },
             HookDeclaration[Declaration] {
                 id: &'a Node<'a>[Identifier],
@@ -81,6 +81,7 @@ macro_rules! nodekind_defs {
                 body: &'a Node<'a>[BlockStatement],
                 type_parameters: Option<&'a Node<'a>>[TypeParameterDeclaration],
                 return_type: Option<&'a Node<'a>>[TypeAnnotation],
+                is_async: bool,
             },
             MatchStatement[Statement] {
                 argument: &'a Node<'a>[Expression],
@@ -115,6 +116,7 @@ macro_rules! nodekind_defs {
             EmptyStatement[Statement],
             BlockStatement[Statement] {
                 body: NodeList<'a>[Statement],
+                implicit: bool,
             },
             StaticBlock {
                 body: NodeList<'a>[Statement],
@@ -203,7 +205,7 @@ macro_rules! nodekind_defs {
             },
             ImportExpression[Expression] {
                 source: &'a Node<'a>[Expression],
-                attributes: Option<&'a Node<'a>>[Expression],
+                options: Option<&'a Node<'a>>[Expression],
             },
             CallExpression[Expression] {
                 callee: &'a Node<'a>[Expression, Super],
@@ -312,22 +314,25 @@ macro_rules! nodekind_defs {
                 method: bool,
                 shorthand: bool,
             },
+            Decorator {
+                expression: &'a Node<'a>[Expression],
+            },
             ClassDeclaration[Declaration] {
                 id: Option<&'a Node<'a>>[Identifier],
                 type_parameters: Option<&'a Node<'a>>[TypeParameterDeclaration],
                 super_class: Option<&'a Node<'a>>[Expression],
-                super_type_parameters: Option<&'a Node<'a>>[TypeParameterInstantiation],
+                super_type_arguments: Option<&'a Node<'a>>[TypeParameterInstantiation],
                 implements: NodeList<'a>[ClassImplements],
-                decorators: NodeList<'a>,
+                decorators: NodeList<'a>[Decorator],
                 body: &'a Node<'a>[ClassBody],
             },
             ClassExpression[Expression] {
                 id: Option<&'a Node<'a>>[Identifier],
                 type_parameters: Option<&'a Node<'a>>[TypeParameterDeclaration],
                 super_class: Option<&'a Node<'a>>[Expression],
-                super_type_parameters: Option<&'a Node<'a>>[TypeParameterInstantiation],
+                super_type_arguments: Option<&'a Node<'a>>[TypeParameterInstantiation],
                 implements: NodeList<'a>[ClassImplements],
-                decorators: NodeList<'a>,
+                decorators: NodeList<'a>[Decorator],
                 body: &'a Node<'a>[ClassBody],
             },
             ClassBody {
@@ -338,6 +343,7 @@ macro_rules! nodekind_defs {
                 value: Option<&'a Node<'a>>[Expression],
                 computed: bool,
                 is_static: bool,
+                decorators: NodeList<'a>[Decorator],
                 declare: bool,
                 optional: bool,
                 variance: Option<&'a Node<'a>>[Variance],
@@ -348,6 +354,7 @@ macro_rules! nodekind_defs {
                 key: &'a Node<'a>[PrivateName],
                 value: Option<&'a Node<'a>>[Expression],
                 is_static: bool,
+                decorators: NodeList<'a>[Decorator],
                 declare: bool,
                 optional: bool,
                 variance: Option<&'a Node<'a>>[Variance],
@@ -360,11 +367,12 @@ macro_rules! nodekind_defs {
                 kind: MethodDefinitionKind,
                 computed: bool,
                 is_static: bool,
+                decorators: NodeList<'a>[Decorator],
             },
             ImportDeclaration[Declaration] {
                 specifiers: NodeList<'a>[ImportSpecifier],
                 source: &'a Node<'a>[StringLiteral],
-                assertions: Option<NodeList<'a>>[ImportAttribute],
+                attributes: Option<NodeList<'a>>[ImportAttribute],
                 import_kind: ImportKind,
             },
             ImportSpecifier {
@@ -466,10 +474,18 @@ macro_rules! nodekind_defs {
                 base: &'a Node<'a>,
                 property: &'a Node<'a>,
             },
+            MatchInstancePattern {
+                target_constructor: &'a Node<'a>[MatchIdentifierPattern, MatchMemberPattern],
+                properties: &'a Node<'a>[MatchInstanceObjectPattern],
+            },
             MatchObjectPatternProperty {
                 key: &'a Node<'a>,
                 pattern: &'a Node<'a>,
                 shorthand: bool,
+            },
+            MatchInstanceObjectPattern {
+                properties: NodeList<'a>[MatchObjectPatternProperty],
+                rest: Option<&'a Node<'a>>[MatchRestPattern],
             },
             MatchRestPattern {
                 argument: Option<&'a Node<'a>>,
@@ -555,6 +571,7 @@ macro_rules! nodekind_defs {
             SymbolTypeAnnotation[FlowType],
             AnyTypeAnnotation[FlowType],
             UnknownTypeAnnotation[FlowType],
+            UndefinedTypeAnnotation[FlowType],
             MixedTypeAnnotation[FlowType],
             VoidTypeAnnotation[FlowType],
             NeverTypeAnnotation[FlowType],
@@ -610,7 +627,7 @@ macro_rules! nodekind_defs {
                 id: &'a Node<'a>[Identifier],
             },
             TupleTypeAnnotation[FlowType] {
-                types: NodeList<'a>[FlowType],
+                element_types: NodeList<'a>[FlowType],
                 inexact: bool,
             },
             TupleTypeSpreadElement[FlowType] {
@@ -672,6 +689,8 @@ macro_rules! nodekind_defs {
                 id: &'a Node<'a>[Identifier],
                 type_parameters: Option<&'a Node<'a>>[TypeParameterDeclaration],
                 impltype: &'a Node<'a>[FlowType],
+                lower_bound: Option<&'a Node<'a>>[FlowType],
+                upper_bound: Option<&'a Node<'a>>[FlowType],
                 supertype: Option<&'a Node<'a>>[FlowType],
             },
             InterfaceDeclaration[FlowDeclaration] {
@@ -689,6 +708,8 @@ macro_rules! nodekind_defs {
                 id: &'a Node<'a>[Identifier],
                 type_parameters: Option<&'a Node<'a>>[TypeParameterDeclaration],
                 impltype: Option<&'a Node<'a>>[FlowType],
+                lower_bound: Option<&'a Node<'a>>[FlowType],
+                upper_bound: Option<&'a Node<'a>>[FlowType],
                 supertype: Option<&'a Node<'a>>[FlowType],
             },
             DeclareInterface[FlowDeclaration] {
@@ -888,6 +909,37 @@ macro_rules! nodekind_defs {
                 local: &'a Node<'a>[Identifier],
                 shorthand: bool,
             },
+            RecordDeclaration[FlowDeclaration] {
+                id: &'a Node<'a>[Identifier],
+                type_parameters: Option<&'a Node<'a>>[TypeParameterDeclaration],
+                implements: NodeList<'a>[RecordDeclarationImplements],
+                body: &'a Node<'a>[RecordDeclarationBody],
+            },
+            RecordDeclarationImplements[Flow] {
+                id: &'a Node<'a>[Identifier, QualifiedTypeIdentifier],
+                type_arguments: Option<&'a Node<'a>>[TypeParameterInstantiation],
+            },
+            RecordDeclarationBody {
+                elements: NodeList<'a>[RecordDeclarationProperty, RecordDeclarationStaticProperty, MethodDefinition],
+            },
+            RecordDeclarationProperty {
+                key: &'a Node<'a>[Literal, Identifier],
+                type_annotation: &'a Node<'a>[TypeAnnotation],
+                default_value: Option<&'a Node<'a>>[Expression],
+            },
+            RecordDeclarationStaticProperty {
+                key: &'a Node<'a>[Literal, Identifier],
+                type_annotation: &'a Node<'a>[TypeAnnotation],
+                value: &'a Node<'a>[Expression],
+            },
+            RecordExpression[Expression] {
+                record_constructor: &'a Node<'a>[Expression],
+                type_arguments: Option<&'a Node<'a>>[TypeParameterInstantiation],
+                properties: &'a Node<'a>[RecordExpressionProperties],
+            },
+            RecordExpressionProperties {
+                properties: NodeList<'a>[Property, SpreadElement],
+            },
 
             TSTypeAnnotation {
                 type_annotation: &'a Node<'a>,
@@ -1046,6 +1098,10 @@ macro_rules! nodekind_defs {
             TSModifiers {
                 accessibility: NodeLabel,
                 readonly: bool,
+            },
+            SHBuiltin[Expression],
+            ImplicitCheckedCast[Expression] {
+                argument: &'a Node<'a>[Expression],
             },
         }
         }

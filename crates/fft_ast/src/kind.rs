@@ -516,8 +516,8 @@ impl<'gc> Node<'gc> {
     pub fn function_like_id(&self) -> Option<&'gc Node<'gc>> {
         match self {
             Node::FunctionExpression(FunctionExpression { id, .. })
-            | Node::ArrowFunctionExpression(ArrowFunctionExpression { id, .. })
             | Node::FunctionDeclaration(FunctionDeclaration { id, .. }) => *id,
+            Node::ArrowFunctionExpression(_) => None,
             _ => self.function_like_panic(),
         }
     }

@@ -1,7 +1,7 @@
 {
   "name": "fast-flow-transform",
   "version": "0.0.1",
-  "description": "Native Hermes/FFT Flow stripping transform with webpack, rspack, and rsbuild adapters",
+  "description": "Native Hermes/FFT Flow stripping transform with webpack, rspack, rsbuild, and Parcel adapters",
   "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
   "bugs": {
     "url": "https://github.com/jbroma/fast-flow-transform/issues"
@@ -45,6 +45,11 @@
       "import": "./dist/rsbuild.js",
       "require": "./dist/rsbuild.cjs",
       "default": "./dist/rsbuild.js"
+    },
+    "./parcel": {
+      "types": "./dist/parcel.d.ts",
+      "import": "./dist/parcel.js",
+      "default": "./dist/parcel.js"
     }
   },
   "scripts": {
@@ -54,6 +59,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@parcel/plugin": "^2.16.1",
+    "@parcel/source-map": "^2.1.1",
     "source-map": "^0.6.1"
   },
   "devDependencies": {

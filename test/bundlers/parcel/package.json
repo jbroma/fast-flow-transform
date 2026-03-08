@@ -1,0 +1,31 @@
+{
+  "name": "@fft-tests/parcel",
+  "private": true,
+  "type": "module",
+  "main": "dist/bundle.cjs",
+  "scripts": {
+    "build": "parcel build ../../fixtures/project/index.js --target main --no-cache",
+    "e2e": "parcel build ../../fixtures/project/index.js --target main --no-cache && vitest --config vitest.config.ts run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@parcel/config-default": "^2.16.4",
+    "@parcel/plugin": "^2.16.4",
+    "@parcel/source-map": "^2.1.1",
+    "@swc/core": "^1.11.24",
+    "fast-flow-transform": "workspace:*",
+    "parcel": "^2.16.1",
+    "vitest": "^4.0.16"
+  },
+  "targets": {
+    "main": {
+      "context": "node",
+      "includeNodeModules": true,
+      "isLibrary": true,
+      "optimize": false,
+      "outputFormat": "commonjs",
+      "sourceMap": true
+    }
+  }
+}

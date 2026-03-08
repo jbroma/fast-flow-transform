@@ -25,3 +25,6 @@ bindings/**/bin/fft-strip*
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Parcel cache
+.parcel-cache

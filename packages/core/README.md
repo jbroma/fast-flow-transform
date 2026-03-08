@@ -1,13 +1,13 @@
 # fast-flow-transform
 
-A programmatic Flow type stripper with webpack, rspack, and rsbuild adapters.
+A programmatic Flow type stripper with webpack, rspack, rsbuild, and Parcel adapters.
 
 ## Features
 
 - Native parse + transform + codegen + source map pipeline
 - Small programmatic API for one-shot transforms
 - CLI for transforming files with the same option set
-- Dedicated webpack, rspack, and rsbuild entrypoints
+- Dedicated webpack, rspack, rsbuild, and Parcel entrypoints
 - Optional source map merging when you need emitted maps
 
 ## Programmatic Usage
@@ -148,6 +148,41 @@ export default defineConfig({
 If you need lower-level control, `fast-flow-transform/rsbuild` also exposes the
 named `applyFastFlowTransformRsbuild` helper for wiring directly inside your own
 `tools.bundlerChain` logic.
+
+## Parcel Usage
+
+Parcel expects transformers to be referenced from `.parcelrc` using either a
+Parcel-style plugin package name or a local file path. The recommended setup is
+to add a tiny local wrapper that imports `fast-flow-transform/parcel`.
+
+```json
+// .parcelrc
+{
+  "extends": "@parcel/config-default",
+  "transformers": {
+    "*.{js,mjs,cjs,jsx}": ["./parcel-transformer.mjs", "..."]
+  }
+}
+```
+
+```js
+// parcel-transformer.mjs
+import { createFastFlowTransformParcel } from 'fast-flow-transform/parcel';
+
+export default createFastFlowTransformParcel({
+  dialect: 'flow-detect',
+  format: 'compact',
+  reactRuntimeTarget: '18',
+  sourcemap: true,
+});
+```
+
+If the defaults are good enough, your wrapper can re-export the package's
+default Parcel transformer instead:
+
+```js
+export { default } from 'fast-flow-transform/parcel';
+```
 
 If you need to override binary resolution during development, set:
 

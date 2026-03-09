@@ -7,7 +7,7 @@ describe('parseOptions', () => {
     expect(parseOptions({})).toEqual({
       dialect: 'flow-detect',
       enumRuntimeModule: 'flow-enums-runtime',
-      format: 'compact',
+      format: 'pretty',
       reactRuntimeTarget: '18',
       sourcemap: true,
     });
@@ -21,7 +21,7 @@ describe('parseOptions', () => {
     ).toEqual({
       dialect: 'flow-detect',
       enumRuntimeModule: 'flow-enums-runtime',
-      format: 'compact',
+      format: 'pretty',
       reactRuntimeTarget: '18',
       sourcemap: false,
     });

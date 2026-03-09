@@ -17,8 +17,10 @@ export interface BenchmarkViewReport {
 export interface BenchmarkReport {
   caseName: string;
   fixturePath: string;
+  format: 'compact' | 'pretty';
   generatedAt: string;
   iterations: number;
+  sourcemap: boolean;
   views: BenchmarkViewReport[];
 }
 

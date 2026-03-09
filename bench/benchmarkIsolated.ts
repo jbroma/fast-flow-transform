@@ -12,12 +12,31 @@ import type {
 
 const execFileAsync = promisify(execFile);
 const DEFAULT_BENCHMARK_CASES = Object.freeze<BenchmarkCase[]>([
-  { caseName: 'without sourcemaps', sourcemap: false },
-  { caseName: 'with sourcemaps', sourcemap: true },
+  {
+    caseName: 'compact without sourcemaps',
+    format: 'compact',
+    sourcemap: false,
+  },
+  {
+    caseName: 'pretty without sourcemaps',
+    format: 'pretty',
+    sourcemap: false,
+  },
+  {
+    caseName: 'compact with sourcemaps',
+    format: 'compact',
+    sourcemap: true,
+  },
+  {
+    caseName: 'pretty with sourcemaps',
+    format: 'pretty',
+    sourcemap: true,
+  },
 ]);
 
 interface IsolatedBenchmarkRequest {
   fixturePath: string;
+  format: 'compact' | 'pretty';
   iterations: number;
   sourcemap: boolean;
   viewName: string;
@@ -52,10 +71,14 @@ async function runBenchmarkCaseIsolated(
   const runView = runtime.runView ?? runViewInFreshProcess;
   const views: BenchmarkViewReport[] = [];
 
-  for (const view of createBenchmarkViews(benchmarkCase.sourcemap)) {
+  for (const view of createBenchmarkViews(
+    benchmarkCase.sourcemap,
+    benchmarkCase.format
+  )) {
     views.push(
       await runView({
         fixturePath: input.filename,
+        format: benchmarkCase.format,
         iterations: input.iterations,
         sourcemap: benchmarkCase.sourcemap,
         viewName: view.viewName,
@@ -66,8 +89,10 @@ async function runBenchmarkCaseIsolated(
   return {
     caseName: benchmarkCase.caseName,
     fixturePath: input.filename,
+    format: benchmarkCase.format,
     generatedAt: new Date().toISOString(),
     iterations: input.iterations,
+    sourcemap: benchmarkCase.sourcemap,
     views,
   };
 }

@@ -35,6 +35,7 @@ interface BabelCore {
 interface TransformModule {
   transform(input: {
     filename: string;
+    format: 'compact' | 'pretty';
     source: string;
     sourcemap: boolean;
   }): Promise<{
@@ -46,6 +47,7 @@ let babelCorePromise: Promise<BabelCore> | undefined;
 let transformPromise: Promise<TransformModule['transform']> | undefined;
 
 interface CandidateOptions {
+  format?: 'compact' | 'pretty';
   sourcemap?: boolean;
 }
 
@@ -101,6 +103,7 @@ export function createBabelOptions(
 export function createFftCandidate(
   options: CandidateOptions = {}
 ): BenchmarkCandidate {
+  const format = options.format ?? 'pretty';
   const sourcemap = options.sourcemap ?? false;
 
   return {
@@ -109,6 +112,7 @@ export function createFftCandidate(
       const transform = await loadTransform();
       const result = await transform({
         filename,
+        format,
         source: code,
         sourcemap,
       });
@@ -123,10 +127,11 @@ export function createFftCandidate(
 export function createCandidates(
   options: CandidateOptions = {}
 ): BenchmarkCandidate[] {
+  const format = options.format ?? 'pretty';
   const sourcemap = options.sourcemap ?? false;
 
   return [
-    createFftCandidate({ sourcemap }),
+    createFftCandidate({ format, sourcemap }),
     createBabelCandidate((filename) => createBabelOptions(filename, sourcemap)),
   ];
 }

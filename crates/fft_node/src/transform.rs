@@ -226,6 +226,12 @@ mod tests {
         }
     }
 
+    fn pretty_request(code: &str) -> TransformRequest {
+        let mut input = request(code);
+        input.format = "pretty".to_string();
+        input
+    }
+
     #[test]
     fn strips_basic_flow_annotations() {
         let result =
@@ -245,6 +251,48 @@ mod tests {
 
         assert_eq!(result.code, "const value=1;\n");
         assert!(result.map_json.is_none(), "expected no source map payload");
+    }
+
+    #[test]
+    fn emits_pretty_output_shape_for_flow_stripping() {
+        let result = transform(&pretty_request(
+            r#"
+                // @flow
+                import type { Node } from "./types.js";
+                const value: Node = { id: 1 };
+                export function read(node: Node): number {
+                    return node.id;
+                }
+                export default value.id;
+            "#,
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "const value = {id: 1};\nexport function read(node) {\n  return node.id;\n}\nexport default value.id;\n"
+        );
+    }
+
+    #[test]
+    fn keeps_compact_output_shape_when_requested() {
+        let result = transform(&request(
+            r#"
+                // @flow
+                import type { Node } from "./types.js";
+                const value: Node = { id: 1 };
+                export function read(node: Node): number {
+                    return node.id;
+                }
+                export default value.id;
+            "#,
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "const value={id:1};export function read(node){return node.id;}export default value.id;\n"
+        );
     }
 
     #[test]
@@ -475,7 +523,25 @@ mod tests {
         input.dialect = "flow-detect".to_string();
 
         let result = transform(&input).expect("transform should succeed");
+        assert_eq!(result.code, "\n");
         assert!(result.map_json.is_some(), "expected source map payload");
+    }
+
+    #[test]
+    fn drops_ordinary_comments_in_pretty_and_compact_output() {
+        let source = r#"
+            // lead comment
+            const value: number = 1; // trailing comment
+            export default value;
+        "#;
+
+        let pretty = transform(&pretty_request(source)).expect("pretty transform should succeed");
+        let compact = transform(&request(source)).expect("compact transform should succeed");
+
+        assert_eq!(pretty.code, "const value = 1;\nexport default value;\n");
+        assert_eq!(compact.code, "const value=1;export default value;\n");
+        assert!(!pretty.code.contains("comment"));
+        assert!(!compact.code.contains("comment"));
     }
 
     #[test]

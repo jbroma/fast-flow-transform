@@ -4,6 +4,7 @@ import { createBenchmarkViews, runBenchmarkView } from './benchmark.ts';
 
 interface ProcessRequest {
   fixturePath: string;
+  format: 'compact' | 'pretty';
   iterations: number;
   sourcemap: boolean;
   viewName: string;
@@ -26,7 +27,7 @@ function viewInput(request: ProcessRequest) {
 }
 
 function resolveView(request: ProcessRequest) {
-  const view = createBenchmarkViews(request.sourcemap).find(
+  const view = createBenchmarkViews(request.sourcemap, request.format).find(
     (candidateView) => candidateView.viewName === request.viewName
   );
 

@@ -162,16 +162,35 @@ describe('benchmark smoke execution', () => {
 });
 
 describe('benchmark case coverage', () => {
-  it('runs both sourcemap benchmark cases', async () => {
+  it('runs compact and pretty benchmark cases with and without sourcemaps', async () => {
     const report = await runBenchmarkCases(smokeInput());
     const table = formatSuiteSummary(report);
 
-    expect(report.cases.map((entry) => entry.caseName)).toStrictEqual([
-      'without sourcemaps',
-      'with sourcemaps',
+    expect(
+      report.cases.map((entry) => ({
+        format: entry.format,
+        sourcemap: entry.sourcemap,
+      }))
+    ).toStrictEqual([
+      { format: 'compact', sourcemap: false },
+      { format: 'pretty', sourcemap: false },
+      { format: 'compact', sourcemap: true },
+      { format: 'pretty', sourcemap: true },
     ]);
-    expect(table).toContain('case: without sourcemaps');
-    expect(table).toContain('case: with sourcemaps');
+    expect(report.cases.map((entry) => entry.caseName)).toStrictEqual([
+      'compact without sourcemaps',
+      'pretty without sourcemaps',
+      'compact with sourcemaps',
+      'pretty with sourcemaps',
+    ]);
+    expect(
+      [
+        'case: compact without sourcemaps',
+        'case: pretty without sourcemaps',
+        'case: compact with sourcemaps',
+        'case: pretty with sourcemaps',
+      ].every((snippet) => table.includes(snippet))
+    ).toBeTruthy();
   });
 });
 
@@ -191,9 +210,12 @@ describe('benchmark compare entrypoint', () => {
       stderr: result.stderr,
     }).toStrictEqual({ status: 0, stderr: '' });
     expect(
-      ['case: without sourcemaps', 'case: with sourcemaps'].every((snippet) =>
-        result.stdout.includes(snippet)
-      )
+      [
+        'case: compact without sourcemaps',
+        'case: pretty without sourcemaps',
+        'case: compact with sourcemaps',
+        'case: pretty with sourcemaps',
+      ].every((snippet) => result.stdout.includes(snippet))
     ).toBeTruthy();
     expect(
       [

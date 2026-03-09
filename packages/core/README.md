@@ -44,10 +44,12 @@ Useful flags:
 fast-flow-transform src/input.js \
   --out-file dist/output.js \
   --dialect flow-detect \
-  --format pretty \
   --react-runtime-target 19 \
   --enum-runtime-module flow-enums-runtime
 ```
+
+Output defaults to readable `pretty` formatting. Pass `--format compact`, or
+set `format: 'compact'` in adapter options, when you want minified output.
 
 If you want code on stdout instead of a file, disable source maps:
 
@@ -69,7 +71,6 @@ module.exports = {
             loader: 'fast-flow-transform/webpack',
             options: {
               dialect: 'flow-detect',
-              format: 'compact',
               reactRuntimeTarget: '18',
               enumRuntimeModule: 'flow-enums-runtime',
             },
@@ -112,7 +113,6 @@ export default defineConfig({
   plugins: [
     pluginFastFlowTransformRsbuild({
       dialect: 'flow-detect',
-      format: 'compact',
       reactRuntimeTarget: '18',
     }),
   ],
@@ -175,7 +175,6 @@ import { createFastFlowTransformParcel } from 'fast-flow-transform/parcel';
 
 export default createFastFlowTransformParcel({
   dialect: 'flow-detect',
-  format: 'compact',
   reactRuntimeTarget: '18',
   sourcemap: true,
 });
@@ -199,7 +198,6 @@ export default defineConfig({
   plugins: [
     fastFlowTransformVite({
       dialect: 'flow-detect',
-      format: 'compact',
       reactRuntimeTarget: '18',
     }),
   ],
@@ -218,7 +216,6 @@ export default {
   plugins: [
     fastFlowTransformRollup({
       dialect: 'flow-detect',
-      format: 'compact',
     }),
   ],
 };
@@ -237,7 +234,6 @@ await build({
   plugins: [
     fastFlowTransformRolldown({
       dialect: 'flow-detect',
-      format: 'compact',
     }),
   ],
 });
@@ -259,7 +255,6 @@ await build({
   plugins: [
     fastFlowTransformEsbuild({
       dialect: 'flow-detect',
-      format: 'compact',
     }),
   ],
 });

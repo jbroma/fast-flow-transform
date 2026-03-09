@@ -37,7 +37,7 @@ Options:
   --input-source-map <path>   Load an incoming source map JSON file
   --source-map-file <path>    Write the emitted source map to a file
   --dialect <value>           flow | flow-detect | flow-unambiguous
-  --format <value>            compact | pretty
+  --format <value>            compact | pretty (default: pretty)
   --react-runtime-target <n>  18 | 19
   --enum-runtime-module <id>  Override enum runtime module
   --source-map                Enable source map output

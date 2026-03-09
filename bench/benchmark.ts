@@ -25,12 +25,14 @@ export interface BenchmarkInput extends BenchmarkJob {
 
 interface BenchmarkRuntimeOptions {
   caseName?: string;
+  format?: 'compact' | 'pretty';
   now?: () => bigint;
   sourcemap?: boolean;
 }
 
 export interface BenchmarkCase {
   caseName: string;
+  format: 'compact' | 'pretty';
   sourcemap: boolean;
 }
 
@@ -39,9 +41,34 @@ export interface BenchmarkViewDefinition {
   viewName: string;
 }
 
+function benchmarkCaseName(
+  format: 'compact' | 'pretty',
+  sourcemap: boolean
+): string {
+  return `${format} ${sourcemap ? 'with sourcemaps' : 'without sourcemaps'}`;
+}
+
 const DEFAULT_BENCHMARK_CASES = Object.freeze<BenchmarkCase[]>([
-  { caseName: 'without sourcemaps', sourcemap: false },
-  { caseName: 'with sourcemaps', sourcemap: true },
+  {
+    caseName: benchmarkCaseName('compact', false),
+    format: 'compact',
+    sourcemap: false,
+  },
+  {
+    caseName: benchmarkCaseName('pretty', false),
+    format: 'pretty',
+    sourcemap: false,
+  },
+  {
+    caseName: benchmarkCaseName('compact', true),
+    format: 'compact',
+    sourcemap: true,
+  },
+  {
+    caseName: benchmarkCaseName('pretty', true),
+    format: 'pretty',
+    sourcemap: true,
+  },
 ]);
 
 function benchDirectory(): string {
@@ -95,15 +122,16 @@ function rotateCandidates(
 }
 
 export function createBenchmarkViews(
-  sourcemap: boolean
+  sourcemap: boolean,
+  format: 'compact' | 'pretty'
 ): BenchmarkViewDefinition[] {
   return [
     {
-      candidates: createCandidates({ sourcemap }),
+      candidates: createCandidates({ format, sourcemap }),
       viewName: 'alternating fft vs babel',
     },
     {
-      candidates: [createFftCandidate({ sourcemap })],
+      candidates: [createFftCandidate({ format, sourcemap })],
       viewName: 'isolated fft-only',
     },
     {
@@ -205,19 +233,22 @@ export async function runBenchmarks(
   input: BenchmarkInput,
   options: BenchmarkRuntimeOptions = {}
 ): Promise<BenchmarkReport> {
+  const format = options.format ?? 'pretty';
   const sourcemap = options.sourcemap ?? false;
   const now = options.now ?? (() => process.hrtime.bigint());
   const views: BenchmarkViewReport[] = [];
 
-  for (const view of createBenchmarkViews(sourcemap)) {
+  for (const view of createBenchmarkViews(sourcemap, format)) {
     views.push(await runBenchmarkView(input, view, now));
   }
 
   return {
-    caseName: options.caseName ?? 'without sourcemaps',
+    caseName: options.caseName ?? benchmarkCaseName(format, sourcemap),
     fixturePath: input.filename,
+    format,
     generatedAt: new Date().toISOString(),
     iterations: input.iterations,
+    sourcemap,
     views,
   };
 }
@@ -233,6 +264,7 @@ export async function runBenchmarkCases(
     reports.push(
       await runBenchmarks(input, {
         caseName: benchmarkCase.caseName,
+        format: benchmarkCase.format,
         now: options.now,
         sourcemap: benchmarkCase.sourcemap,
       })

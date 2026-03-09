@@ -1,0 +1,14 @@
+{
+  "name": "@fft-tests/correctness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pretest": "pnpm --dir ../.. sync-binding && pnpm --filter fast-flow-transform build",
+    "test": "vitest --config vitest.config.ts run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "fast-flow-transform": "workspace:*",
+    "vitest": "^4.0.16"
+  }
+}

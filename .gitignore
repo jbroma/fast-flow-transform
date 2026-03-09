@@ -35,3 +35,6 @@ bindings/**/*.node
 # Vite cache
 .vite-cache
 **/.vite-cache
+
+# Local registry state
+.local/verdaccio/

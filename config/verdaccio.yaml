@@ -1,0 +1,23 @@
+storage: '../.local/verdaccio/storage'
+auth:
+  htpasswd:
+    file: '../.local/verdaccio/htpasswd'
+    max_users: 1000
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+packages:
+  'fast-flow-transform':
+    access: $all
+    publish: $all
+    unpublish: $all
+  'fast-flow-transform-*':
+    access: $all
+    publish: $all
+    unpublish: $all
+  '@*/*':
+    access: $all
+    proxy: npmjs
+  '**':
+    access: $all
+    proxy: npmjs

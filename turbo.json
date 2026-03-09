@@ -20,9 +20,6 @@
     "typecheck": {
       "outputs": []
     },
-    "//#pack:local:root": {
-      "cache": false
-    },
     "//#sync-binding": {
       "inputs": [
         "Cargo.lock",

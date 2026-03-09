@@ -14,6 +14,12 @@ This repo uses **Ultracite**, **Oxlint**, and **Oxfmt** for JS/TS work.
 
 - Run `pnpm check` before completion for JS/TS changes.
 - Always request escalated sandbox permissions before running `pnpm install`.
+- Skip TDD for repository plumbing work such as contributor scripts, local
+  tooling, docs, release helpers, and other repo-only infrastructure. Use TDD
+  for changes that affect FFT's shipped behavior, runtime output, APIs, parser
+  behavior, transforms, bindings, or other end-product functionality.
+- Do not add or keep dedicated tests for repo-only plumbing unless the user
+  explicitly asks for them.
 - Treat Hermes `ESTree.def` at `third_party/hermes/include/hermes/AST/ESTree.def`
   as the source of truth for generated Rust bindings and AST shape decisions. Do
   not hand-maintain schema drift in generated files or patch around Hermes with

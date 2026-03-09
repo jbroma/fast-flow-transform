@@ -1,4 +1,4 @@
-import { checkRustBindings, writeRustBindings } from './hermes-rustgen-lib.mts';
+import { checkRustBindings, writeRustBindings } from './lib.mts';
 
 function isCheckMode(argv: string[]): boolean {
   return argv.includes('--check');

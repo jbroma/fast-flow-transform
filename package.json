@@ -6,16 +6,13 @@
     "build": "turbo run build --log-prefix=none",
     "build:loader": "turbo run build --log-prefix=none --filter=fast-flow-transform",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm codegen:rust:check",
-    "codegen:rust": "node scripts/generate-rust-bindings.mts",
-    "codegen:rust:check": "node scripts/generate-rust-bindings.mts --check",
+    "codegen:rust": "node scripts/rust-bindings/generate.mts",
+    "codegen:rust:check": "node scripts/rust-bindings/generate.mts --check",
     "format": "oxfmt . '!.turbo/**' '!bench/fixtures/**/*.js' '!test/fixtures/project/**/*.js' '!test/bundlers/parcel/src/**/*.js'",
     "format:check": "oxfmt --check . '!.turbo/**' '!bench/fixtures/**/*.js' '!test/fixtures/project/**/*.js' '!test/bundlers/parcel/src/**/*.js'",
     "lint": "oxlint . --ignore-pattern 'test/bundlers/parcel/src/**/*.js'",
     "lint:fix": "oxlint --fix . --ignore-pattern 'test/bundlers/parcel/src/**/*.js'",
-    "pack:local": "turbo run pack:local:root --log-prefix=none",
-    "pack:local:root": "node scripts/pack-local.mts",
     "sync-binding": "cargo build --release -p fft_node && node scripts/sync-binding.mts",
-    "test:codegen:rust": "node --test scripts/generate-rust-bindings.test.mts",
     "e2e": "turbo run e2e --log-prefix=none --filter=@fft-tests/*",
     "e2e:parcel": "turbo run e2e --log-prefix=none --filter=@fft-tests/parcel",
     "e2e:esbuild": "turbo run e2e --log-prefix=none --filter=@fft-tests/esbuild",
@@ -25,6 +22,9 @@
     "e2e:rspack": "turbo run e2e --log-prefix=none --filter=@fft-tests/rspack",
     "e2e:vite": "turbo run e2e --log-prefix=none --filter=@fft-tests/vite",
     "e2e:webpack": "turbo run e2e --log-prefix=none --filter=@fft-tests/webpack",
+    "local-registry:publish": "node scripts/local-registry/publish.mts",
+    "local-registry:setup": "node scripts/local-registry/setup.mts",
+    "local-registry:start": "node scripts/local-registry/start.mts",
     "typecheck": "turbo run typecheck --log-prefix=none"
   },
   "devDependencies": {
@@ -33,7 +33,8 @@
     "oxlint": "1.51.0",
     "turbo": "^2.8.14",
     "typescript": "^5.9.3",
-    "ultracite": "7.2.5"
+    "ultracite": "7.2.5",
+    "verdaccio": "6.1.6"
   },
   "packageManager": "pnpm@10.29.2"
 }

@@ -12,7 +12,7 @@ import {
   resolveHermesBuildDir,
   resolveHermesSourceDir,
   rustgenBinaryPath,
-} from './hermes-rustgen-core.mts';
+} from './core.mts';
 
 type RustgenMode = 'ffi' | 'cvt';
 

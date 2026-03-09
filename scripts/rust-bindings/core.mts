@@ -35,7 +35,7 @@ function demangleLibraryPath(buildDir: string): string {
 }
 
 export function defaultWorkspaceRoot(): string {
-  return resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  return resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 }
 
 export function resolveHermesSourceDir(

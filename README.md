@@ -19,6 +19,9 @@ own project with its own packaging, workspace layout, and integration surface.
   `fast-flow-transform`.
 - A clean subtree that can be copied to a new git repository.
 
+Contributor workflows, including local Verdaccio publishing for canary testing,
+live in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## Attribution And Licensing
 
 - FFT builds on top of Hermes Juno:

@@ -23,6 +23,7 @@
     "e2e:vite": "turbo run e2e --log-prefix=none --filter=@fft-tests/vite",
     "e2e:webpack": "turbo run e2e --log-prefix=none --filter=@fft-tests/webpack",
     "local-registry:publish": "node scripts/local-registry/publish.mts",
+    "local-registry:start": "node scripts/local-registry/start.mts",
     "typecheck": "turbo run typecheck --log-prefix=none"
   },
   "devDependencies": {

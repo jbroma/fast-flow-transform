@@ -3,9 +3,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
-  ensurePublishUserConfig,
-  ensureRegistryReady,
+  ensureRegistryCredentials,
+  requireRegistryReady,
   registryUrlFromEnv,
+  registryPublishEnv,
   workspaceRootDir,
 } from './verdaccio.mts';
 
@@ -154,14 +155,10 @@ function publishPackage(
   userConfigPath: string
 ): void {
   runCommand(
-    'pnpm',
-    ['publish', '--registry', registryUrl, '--tag', 'local', '--no-git-checks'],
+    'npm',
+    ['publish', '--registry', registryUrl, '--tag', 'local'],
     packageRoot,
-    {
-      ...process.env,
-      npm_config_registry: registryUrl,
-      npm_config_userconfig: userConfigPath,
-    }
+    registryPublishEnv(registryUrl, userConfigPath)
   );
 }
 
@@ -228,8 +225,8 @@ async function main(): Promise<void> {
   const root = workspaceRootDir();
   const registryUrl = registryUrlFromEnv();
 
-  await ensureRegistryReady(root, registryUrl);
-  const userConfigPath = ensurePublishUserConfig(root, registryUrl);
+  await requireRegistryReady(root, registryUrl);
+  const userConfigPath = await ensureRegistryCredentials(root, registryUrl);
   const context = buildContext(root, registryUrl, userConfigPath);
 
   buildArtifacts(root, context.corePackageRoot);

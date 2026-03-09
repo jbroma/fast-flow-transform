@@ -250,6 +250,7 @@ mod tests {
     use super::*;
     use fft::ast;
     use fft::gen_js;
+    use sourcemap::SourceMap;
 
     fn request(code: &str) -> TransformRequest {
         TransformRequest {
@@ -381,6 +382,51 @@ mod tests {
             result.code,
             "const value = 1;\n\n// keep me\nexport function read(node) {\n  return node + value;\n}\n"
         );
+    }
+
+    #[test]
+    fn preserves_whitespace_with_sourcemaps() {
+        let mut input = preserve_request("const value: number = 1;\nexport default value;\n");
+        input.sourcemap = true;
+
+        let result = transform(&input).expect("transform should succeed");
+        let map_json = result
+            .map_json
+            .as_ref()
+            .expect("expected source map payload");
+        let map = SourceMap::from_slice(map_json.as_bytes()).expect("valid source map");
+
+        assert_eq!(result.code, "const value = 1;\nexport default value;\n");
+        let token = map
+            .lookup_token(0, 14)
+            .expect("expected token at value literal");
+        assert_eq!(token.get_source(), Some("input.js"));
+        assert_eq!(token.get_src(), (0, 22));
+    }
+
+    #[test]
+    fn preserves_whitespace_and_comments_with_sourcemaps() {
+        let mut input =
+            preserve_request("const value: number = 1;\n// keep me\nexport default value;\n");
+        input.preserve_comments = true;
+        input.sourcemap = true;
+
+        let result = transform(&input).expect("transform should succeed");
+        let map_json = result
+            .map_json
+            .as_ref()
+            .expect("expected source map payload");
+        let map = SourceMap::from_slice(map_json.as_bytes()).expect("valid source map");
+
+        assert_eq!(
+            result.code,
+            "const value = 1;\n// keep me\nexport default value;\n"
+        );
+        let token = map
+            .lookup_token(2, 7)
+            .expect("expected token on export line");
+        assert_eq!(token.get_source(), Some("input.js"));
+        assert_eq!(token.get_src(), (2, 7));
     }
 
     #[test]

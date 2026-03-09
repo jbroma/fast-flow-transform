@@ -113,7 +113,7 @@ describe('CLI runner', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('forwards preserve flags and disables sourcemaps by default', async () => {
+  it('forwards preserve flags with explicit no-source-map', async () => {
     const { deps, readFile, stdout, transform, writeFile } = createDeps();
     readFile.mockResolvedValue('const answer: number = 42;');
     transform.mockResolvedValue({
@@ -121,7 +121,12 @@ describe('CLI runner', () => {
     });
 
     const exitCode = await runCli(
-      ['src/input.js', '--preserve-whitespace', '--preserve-comments'],
+      [
+        'src/input.js',
+        '--preserve-whitespace',
+        '--preserve-comments',
+        '--no-source-map',
+      ],
       deps
     );
 

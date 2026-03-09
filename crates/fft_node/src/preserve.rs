@@ -1,21 +1,16 @@
-use std::cmp::max;
 use std::convert::TryFrom;
 
 use fft::ast;
+use fft::ast::Visitor;
 use fft::hparser;
 use fft::hparser::ParserDialect;
-use fft::ast::Visitor;
 use fft_support::NullTerminatedBuf;
 
+use crate::preserve_output;
+use crate::preserve_output::ByteSpan;
 use crate::transform::TransformFailure;
 use crate::transform::TransformOutput;
 use crate::transform::TransformRequest;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct ByteSpan {
-    end: usize,
-    start: usize,
-}
 
 #[derive(Debug)]
 struct PreserveCollector<'src> {
@@ -39,37 +34,49 @@ impl<'src> PreserveCollector<'src> {
         }
     }
 
-    fn build_output(mut self) -> Result<String, TransformFailure> {
+    fn build_output(
+        mut self,
+        filename: &str,
+        sourcemap: bool,
+    ) -> Result<TransformOutput, TransformFailure> {
         if let Some(error) = self.error {
             return Err(error);
         }
 
-        merge_spans(&mut self.edits);
-        let mut cursor = 0;
-        let mut output = Vec::with_capacity(self.source_len);
-
-        for span in self.edits {
-            output.extend_from_slice(&self.source_text[cursor..span.start]);
-            cursor = span.end;
-        }
-
-        output.extend_from_slice(&self.source_text[cursor..]);
-        String::from_utf8(output).map_err(|error| TransformFailure {
+        let source = std::str::from_utf8(self.source_text).map_err(|error| TransformFailure {
             message: format!("generated output is not UTF-8: {}", error),
             line: None,
             column: None,
-        })
+        })?;
+
+        preserve_output::build_output(source, &mut self.edits, filename, sourcemap)
     }
 
     fn loc_to_offset(&self, loc: ast::SourceLoc) -> usize {
         let line_index = usize::try_from(loc.line.saturating_sub(1)).unwrap();
-        let line_start = self.line_starts.get(line_index).copied().unwrap_or(self.source_len);
+        let line_start = self
+            .line_starts
+            .get(line_index)
+            .copied()
+            .unwrap_or(self.source_len);
         line_start + usize::try_from(loc.col.saturating_sub(1)).unwrap()
     }
 
     fn remove_comment_range(&mut self, comment: &hparser::Comment) {
-        let start = unsafe { comment.source_range.start.as_ptr().offset_from(self.source_start) };
-        let end = unsafe { comment.source_range.end.as_ptr().offset_from(self.source_start) };
+        let start = unsafe {
+            comment
+                .source_range
+                .start
+                .as_ptr()
+                .offset_from(self.source_start)
+        };
+        let end = unsafe {
+            comment
+                .source_range
+                .end
+                .as_ptr()
+                .offset_from(self.source_start)
+        };
         if start < 0 || end < 0 {
             return;
         }
@@ -167,7 +174,9 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
                     return;
                 }
             }
-            ast::Node::ExportNamedDeclaration(decl) if decl.export_kind != ast::ExportKind::Value => {
+            ast::Node::ExportNamedDeclaration(decl)
+                if decl.export_kind != ast::ExportKind::Value =>
+            {
                 self.remove_node_range(node);
                 return;
             }
@@ -301,14 +310,6 @@ pub fn transform_preserving_layout(
     request: &TransformRequest,
     dialect: ParserDialect,
 ) -> Result<TransformOutput, TransformFailure> {
-    if request.sourcemap {
-        return Err(TransformFailure {
-            message: "preserveWhitespace does not support sourcemaps yet".to_string(),
-            line: None,
-            column: None,
-        });
-    }
-
     let mut ctx = ast::Context::new();
     let file_id = ctx.sm_mut().add_source(
         request.filename.clone(),
@@ -357,10 +358,7 @@ pub fn transform_preserving_layout(
         collector.call(&gc, program.node(&gc), None);
     }
 
-    Ok(TransformOutput {
-        code: collector.build_output()?,
-        map_json: None,
-    })
+    collector.build_output(request.filename.as_str(), request.sourcemap)
 }
 
 fn has_this_param<'gc>(
@@ -381,18 +379,4 @@ fn line_starts(source: &[u8]) -> Vec<usize> {
         }
     }
     starts
-}
-
-fn merge_spans(spans: &mut Vec<ByteSpan>) {
-    spans.sort_by_key(|span| (span.start, span.end));
-    let mut merged: Vec<ByteSpan> = Vec::with_capacity(spans.len());
-    for span in spans.drain(..) {
-        match merged.last_mut() {
-            Some(previous) if span.start <= previous.end => {
-                previous.end = max(previous.end, span.end);
-            }
-            _ => merged.push(span),
-        }
-    }
-    *spans = merged;
 }

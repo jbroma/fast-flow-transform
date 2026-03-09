@@ -57,7 +57,7 @@ ordinary comments preserved on normal `pretty` or `compact` output.
 For source-preserving output, enable `preserveWhitespace: true` or pass
 `--preserve-whitespace`. That path preserves original layout where possible,
 can optionally keep comments too, currently supports subtractive Flow stripping
-only, and disables source maps.
+only, and now supports source maps as well.
 
 If you want code on stdout instead of a file, disable source maps:
 

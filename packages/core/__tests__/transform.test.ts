@@ -223,10 +223,18 @@ describe('programmatic transform', () => {
     });
   });
 
-  it('forwards preserve flags to the native binding', async () => {
+  it('forwards preserve flags to the native binding with sourcemaps enabled', async () => {
     const { bindingTransform } = mockNativeBinding(() =>
       Promise.resolve({
         code: '\nconst value = 1;\n',
+        map: createSingleMappingMap({
+          file: 'generated.js',
+          generatedColumn: 0,
+          generatedLine: 1,
+          originalColumn: 0,
+          originalLine: 1,
+          source: '/tmp/input.js',
+        }),
       })
     );
 
@@ -247,7 +255,7 @@ describe('programmatic transform', () => {
       preserveComments: true,
       preserveWhitespace: true,
       reactRuntimeTarget: '18',
-      sourcemap: false,
+      sourcemap: true,
     });
   });
 

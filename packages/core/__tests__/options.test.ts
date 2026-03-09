@@ -31,7 +31,7 @@ describe('parseOptions', () => {
     });
   });
 
-  it('disables sourcemaps by default when preserveWhitespace is enabled', () => {
+  it('keeps sourcemaps enabled by default when preserveWhitespace is enabled', () => {
     expect(
       parseOptions({
         preserveWhitespace: true,
@@ -43,7 +43,7 @@ describe('parseOptions', () => {
       preserveComments: false,
       preserveWhitespace: true,
       reactRuntimeTarget: '18',
-      sourcemap: false,
+      sourcemap: true,
     });
   });
 

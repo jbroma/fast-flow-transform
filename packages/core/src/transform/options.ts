@@ -76,17 +76,9 @@ export function parseOptions(
     'preserveComments',
     options.preserveComments ?? DEFAULT_OPTIONS.preserveComments
   );
-
-  const sourcemap =
-    preserveWhitespace && options.sourcemap === undefined
-      ? false
-      : validateSourceMapOption(options.sourcemap ?? DEFAULT_OPTIONS.sourcemap);
-
-  if (preserveWhitespace && sourcemap) {
-    throw new Error(
-      'Invalid fast-flow-transform option `sourcemap`: preserveWhitespace does not support sourcemaps yet'
-    );
-  }
+  const sourcemap = validateSourceMapOption(
+    options.sourcemap ?? DEFAULT_OPTIONS.sourcemap
+  );
 
   return {
     dialect: validateStringOption(

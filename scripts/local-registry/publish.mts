@@ -1,12 +1,24 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-const DEFAULT_REGISTRY_URL = 'http://127.0.0.1:4873';
+import {
+  ensurePublishUserConfig,
+  ensureRegistryReady,
+  registryUrlFromEnv,
+  workspaceRootDir,
+} from './verdaccio.mts';
+
+const PLATFORM_PACKAGE_NAMES: Record<string, string> = {
+  'darwin-arm64': 'fast-flow-transform-darwin-arm64',
+  'darwin-x64': 'fast-flow-transform-darwin-x64',
+  'linux-arm64': 'fast-flow-transform-linux-arm64',
+  'linux-x64': 'fast-flow-transform-linux-x64',
+  'win32-arm64': 'fast-flow-transform-win32-arm64',
+  'win32-x64': 'fast-flow-transform-win32-x64',
+};
 
 interface PackageManifest {
-  name: string;
   optionalDependencies?: Record<string, string>;
   version: string;
 }
@@ -22,79 +34,8 @@ interface PublishContext {
   version: string;
 }
 
-function workspaceRootDir(): string {
-  return resolve(fileURLToPath(new URL('../..', import.meta.url)));
-}
-
-function registryUrlFromEnv(): string {
-  return process.env.FFT_LOCAL_REGISTRY_URL ?? DEFAULT_REGISTRY_URL;
-}
-
-function localRegistryUserConfigPath(root: string): string {
-  return join(root, '.local', 'verdaccio', 'npmrc');
-}
-
-async function checkRegistryHealth(registryUrl: string): Promise<void> {
-  const response = await fetch(new URL('/-/ping', registryUrl), {
-    headers: {
-      accept: 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Registry health check failed with status ${String(response.status)}.`
-    );
-  }
-}
-
-function requirePublishUserConfig(root: string): string {
-  const userConfigPath = localRegistryUserConfigPath(root);
-  if (!existsSync(userConfigPath)) {
-    throw new Error(
-      `Missing Verdaccio login at ${userConfigPath}. Run pnpm run local-registry:setup first.`
-    );
-  }
-
-  return userConfigPath;
-}
-
-function packageManifestPath(packageRoot: string): string {
-  return join(packageRoot, 'package.json');
-}
-
 function readPackageManifest(path: string): PackageManifest {
   return JSON.parse(readFileSync(path, 'utf8')) as PackageManifest;
-}
-
-function serializeManifest(manifest: PackageManifest): string {
-  return `${JSON.stringify(manifest, null, 2)}\n`;
-}
-
-function platformPackageNameFor(platform: string, arch: string): string | null {
-  switch (`${platform}-${arch}`) {
-    case 'darwin-arm64': {
-      return 'fast-flow-transform-darwin-arm64';
-    }
-    case 'darwin-x64': {
-      return 'fast-flow-transform-darwin-x64';
-    }
-    case 'linux-arm64': {
-      return 'fast-flow-transform-linux-arm64';
-    }
-    case 'linux-x64': {
-      return 'fast-flow-transform-linux-x64';
-    }
-    case 'win32-arm64': {
-      return 'fast-flow-transform-win32-arm64';
-    }
-    case 'win32-x64': {
-      return 'fast-flow-transform-win32-x64';
-    }
-    default: {
-      return null;
-    }
-  }
 }
 
 function currentPlatformPackage(root: string): {
@@ -102,7 +43,7 @@ function currentPlatformPackage(root: string): {
   packageRoot: string;
 } {
   const targetKey = `${process.platform}-${process.arch}`;
-  const packageName = platformPackageNameFor(process.platform, process.arch);
+  const packageName = PLATFORM_PACKAGE_NAMES[targetKey] ?? null;
 
   if (!packageName) {
     throw new Error(`Unsupported local packaging target: ${targetKey}`);
@@ -119,10 +60,9 @@ function runCommand(
   args: string[],
   cwd: string,
   env: NodeJS.ProcessEnv = process.env
-): string {
+): void {
   const result = spawnSync(command, args, {
     cwd,
-    encoding: 'utf8',
     env,
     shell: process.platform === 'win32',
     stdio: 'inherit',
@@ -133,8 +73,6 @@ function runCommand(
       `Command failed (${String(result.status)}): ${command} ${args.join(' ')}`
     );
   }
-
-  return result.stdout ?? '';
 }
 
 function gitShortSha(root: string): string {
@@ -149,24 +87,16 @@ function gitShortSha(root: string): string {
     : 'nogit';
 }
 
-function buildVersionStamp(date: Date): string {
-  const parts = [
-    String(date.getUTCFullYear()).padStart(4, '0'),
-    String(date.getUTCMonth() + 1).padStart(2, '0'),
-    String(date.getUTCDate()).padStart(2, '0'),
-    't',
-    String(date.getUTCHours()).padStart(2, '0'),
-    String(date.getUTCMinutes()).padStart(2, '0'),
-    String(date.getUTCSeconds()).padStart(2, '0'),
-    String(date.getUTCMilliseconds()).padStart(3, '0'),
-    'z',
-  ];
-
-  return parts.join('');
-}
-
 function buildLocalVersion(baseVersion: string, root: string): string {
-  return `${baseVersion}-local.${buildVersionStamp(new Date())}.${gitShortSha(root)}`;
+  const stamp = new Date()
+    .toISOString()
+    .replaceAll('-', '')
+    .replaceAll(':', '')
+    .replace('T', 't')
+    .replace('.', '')
+    .replace('Z', 'z');
+
+  return `${baseVersion}-local.${stamp}.${gitShortSha(root)}`;
 }
 
 function withTemporaryManifestWrites(
@@ -191,21 +121,24 @@ function withTemporaryManifestWrites(
   }
 }
 
-function buildContext(root: string, registryUrl: string): PublishContext {
+function buildContext(
+  root: string,
+  registryUrl: string,
+  userConfigPath: string
+): PublishContext {
   const corePackageRoot = join(root, 'packages', 'core');
-  const coreManifest = readPackageManifest(
-    packageManifestPath(corePackageRoot)
-  );
+  const coreManifestPath = join(corePackageRoot, 'package.json');
+  const coreManifest = readPackageManifest(coreManifestPath);
   const { packageName, packageRoot } = currentPlatformPackage(root);
 
   return {
-    bindingManifestPath: packageManifestPath(packageRoot),
+    bindingManifestPath: join(packageRoot, 'package.json'),
     bindingPackageName: packageName,
     bindingPackageRoot: packageRoot,
-    coreManifestPath: packageManifestPath(corePackageRoot),
+    coreManifestPath,
     corePackageRoot,
     registryUrl,
-    userConfigPath: requirePublishUserConfig(root),
+    userConfigPath,
     version: buildLocalVersion(coreManifest.version, root),
   };
 }
@@ -232,28 +165,34 @@ function publishPackage(
   );
 }
 
+function stringifyManifest(manifest: PackageManifest): string {
+  return `${JSON.stringify(manifest, null, 2)}\n`;
+}
+
 function publishCanary(context: PublishContext): void {
   const coreManifest = readPackageManifest(context.coreManifestPath);
   const bindingManifest = readPackageManifest(context.bindingManifestPath);
+  const nextBindingManifest = {
+    ...bindingManifest,
+    version: context.version,
+  };
+  const nextCoreManifest = {
+    ...coreManifest,
+    optionalDependencies: {
+      [context.bindingPackageName]: context.version,
+    },
+    version: context.version,
+  };
 
   withTemporaryManifestWrites(
     [
       {
         path: context.bindingManifestPath,
-        source: serializeManifest({
-          ...bindingManifest,
-          version: context.version,
-        }),
+        source: stringifyManifest(nextBindingManifest),
       },
       {
         path: context.coreManifestPath,
-        source: serializeManifest({
-          ...coreManifest,
-          optionalDependencies: {
-            [context.bindingPackageName]: context.version,
-          },
-          version: context.version,
-        }),
+        source: stringifyManifest(nextCoreManifest),
       },
     ],
     () => {
@@ -289,9 +228,10 @@ async function main(): Promise<void> {
   const root = workspaceRootDir();
   const registryUrl = registryUrlFromEnv();
 
-  await checkRegistryHealth(registryUrl);
+  await ensureRegistryReady(root, registryUrl);
+  const userConfigPath = ensurePublishUserConfig(root, registryUrl);
+  const context = buildContext(root, registryUrl, userConfigPath);
 
-  const context = buildContext(root, registryUrl);
   buildArtifacts(root, context.corePackageRoot);
   publishCanary(context);
   printInstallSnippet(context);

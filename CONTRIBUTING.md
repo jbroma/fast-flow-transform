@@ -6,18 +6,6 @@ Use the local Verdaccio workflow when you want to publish a canary build of
 `fast-flow-transform` and install that exact version into another project on
 this machine.
 
-Start Verdaccio in one terminal:
-
-```bash
-pnpm run local-registry:start
-```
-
-Run the one-time npm login against that Verdaccio instance:
-
-```bash
-pnpm run local-registry:setup
-```
-
 Publish a fresh local canary build:
 
 ```bash
@@ -26,11 +14,13 @@ pnpm run local-registry:publish
 
 That publish flow will:
 
-1. Verify the local registry is up.
-2. Build and sync the native binding for the current machine.
-3. Build `packages/core`.
-4. Publish the current platform binding package first.
-5. Publish `fast-flow-transform` with a unique canary version such as
+1. Start Verdaccio automatically if it is not already running.
+2. Run the one-time interactive `npm adduser` flow automatically if the local
+   publish login does not exist yet.
+3. Build and sync the native binding for the current machine.
+4. Build `packages/core`.
+5. Publish the current platform binding package first.
+6. Publish `fast-flow-transform` with a unique canary version such as
    `0.0.1-local.20260309t123456789z.abc1234`.
 
 The publish command prints the exact consumer install command to copy into
@@ -53,8 +43,8 @@ Notes:
 - Public npm packages still resolve through Verdaccio because
   [`config/verdaccio.yaml`](./config/verdaccio.yaml) proxies
   `https://registry.npmjs.org/`.
-- `pnpm run local-registry:setup` stores the Verdaccio login in the ignored
-  `.local/verdaccio/npmrc` file, and `pnpm run local-registry:publish` reuses
-  that file for publish.
+- On the first run, `pnpm run local-registry:publish` stores the Verdaccio
+  login in the ignored `.local/verdaccio/npmrc` file and reuses that file for
+  later publishes.
 - To reset the local registry state, stop Verdaccio and remove
   `.local/verdaccio/`.

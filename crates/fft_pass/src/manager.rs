@@ -54,7 +54,8 @@ impl PassManager {
     /// Run the pipeline on `node`, consuming it in the process.
     pub fn run(mut self, ctx: &mut Context, node: NodeRc) -> NodeRc {
         let mut result = node;
-        for pass in &mut self.passes {
+        let pass_count = self.passes.len();
+        for (index, pass) in self.passes.iter_mut().enumerate() {
             {
                 let gc = GCLock::new(ctx);
                 result = match pass.run(&gc, result.node(&gc)) {
@@ -68,7 +69,9 @@ impl PassManager {
                     }
                 };
             }
-            ctx.gc();
+            if index + 1 < pass_count {
+                ctx.gc();
+            }
         }
         result
     }

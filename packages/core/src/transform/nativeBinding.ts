@@ -23,6 +23,8 @@ interface RawNativeBindingRequest {
   enumRuntimeModule: string;
   filename: string;
   format: string;
+  preserveComments: boolean;
+  preserveWhitespace: boolean;
   reactRuntimeTarget: string;
   sourcemap: boolean;
 }
@@ -62,6 +64,8 @@ function normalizeRequest(
     enumRuntimeModule: input.enumRuntimeModule,
     filename: input.filename,
     format: input.format,
+    preserveComments: input.preserveComments,
+    preserveWhitespace: input.preserveWhitespace,
     reactRuntimeTarget: input.reactRuntimeTarget,
     sourcemap: input.sourcemap,
   };

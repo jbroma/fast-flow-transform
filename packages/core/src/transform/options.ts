@@ -10,6 +10,8 @@ const DEFAULT_OPTIONS: TransformOptions = Object.freeze({
   dialect: 'flow-detect',
   enumRuntimeModule: 'flow-enums-runtime',
   format: 'pretty',
+  preserveComments: false,
+  preserveWhitespace: false,
   reactRuntimeTarget: '18',
   sourcemap: true,
 });
@@ -54,10 +56,43 @@ function validateSourceMapOption(sourcemap: unknown): boolean {
   throw invalidOption('sourcemap', sourcemap);
 }
 
+function validateBooleanOption(optionName: string, value: unknown): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  throw invalidOption(optionName, value);
+}
+
 export function parseOptions(
   rawOptions: TransformOptionsInput | null | undefined
 ): TransformOptions {
   const options = rawOptions ?? {};
+  const preserveWhitespace = validateBooleanOption(
+    'preserveWhitespace',
+    options.preserveWhitespace ?? DEFAULT_OPTIONS.preserveWhitespace
+  );
+  const preserveComments = validateBooleanOption(
+    'preserveComments',
+    options.preserveComments ?? DEFAULT_OPTIONS.preserveComments
+  );
+
+  if (preserveComments && !preserveWhitespace) {
+    throw new Error(
+      'Invalid fast-flow-transform option `preserveComments`: preserveWhitespace must be true'
+    );
+  }
+
+  const sourcemap =
+    preserveWhitespace && options.sourcemap === undefined
+      ? false
+      : validateSourceMapOption(options.sourcemap ?? DEFAULT_OPTIONS.sourcemap);
+
+  if (preserveWhitespace && sourcemap) {
+    throw new Error(
+      'Invalid fast-flow-transform option `sourcemap`: preserveWhitespace does not support sourcemaps yet'
+    );
+  }
 
   return {
     dialect: validateStringOption(
@@ -73,13 +108,13 @@ export function parseOptions(
       'format',
       options.format ?? DEFAULT_OPTIONS.format
     ),
+    preserveComments,
+    preserveWhitespace,
     reactRuntimeTarget: validateStringOption(
       REACT_TARGETS,
       'reactRuntimeTarget',
       String(options.reactRuntimeTarget ?? DEFAULT_OPTIONS.reactRuntimeTarget)
     ),
-    sourcemap: validateSourceMapOption(
-      options.sourcemap ?? DEFAULT_OPTIONS.sourcemap
-    ),
+    sourcemap,
   };
 }

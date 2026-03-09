@@ -81,6 +81,8 @@ describe('programmatic transform', () => {
       enumRuntimeModule: 'flow-enums-runtime',
       filename: '/tmp/input.js',
       format: 'pretty',
+      preserveComments: false,
+      preserveWhitespace: false,
       reactRuntimeTarget: '18',
       sourcemap: false,
     });
@@ -214,6 +216,36 @@ describe('programmatic transform', () => {
       enumRuntimeModule: 'flow-enums-runtime',
       filename: '/tmp/input.js',
       format: 'compact',
+      preserveComments: false,
+      preserveWhitespace: false,
+      reactRuntimeTarget: '18',
+      sourcemap: false,
+    });
+  });
+
+  it('forwards preserve flags to the native binding', async () => {
+    const { bindingTransform } = mockNativeBinding(() =>
+      Promise.resolve({
+        code: '\nconst value = 1;\n',
+      })
+    );
+
+    const { default: transform } = await importTransform();
+    await transform({
+      filename: '/tmp/input.js',
+      preserveComments: true,
+      preserveWhitespace: true,
+      source: 'const value: number = 1;',
+    } as never);
+
+    expect(bindingTransform).toHaveBeenCalledWith({
+      code: 'const value: number = 1;',
+      dialect: 'flow-detect',
+      enumRuntimeModule: 'flow-enums-runtime',
+      filename: '/tmp/input.js',
+      format: 'pretty',
+      preserveComments: true,
+      preserveWhitespace: true,
       reactRuntimeTarget: '18',
       sourcemap: false,
     });

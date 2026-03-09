@@ -8,6 +8,8 @@ describe('parseOptions', () => {
       dialect: 'flow-detect',
       enumRuntimeModule: 'flow-enums-runtime',
       format: 'pretty',
+      preserveComments: false,
+      preserveWhitespace: false,
       reactRuntimeTarget: '18',
       sourcemap: true,
     });
@@ -22,8 +24,34 @@ describe('parseOptions', () => {
       dialect: 'flow-detect',
       enumRuntimeModule: 'flow-enums-runtime',
       format: 'pretty',
+      preserveComments: false,
+      preserveWhitespace: false,
       reactRuntimeTarget: '18',
       sourcemap: false,
     });
+  });
+
+  it('disables sourcemaps by default when preserveWhitespace is enabled', () => {
+    expect(
+      parseOptions({
+        preserveWhitespace: true,
+      } as never)
+    ).toEqual({
+      dialect: 'flow-detect',
+      enumRuntimeModule: 'flow-enums-runtime',
+      format: 'pretty',
+      preserveComments: false,
+      preserveWhitespace: true,
+      reactRuntimeTarget: '18',
+      sourcemap: false,
+    });
+  });
+
+  it('rejects preserveComments without preserveWhitespace', () => {
+    expect(() =>
+      parseOptions({
+        preserveComments: true,
+      } as never)
+    ).toThrow(/preserveComments/u);
   });
 });

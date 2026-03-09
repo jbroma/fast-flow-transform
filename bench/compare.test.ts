@@ -15,6 +15,10 @@ import {
   runBenchmarkView,
   writeBenchmarkReport,
 } from './benchmark.ts';
+import {
+  assertCaseSnippets,
+  assertDefaultCaseCoverage,
+} from './compareTestHelpers.ts';
 import { summarizeRuns } from './stats.ts';
 
 const benchRoot = dirname(fileURLToPath(import.meta.url));
@@ -48,24 +52,35 @@ function assertCandidateNames(
   report: Awaited<ReturnType<typeof runBenchmarks>>
 ): void {
   expect(report.views.map((view) => view.viewName)).toStrictEqual([
-    'alternating fft vs babel',
-    'isolated fft-only',
-    'isolated babel-only',
+    'fft',
+    'babel',
   ]);
   expect(
     report.views[0]?.candidates.map((candidate) => candidate.name)
-  ).toStrictEqual(['fft', 'babel']);
-  expect(
-    report.views[1]?.candidates.map((candidate) => candidate.name)
   ).toStrictEqual(['fft']);
   expect(
-    report.views[2]?.candidates.map((candidate) => candidate.name)
+    report.views[1]?.candidates.map((candidate) => candidate.name)
   ).toStrictEqual(['babel']);
 }
 
 function assertTableLabels(table: string): void {
-  expect(table).toMatch(/fft/);
-  expect(table).toMatch(/babel/);
+  expect(
+    [
+      'fft',
+      'babel',
+      'case:',
+      'fmt=',
+      'sm=',
+      'ws=',
+      'cm=',
+      'cand',
+      'mean',
+      'med',
+      'p95',
+      'min',
+      'max',
+    ].every((snippet) => table.includes(snippet))
+  ).toBeTruthy();
 }
 
 function createFakeCandidate(): BenchmarkCandidate {
@@ -150,8 +165,8 @@ describe('benchmark smoke execution', () => {
 
     assertCandidateNames(report);
     const fftCandidate = requireValue(
-      report.views[1]?.candidates[0],
-      'expected isolated fft candidate'
+      report.views[0]?.candidates[0],
+      'expected fft candidate'
     );
 
     expect(fftCandidate.name).toBe('fft');
@@ -163,34 +178,10 @@ describe('benchmark smoke execution', () => {
 
 describe('benchmark case coverage', () => {
   it('runs compact and pretty benchmark cases with and without sourcemaps', async () => {
+    expect.hasAssertions();
     const report = await runBenchmarkCases(smokeInput());
-    const table = formatSuiteSummary(report);
 
-    expect(
-      report.cases.map((entry) => ({
-        format: entry.format,
-        sourcemap: entry.sourcemap,
-      }))
-    ).toStrictEqual([
-      { format: 'compact', sourcemap: false },
-      { format: 'pretty', sourcemap: false },
-      { format: 'compact', sourcemap: true },
-      { format: 'pretty', sourcemap: true },
-    ]);
-    expect(report.cases.map((entry) => entry.caseName)).toStrictEqual([
-      'compact without sourcemaps',
-      'pretty without sourcemaps',
-      'compact with sourcemaps',
-      'pretty with sourcemaps',
-    ]);
-    expect(
-      [
-        'case: compact without sourcemaps',
-        'case: pretty without sourcemaps',
-        'case: compact with sourcemaps',
-        'case: pretty with sourcemaps',
-      ].every((snippet) => table.includes(snippet))
-    ).toBeTruthy();
+    assertDefaultCaseCoverage(report, formatSuiteSummary(report));
   });
 });
 
@@ -209,19 +200,13 @@ describe('benchmark compare entrypoint', () => {
       status: result.status,
       stderr: result.stderr,
     }).toStrictEqual({ status: 0, stderr: '' });
-    expect(
-      [
-        'case: compact without sourcemaps',
-        'case: pretty without sourcemaps',
-        'case: compact with sourcemaps',
-        'case: pretty with sourcemaps',
-      ].every((snippet) => result.stdout.includes(snippet))
-    ).toBeTruthy();
+    assertCaseSnippets(result.stdout);
     expect(
       [
         'fft stage timings',
-        'view: alternating fft vs babel',
-        'view: isolated fft vs babel',
+        'alternating fft vs babel',
+        'isolated fft-only',
+        'isolated babel-only',
       ].every((snippet) => !result.stdout.includes(snippet))
     ).toBeTruthy();
   });

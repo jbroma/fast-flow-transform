@@ -9,6 +9,8 @@ export interface TransformOptions {
   dialect: Dialect;
   enumRuntimeModule: string;
   format: Format;
+  preserveComments: boolean;
+  preserveWhitespace: boolean;
   reactRuntimeTarget: ReactRuntimeTarget;
   sourcemap: boolean;
 }
@@ -34,6 +36,8 @@ export interface NativeTransformRequest {
   enumRuntimeModule: string;
   filename: string;
   format: Format;
+  preserveComments: boolean;
+  preserveWhitespace: boolean;
   reactRuntimeTarget: ReactRuntimeTarget;
   sourcemap: boolean;
 }

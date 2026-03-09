@@ -3,7 +3,9 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { createBenchmarkViews } from './benchmark.ts';
-import type { BenchmarkCase, BenchmarkInput } from './benchmark.ts';
+import type { BenchmarkInput } from './benchmark.ts';
+import { DEFAULT_BENCHMARK_CASES } from './benchmarkCases.ts';
+import type { BenchmarkCase } from './benchmarkCases.ts';
 import type {
   BenchmarkReport,
   BenchmarkSuiteReport,
@@ -11,33 +13,13 @@ import type {
 } from './benchmarkReport.ts';
 
 const execFileAsync = promisify(execFile);
-const DEFAULT_BENCHMARK_CASES = Object.freeze<BenchmarkCase[]>([
-  {
-    caseName: 'compact without sourcemaps',
-    format: 'compact',
-    sourcemap: false,
-  },
-  {
-    caseName: 'pretty without sourcemaps',
-    format: 'pretty',
-    sourcemap: false,
-  },
-  {
-    caseName: 'compact with sourcemaps',
-    format: 'compact',
-    sourcemap: true,
-  },
-  {
-    caseName: 'pretty with sourcemaps',
-    format: 'pretty',
-    sourcemap: true,
-  },
-]);
 
 interface IsolatedBenchmarkRequest {
   fixturePath: string;
   format: 'compact' | 'pretty';
   iterations: number;
+  preserveComments: boolean;
+  preserveWhitespace: boolean;
   sourcemap: boolean;
   viewName: string;
 }
@@ -73,13 +55,17 @@ async function runBenchmarkCaseIsolated(
 
   for (const view of createBenchmarkViews(
     benchmarkCase.sourcemap,
-    benchmarkCase.format
+    benchmarkCase.format,
+    benchmarkCase.preserveWhitespace,
+    benchmarkCase.preserveComments
   )) {
     views.push(
       await runView({
         fixturePath: input.filename,
         format: benchmarkCase.format,
         iterations: input.iterations,
+        preserveComments: benchmarkCase.preserveComments,
+        preserveWhitespace: benchmarkCase.preserveWhitespace,
         sourcemap: benchmarkCase.sourcemap,
         viewName: view.viewName,
       })
@@ -92,6 +78,8 @@ async function runBenchmarkCaseIsolated(
     format: benchmarkCase.format,
     generatedAt: new Date().toISOString(),
     iterations: input.iterations,
+    preserveComments: benchmarkCase.preserveComments,
+    preserveWhitespace: benchmarkCase.preserveWhitespace,
     sourcemap: benchmarkCase.sourcemap,
     views,
   };

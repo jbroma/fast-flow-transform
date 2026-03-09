@@ -15,6 +15,7 @@ use fft_support::NullTerminatedBuf;
 use fft_support::source_manager::SourceId;
 use generated_cvt::cvt_node_ptr;
 use hermes::parser::HermesParser;
+pub use hermes::parser::Comment;
 pub use hermes::parser::MagicCommentKind;
 use hermes::parser::NodePtr;
 pub use hermes::parser::ParserDialect;
@@ -51,6 +52,10 @@ impl<'parser> ParsedJS<'parser> {
     /// one, so only the last is recorded).
     pub fn magic_comment(&self, kind: MagicCommentKind) -> Option<&str> {
         self.parser.magic_comment(kind)
+    }
+
+    pub fn comments(&self) -> &[Comment] {
+        self.parser.comments()
     }
 
     /// This function is a temporary hack returning the first error.

@@ -38,6 +38,8 @@ Options:
   --source-map-file <path>    Write the emitted source map to a file
   --dialect <value>           flow | flow-detect | flow-unambiguous
   --format <value>            compact | pretty (default: pretty)
+  --preserve-whitespace       Preserve original whitespace where possible
+  --preserve-comments         Preserve comments with --preserve-whitespace
   --react-runtime-target <n>  18 | 19
   --enum-runtime-module <id>  Override enum runtime module
   --source-map                Enable source map output
@@ -48,6 +50,12 @@ Options:
 const BOOLEAN_FLAG_HANDLERS: Record<string, BooleanFlagHandler> = {
   '--no-source-map': (state) => {
     state.rawOptions.sourcemap = false;
+  },
+  '--preserve-comments': (state) => {
+    state.rawOptions.preserveComments = true;
+  },
+  '--preserve-whitespace': (state) => {
+    state.rawOptions.preserveWhitespace = true;
   },
   '--source-map': (state) => {
     state.rawOptions.sourcemap = true;

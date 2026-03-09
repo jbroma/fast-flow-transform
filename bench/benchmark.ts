@@ -2,6 +2,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  benchmarkCaseName,
+  DEFAULT_BENCHMARK_CASES,
+} from './benchmarkCases.ts';
+import type { BenchmarkCase } from './benchmarkCases.ts';
 import { formatSuiteSummary, formatSummaryTable } from './benchmarkReport.ts';
 import type {
   BenchmarkReport,
@@ -12,7 +17,6 @@ import type {
 import {
   createBabelCandidate,
   createBabelOptions,
-  createCandidates,
   createFftCandidate,
 } from './candidates.ts';
 import type { BenchmarkCandidate, BenchmarkJob } from './candidates.ts';
@@ -27,13 +31,9 @@ interface BenchmarkRuntimeOptions {
   caseName?: string;
   format?: 'compact' | 'pretty';
   now?: () => bigint;
+  preserveComments?: boolean;
+  preserveWhitespace?: boolean;
   sourcemap?: boolean;
-}
-
-export interface BenchmarkCase {
-  caseName: string;
-  format: 'compact' | 'pretty';
-  sourcemap: boolean;
 }
 
 export interface BenchmarkViewDefinition {
@@ -41,42 +41,12 @@ export interface BenchmarkViewDefinition {
   viewName: string;
 }
 
-function benchmarkCaseName(
-  format: 'compact' | 'pretty',
-  sourcemap: boolean
-): string {
-  return `${format} ${sourcemap ? 'with sourcemaps' : 'without sourcemaps'}`;
-}
-
-const DEFAULT_BENCHMARK_CASES = Object.freeze<BenchmarkCase[]>([
-  {
-    caseName: benchmarkCaseName('compact', false),
-    format: 'compact',
-    sourcemap: false,
-  },
-  {
-    caseName: benchmarkCaseName('pretty', false),
-    format: 'pretty',
-    sourcemap: false,
-  },
-  {
-    caseName: benchmarkCaseName('compact', true),
-    format: 'compact',
-    sourcemap: true,
-  },
-  {
-    caseName: benchmarkCaseName('pretty', true),
-    format: 'pretty',
-    sourcemap: true,
-  },
-]);
-
 function benchDirectory(): string {
   return fileURLToPath(new URL('.', import.meta.url));
 }
 
 function defaultFixturePath(): string {
-  return resolve(benchDirectory(), 'fixtures', 'single-file-flow.js');
+  return resolve(benchDirectory(), 'fixtures', 'single-file-flow-preserve.js');
 }
 
 function durationMs(startNs: bigint, endNs: bigint): number {
@@ -123,16 +93,21 @@ function rotateCandidates(
 
 export function createBenchmarkViews(
   sourcemap: boolean,
-  format: 'compact' | 'pretty'
+  format: 'compact' | 'pretty',
+  preserveWhitespace = false,
+  preserveComments = false
 ): BenchmarkViewDefinition[] {
   return [
     {
-      candidates: createCandidates({ format, sourcemap }),
-      viewName: 'alternating fft vs babel',
-    },
-    {
-      candidates: [createFftCandidate({ format, sourcemap })],
-      viewName: 'isolated fft-only',
+      candidates: [
+        createFftCandidate({
+          format,
+          preserveComments,
+          preserveWhitespace,
+          sourcemap,
+        }),
+      ],
+      viewName: 'fft',
     },
     {
       candidates: [
@@ -140,7 +115,7 @@ export function createBenchmarkViews(
           createBabelOptions(filename, sourcemap)
         ),
       ],
-      viewName: 'isolated babel-only',
+      viewName: 'babel',
     },
   ];
 }
@@ -234,11 +209,18 @@ export async function runBenchmarks(
   options: BenchmarkRuntimeOptions = {}
 ): Promise<BenchmarkReport> {
   const format = options.format ?? 'pretty';
+  const preserveComments = options.preserveComments ?? false;
+  const preserveWhitespace = options.preserveWhitespace ?? false;
   const sourcemap = options.sourcemap ?? false;
   const now = options.now ?? (() => process.hrtime.bigint());
   const views: BenchmarkViewReport[] = [];
 
-  for (const view of createBenchmarkViews(sourcemap, format)) {
+  for (const view of createBenchmarkViews(
+    sourcemap,
+    format,
+    preserveWhitespace,
+    preserveComments
+  )) {
     views.push(await runBenchmarkView(input, view, now));
   }
 
@@ -248,6 +230,8 @@ export async function runBenchmarks(
     format,
     generatedAt: new Date().toISOString(),
     iterations: input.iterations,
+    preserveComments,
+    preserveWhitespace,
     sourcemap,
     views,
   };
@@ -266,6 +250,8 @@ export async function runBenchmarkCases(
         caseName: benchmarkCase.caseName,
         format: benchmarkCase.format,
         now: options.now,
+        preserveComments: benchmarkCase.preserveComments,
+        preserveWhitespace: benchmarkCase.preserveWhitespace,
         sourcemap: benchmarkCase.sourcemap,
       })
     );

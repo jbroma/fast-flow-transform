@@ -8,12 +8,16 @@ use fft_pass::strip_flow::ReactRuntimeTarget;
 use fft_pass::strip_flow::StripFlowOptions;
 use fft_support::NullTerminatedBuf;
 
+use crate::preserve;
+
 #[derive(Debug, Clone)]
 pub struct TransformRequest {
     pub filename: String,
     pub code: String,
     pub dialect: String,
     pub format: String,
+    pub preserve_comments: bool,
+    pub preserve_whitespace: bool,
     pub react_runtime_target: String,
     pub enum_runtime_module: String,
     pub sourcemap: bool,
@@ -190,8 +194,33 @@ fn transform_once(
 
 pub fn transform(request: &TransformRequest) -> Result<TransformOutput, TransformFailure> {
     let requested_dialect = parse_dialect(request.dialect.as_str())?;
-    let pretty = parse_format(request.format.as_str())?;
     let react_runtime_target = parse_react_runtime_target(request.react_runtime_target.as_str())?;
+
+    if request.preserve_comments && !request.preserve_whitespace {
+        return Err(TransformFailure {
+            message: "preserveComments requires preserveWhitespace".to_string(),
+            line: None,
+            column: None,
+        });
+    }
+
+    if request.preserve_whitespace {
+        return if requested_dialect == ParserDialect::FlowDetect {
+            match preserve::transform_preserving_layout(request, ParserDialect::FlowDetect) {
+                Ok(result) => Ok(result),
+                Err(primary_error) => {
+                    match preserve::transform_preserving_layout(request, ParserDialect::Flow) {
+                        Ok(result) => Ok(result),
+                        Err(_) => Err(primary_error),
+                    }
+                }
+            }
+        } else {
+            preserve::transform_preserving_layout(request, requested_dialect)
+        };
+    }
+
+    let pretty = parse_format(request.format.as_str())?;
 
     if requested_dialect == ParserDialect::FlowDetect {
         match transform_once(request, ParserDialect::FlowDetect, pretty, react_runtime_target) {
@@ -220,6 +249,8 @@ mod tests {
             code: code.to_string(),
             dialect: "flow".to_string(),
             format: "compact".to_string(),
+            preserve_comments: false,
+            preserve_whitespace: false,
             react_runtime_target: "18".to_string(),
             enum_runtime_module: "flow-enums-runtime".to_string(),
             sourcemap: true,
@@ -229,6 +260,13 @@ mod tests {
     fn pretty_request(code: &str) -> TransformRequest {
         let mut input = request(code);
         input.format = "pretty".to_string();
+        input
+    }
+
+    fn preserve_request(code: &str) -> TransformRequest {
+        let mut input = pretty_request(code);
+        input.preserve_whitespace = true;
+        input.sourcemap = false;
         input
     }
 
@@ -302,6 +340,34 @@ mod tests {
 
         let error = transform(&input).expect_err("transform should fail");
         assert!(error.message.contains("invalid dialect"));
+    }
+
+    #[test]
+    fn preserves_whitespace_for_simple_flow_stripping() {
+        let result = transform(&preserve_request(
+            "import type { Node } from \"./types.js\";\n\nconst value: number = 1;\n\nexport function read(\n  node: Node,\n): number {\n  return value + node.id;\n}\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "\n\nconst value = 1;\n\nexport function read(\n  node,\n) {\n  return value + node.id;\n}\n"
+        );
+    }
+
+    #[test]
+    fn preserves_comments_when_requested() {
+        let mut input = preserve_request(
+            "const value: number = 1;\n\n// keep me\nexport function read(node: number): number {\n  return node + value;\n}\n",
+        );
+        input.preserve_comments = true;
+
+        let result = transform(&input).expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "const value = 1;\n\n// keep me\nexport function read(node) {\n  return node + value;\n}\n"
+        );
     }
 
     #[test]

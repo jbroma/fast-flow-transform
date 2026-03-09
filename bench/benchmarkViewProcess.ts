@@ -6,6 +6,8 @@ interface ProcessRequest {
   fixturePath: string;
   format: 'compact' | 'pretty';
   iterations: number;
+  preserveComments: boolean;
+  preserveWhitespace: boolean;
   sourcemap: boolean;
   viewName: string;
 }
@@ -27,9 +29,12 @@ function viewInput(request: ProcessRequest) {
 }
 
 function resolveView(request: ProcessRequest) {
-  const view = createBenchmarkViews(request.sourcemap, request.format).find(
-    (candidateView) => candidateView.viewName === request.viewName
-  );
+  const view = createBenchmarkViews(
+    request.sourcemap,
+    request.format,
+    request.preserveWhitespace,
+    request.preserveComments
+  ).find((candidateView) => candidateView.viewName === request.viewName);
 
   if (!view) {
     throw new Error(`Unknown benchmark view: ${request.viewName}`);

@@ -63,6 +63,8 @@ function transformRequest(
     enumRuntimeModule: options.enumRuntimeModule,
     filename: input.filename,
     format: options.format,
+    preserveComments: options.preserveComments,
+    preserveWhitespace: options.preserveWhitespace,
     reactRuntimeTarget: options.reactRuntimeTarget,
     sourcemap: options.sourcemap,
   };

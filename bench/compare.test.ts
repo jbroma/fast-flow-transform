@@ -12,6 +12,7 @@ import {
   formatSuiteSummary,
   runBenchmarks,
   runBenchmarkCases,
+  runBenchmarkView,
   writeBenchmarkReport,
 } from './benchmark.ts';
 import { summarizeRuns } from './stats.ts';
@@ -46,11 +47,20 @@ export function render(input: number): string {
 function assertCandidateNames(
   report: Awaited<ReturnType<typeof runBenchmarks>>
 ): void {
-  expect(report.candidates).toHaveLength(2);
-  expect(report.candidates.map((candidate) => candidate.name)).toStrictEqual([
-    'fft',
-    'babel',
+  expect(report.views.map((view) => view.viewName)).toStrictEqual([
+    'alternating fft vs babel',
+    'isolated fft-only',
+    'isolated babel-only',
   ]);
+  expect(
+    report.views[0]?.candidates.map((candidate) => candidate.name)
+  ).toStrictEqual(['fft', 'babel']);
+  expect(
+    report.views[1]?.candidates.map((candidate) => candidate.name)
+  ).toStrictEqual(['fft']);
+  expect(
+    report.views[2]?.candidates.map((candidate) => candidate.name)
+  ).toStrictEqual(['babel']);
 }
 
 function assertTableLabels(table: string): void {
@@ -86,6 +96,14 @@ function createWarmClock(samples: number): () => bigint {
   }
 
   return createDeterministicClock(timestamps);
+}
+
+function requireValue<T>(value: T | undefined, message: string): T {
+  if (value === undefined) {
+    throw new Error(message);
+  }
+
+  return value;
 }
 
 describe('benchmark stats', () => {
@@ -129,14 +147,21 @@ describe('benchmark smoke execution', () => {
     const reportPath = '/tmp/fft-bench-report.json';
     rmSync(reportPath, { force: true });
     const report = await runBenchmarks(smokeInput());
-    const table = formatSummaryTable(report);
 
     assertCandidateNames(report);
-    assertTableLabels(table);
+    const fftCandidate = requireValue(
+      report.views[1]?.candidates[0],
+      'expected isolated fft candidate'
+    );
+
+    expect(fftCandidate.name).toBe('fft');
+    assertTableLabels(formatSummaryTable(report));
     expect(writeBenchmarkReport(report)).toBeNull();
     expect(existsSync(reportPath)).toBeFalsy();
   });
+});
 
+describe('benchmark case coverage', () => {
   it('runs both sourcemap benchmark cases', async () => {
     const report = await runBenchmarkCases(smokeInput());
     const table = formatSuiteSummary(report);
@@ -148,7 +173,9 @@ describe('benchmark smoke execution', () => {
     expect(table).toContain('case: without sourcemaps');
     expect(table).toContain('case: with sourcemaps');
   });
+});
 
+describe('benchmark compare entrypoint', () => {
   it('compare entrypoint runs successfully', () => {
     const result = spawnSync('node', ['compare.ts'], {
       cwd: benchRoot,
@@ -159,45 +186,28 @@ describe('benchmark smoke execution', () => {
       encoding: 'utf8',
     });
 
-    expect(result.status).toBe(0);
-    expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('case: without sourcemaps');
-    expect(result.stdout).toContain('case: with sourcemaps');
-  });
-});
-
-describe('benchmark formatting', () => {
-  it('adds ANSI color to key output lines', () => {
-    const table = formatSummaryTable({
-      candidates: [
-        {
-          firstRunMs: 1,
-          name: 'fft',
-          runsMs: [1],
-          summary: summarizeRuns([1]),
-        },
-        {
-          firstRunMs: 2,
-          name: 'babel',
-          runsMs: [2],
-          summary: summarizeRuns([2]),
-        },
-      ],
-      caseName: 'without sourcemaps',
-      fixturePath: '/virtual/smoke.js',
-      generatedAt: '2026-03-09T00:00:00.000Z',
-      iterations: 1,
-    });
-
-    expect(table).toContain('\u001B[');
-    expect(table).toContain('case: without sourcemaps');
-    expect(table).toContain('fft mean speedup vs babel');
+    expect({
+      status: result.status,
+      stderr: result.stderr,
+    }).toStrictEqual({ status: 0, stderr: '' });
+    expect(
+      ['case: without sourcemaps', 'case: with sourcemaps'].every((snippet) =>
+        result.stdout.includes(snippet)
+      )
+    ).toBeTruthy();
+    expect(
+      [
+        'fft stage timings',
+        'view: alternating fft vs babel',
+        'view: isolated fft vs babel',
+      ].every((snippet) => !result.stdout.includes(snippet))
+    ).toBeTruthy();
   });
 });
 
 describe('benchmark first-run metric', () => {
   it('records cold time separately from warm iteration timings', async () => {
-    const report = await runBenchmarks(
+    const report = await runBenchmarkView(
       {
         code: '',
         filename: '/virtual/fake.js',
@@ -205,15 +215,16 @@ describe('benchmark first-run metric', () => {
       },
       {
         candidates: [createFakeCandidate()],
-        now: createDeterministicClock([
-          0n,
-          5_000_000n,
-          5_000_000n,
-          7_000_000n,
-          7_000_000n,
-          10_000_000n,
-        ]),
-      }
+        viewName: 'isolated fake-only',
+      },
+      createDeterministicClock([
+        0n,
+        5_000_000n,
+        5_000_000n,
+        7_000_000n,
+        7_000_000n,
+        10_000_000n,
+      ])
     );
 
     expect(report.candidates[0]?.firstRunMs).toBe(5);
@@ -239,7 +250,7 @@ describe('benchmark warm-order rotation', () => {
       },
     };
 
-    await runBenchmarks(
+    await runBenchmarkView(
       {
         code: '',
         filename: '/virtual/order.js',
@@ -247,8 +258,9 @@ describe('benchmark warm-order rotation', () => {
       },
       {
         candidates: [candidateA, candidateB],
-        now: createWarmClock(8),
-      }
+        viewName: 'alternating fake pair',
+      },
+      createWarmClock(8)
     );
 
     expect(callOrder).toStrictEqual([

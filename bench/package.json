@@ -5,8 +5,8 @@
   "scripts": {
     "benchmark": "node compare.ts",
     "prebenchmark": "pnpm --dir .. sync-binding && pnpm --filter fast-flow-transform build",
-    "pretest": "pnpm --filter fast-flow-transform build",
-    "test": "vitest run --globals compare.test.ts"
+    "pretest": "pnpm --dir .. sync-binding && pnpm --filter fast-flow-transform build",
+    "test": "vitest run --globals *.test.ts"
   },
   "dependencies": {
     "@babel/core": "^7.28.4",

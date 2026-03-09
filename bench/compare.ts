@@ -1,13 +1,13 @@
 import {
   formatSuiteSummary,
   resolveBenchmarkInput,
-  runBenchmarkCases,
   writeBenchmarkReport,
 } from './benchmark.ts';
+import { runBenchmarkCasesIsolated } from './benchmarkIsolated.ts';
 
 async function main(): Promise<void> {
   const input = resolveBenchmarkInput();
-  const report = await runBenchmarkCases(input);
+  const report = await runBenchmarkCasesIsolated(input);
   const reportPath = writeBenchmarkReport(report, input.jsonPath);
 
   console.log(formatSuiteSummary(report));

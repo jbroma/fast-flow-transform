@@ -71,7 +71,7 @@ async function loadTransform(): Promise<TransformModule['transform']> {
   return await transformPromise;
 }
 
-function createBabelCandidate(
+export function createBabelCandidate(
   createOptions: (filename: string) => BabelTransformOptions
 ): BenchmarkCandidate {
   return {
@@ -98,27 +98,35 @@ export function createBabelOptions(
   };
 }
 
+export function createFftCandidate(
+  options: CandidateOptions = {}
+): BenchmarkCandidate {
+  const sourcemap = options.sourcemap ?? false;
+
+  return {
+    name: 'fft',
+    async run({ code, filename }) {
+      const transform = await loadTransform();
+      const result = await transform({
+        filename,
+        source: code,
+        sourcemap,
+      });
+
+      if (typeof result.code !== 'string') {
+        throw new TypeError('FFT candidate produced no code output');
+      }
+    },
+  };
+}
+
 export function createCandidates(
   options: CandidateOptions = {}
 ): BenchmarkCandidate[] {
   const sourcemap = options.sourcemap ?? false;
 
   return [
-    {
-      name: 'fft',
-      async run({ code, filename }) {
-        const transform = await loadTransform();
-        const result = await transform({
-          filename,
-          source: code,
-          sourcemap,
-        });
-
-        if (typeof result.code !== 'string') {
-          throw new TypeError('FFT candidate produced no code output');
-        }
-      },
-    },
+    createFftCandidate({ sourcemap }),
     createBabelCandidate((filename) => createBabelOptions(filename, sourcemap)),
   ];
 }

@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { styleText } from 'node:util';
 
 import { createBabelOptions, createCandidates } from './candidates.ts';
 import type { BenchmarkCandidate, BenchmarkJob } from './candidates.ts';
@@ -21,15 +22,40 @@ export interface CandidateReport {
 
 export interface BenchmarkReport {
   candidates: CandidateReport[];
+  caseName: string;
   fixturePath: string;
   generatedAt: string;
   iterations: number;
 }
 
 interface BenchmarkRuntimeOptions {
+  caseName?: string;
   candidates?: BenchmarkCandidate[];
   now?: () => bigint;
 }
+
+export interface BenchmarkCase {
+  caseName: string;
+  sourcemap: boolean;
+}
+
+export interface BenchmarkSuiteReport {
+  cases: BenchmarkReport[];
+  fixturePath: string;
+  generatedAt: string;
+  iterations: number;
+}
+
+const DEFAULT_BENCHMARK_CASES = Object.freeze<BenchmarkCase[]>([
+  {
+    caseName: 'without sourcemaps',
+    sourcemap: false,
+  },
+  {
+    caseName: 'with sourcemaps',
+    sourcemap: true,
+  },
+]);
 
 function benchDirectory(): string {
   return fileURLToPath(new URL('.', import.meta.url));
@@ -80,9 +106,29 @@ function formatMetric(value: number): string {
   return value.toFixed(2);
 }
 
+function paint(format: string | string[], text: string): string {
+  return styleText(format, text, { validateStream: false });
+}
+
+function candidateLabel(name: string): string {
+  const paddedName = name.padEnd(14);
+
+  switch (name) {
+    case 'fft': {
+      return paddedName.replace(name, paint(['bold', 'green'], name));
+    }
+    case 'babel': {
+      return paddedName.replace(name, paint(['bold', 'yellow'], name));
+    }
+    default: {
+      return paddedName.replace(name, paint('cyan', name));
+    }
+  }
+}
+
 function tableRow(name: string, coldMs: number, summary: RunSummary): string {
   const columns = [
-    name.padEnd(14),
+    candidateLabel(name),
     formatMetric(coldMs).padStart(8),
     formatMetric(summary.meanMs).padStart(8),
     formatMetric(summary.medianMs).padStart(8),
@@ -132,13 +178,18 @@ function speedupLines(report: BenchmarkReport): string[] {
 
   return report.candidates
     .filter((candidate) => candidate.name !== 'fft')
-    .map(
-      (candidate) =>
-        `fft mean speedup vs ${candidate.name}: ${meanSpeedup(
-          candidate.summary.meanMs,
-          fftResult.summary.meanMs
-        )}`
-    );
+    .map((candidate) => {
+      const speedup = meanSpeedup(
+        candidate.summary.meanMs,
+        fftResult.summary.meanMs
+      );
+      const speedupValue =
+        speedup === 'n/a'
+          ? paint('red', speedup)
+          : paint(['bold', 'green'], speedup);
+
+      return `${paint('bold', `fft mean speedup vs ${candidate.name}:`)} ${speedupValue}`;
+    });
 }
 
 export function resolveBenchmarkInput(
@@ -220,6 +271,32 @@ export async function runBenchmarks(
 
   return {
     candidates: finalizeReports(reports),
+    caseName: options.caseName ?? 'without sourcemaps',
+    fixturePath: input.filename,
+    generatedAt: new Date().toISOString(),
+    iterations: input.iterations,
+  };
+}
+
+export async function runBenchmarkCases(
+  input: BenchmarkInput,
+  options: { cases?: BenchmarkCase[]; now?: () => bigint } = {}
+): Promise<BenchmarkSuiteReport> {
+  const cases = options.cases ?? DEFAULT_BENCHMARK_CASES;
+  const reports: BenchmarkReport[] = [];
+
+  for (const benchmarkCase of cases) {
+    reports.push(
+      await runBenchmarks(input, {
+        candidates: createCandidates({ sourcemap: benchmarkCase.sourcemap }),
+        caseName: benchmarkCase.caseName,
+        now: options.now,
+      })
+    );
+  }
+
+  return {
+    cases: reports,
     fixturePath: input.filename,
     generatedAt: new Date().toISOString(),
     iterations: input.iterations,
@@ -228,11 +305,15 @@ export async function runBenchmarks(
 
 export function formatSummaryTable(report: BenchmarkReport): string {
   const lines = [
-    'Single-file Flow transform benchmark',
-    `fixture: ${report.fixturePath}`,
-    `iterations: ${String(report.iterations)}`,
+    paint(['bold', 'cyan'], 'Single-file Flow transform benchmark'),
+    paint('dim', `fixture: ${report.fixturePath}`),
+    paint('dim', `iterations: ${String(report.iterations)}`),
+    paint(['bold', 'magenta'], `case: ${report.caseName}`),
     '',
-    'candidate         first     mean   median      p95      min      max',
+    paint(
+      'dim',
+      'candidate         first     mean   median      p95      min      max'
+    ),
   ];
 
   for (const candidate of report.candidates) {
@@ -250,8 +331,12 @@ export function formatSummaryTable(report: BenchmarkReport): string {
   return lines.join('\n');
 }
 
+export function formatSuiteSummary(report: BenchmarkSuiteReport): string {
+  return report.cases.map((entry) => formatSummaryTable(entry)).join('\n\n');
+}
+
 export function writeBenchmarkReport(
-  report: BenchmarkReport,
+  report: BenchmarkReport | BenchmarkSuiteReport,
   jsonPath?: string
 ): string | null {
   if (!jsonPath) {

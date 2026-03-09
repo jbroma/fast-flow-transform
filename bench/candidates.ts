@@ -6,7 +6,6 @@ const FLOW_STRIP_PLUGIN = [
 const SHARED_BABEL_OPTIONS = Object.freeze({
   babelrc: false,
   configFile: false,
-  sourceMaps: false,
   sourceType: 'module',
 });
 
@@ -46,6 +45,10 @@ interface TransformModule {
 let babelCorePromise: Promise<BabelCore> | undefined;
 let transformPromise: Promise<TransformModule['transform']> | undefined;
 
+interface CandidateOptions {
+  sourcemap?: boolean;
+}
+
 function ensureBabelOutput(result: unknown, candidateName: string): void {
   const code = (result as { code?: unknown } | null)?.code;
 
@@ -83,15 +86,23 @@ function createBabelCandidate(
   };
 }
 
-export function createBabelOptions(filename: string): BabelTransformOptions {
+export function createBabelOptions(
+  filename: string,
+  sourcemap = false
+): BabelTransformOptions {
   return {
     ...SHARED_BABEL_OPTIONS,
     filename,
     plugins: ['babel-plugin-syntax-hermes-parser', FLOW_STRIP_PLUGIN],
+    sourceMaps: sourcemap,
   };
 }
 
-export function createCandidates(): BenchmarkCandidate[] {
+export function createCandidates(
+  options: CandidateOptions = {}
+): BenchmarkCandidate[] {
+  const sourcemap = options.sourcemap ?? false;
+
   return [
     {
       name: 'fft',
@@ -100,7 +111,7 @@ export function createCandidates(): BenchmarkCandidate[] {
         const result = await transform({
           filename,
           source: code,
-          sourcemap: false,
+          sourcemap,
         });
 
         if (typeof result.code !== 'string') {
@@ -108,6 +119,6 @@ export function createCandidates(): BenchmarkCandidate[] {
         }
       },
     },
-    createBabelCandidate(createBabelOptions),
+    createBabelCandidate((filename) => createBabelOptions(filename, sourcemap)),
   ];
 }

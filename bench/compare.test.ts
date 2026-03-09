@@ -1,15 +1,22 @@
 /// <reference types="vitest/globals" />
 
+import { spawnSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { BenchmarkCandidate } from './benchmark.ts';
 import {
   createBabelOptions,
   formatSummaryTable,
+  formatSuiteSummary,
   runBenchmarks,
+  runBenchmarkCases,
   writeBenchmarkReport,
 } from './benchmark.ts';
 import { summarizeRuns } from './stats.ts';
+
+const benchRoot = dirname(fileURLToPath(import.meta.url));
 
 function assertMinimalBabelOptions(
   options: ReturnType<typeof createBabelOptions>,
@@ -109,6 +116,12 @@ describe('benchmark candidate config', () => {
       ],
     ]);
   });
+
+  it('can enable sourcemaps for the babel benchmark case', () => {
+    const babelOptions = createBabelOptions('/tmp/fixture.js', true);
+
+    expect(babelOptions.sourceMaps).toBeTruthy();
+  });
 });
 
 describe('benchmark smoke execution', () => {
@@ -122,6 +135,63 @@ describe('benchmark smoke execution', () => {
     assertTableLabels(table);
     expect(writeBenchmarkReport(report)).toBeNull();
     expect(existsSync(reportPath)).toBeFalsy();
+  });
+
+  it('runs both sourcemap benchmark cases', async () => {
+    const report = await runBenchmarkCases(smokeInput());
+    const table = formatSuiteSummary(report);
+
+    expect(report.cases.map((entry) => entry.caseName)).toStrictEqual([
+      'without sourcemaps',
+      'with sourcemaps',
+    ]);
+    expect(table).toContain('case: without sourcemaps');
+    expect(table).toContain('case: with sourcemaps');
+  });
+
+  it('compare entrypoint runs successfully', () => {
+    const result = spawnSync('node', ['compare.ts'], {
+      cwd: benchRoot,
+      env: {
+        ...process.env,
+        BENCH_ITERATIONS: '1',
+      },
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('case: without sourcemaps');
+    expect(result.stdout).toContain('case: with sourcemaps');
+  });
+});
+
+describe('benchmark formatting', () => {
+  it('adds ANSI color to key output lines', () => {
+    const table = formatSummaryTable({
+      candidates: [
+        {
+          firstRunMs: 1,
+          name: 'fft',
+          runsMs: [1],
+          summary: summarizeRuns([1]),
+        },
+        {
+          firstRunMs: 2,
+          name: 'babel',
+          runsMs: [2],
+          summary: summarizeRuns([2]),
+        },
+      ],
+      caseName: 'without sourcemaps',
+      fixturePath: '/virtual/smoke.js',
+      generatedAt: '2026-03-09T00:00:00.000Z',
+      iterations: 1,
+    });
+
+    expect(table).toContain('\u001B[');
+    expect(table).toContain('case: without sourcemaps');
+    expect(table).toContain('fft mean speedup vs babel');
   });
 });
 

@@ -1,18 +1,16 @@
 import {
-  formatSummaryTable,
+  formatSuiteSummary,
   resolveBenchmarkInput,
-  runBenchmarks,
+  runBenchmarkCases,
   writeBenchmarkReport,
 } from './benchmark.ts';
-import { configureBenchmarkBinary } from './native.ts';
 
 async function main(): Promise<void> {
-  configureBenchmarkBinary();
   const input = resolveBenchmarkInput();
-  const report = await runBenchmarks(input);
+  const report = await runBenchmarkCases(input);
   const reportPath = writeBenchmarkReport(report, input.jsonPath);
 
-  console.log(formatSummaryTable(report));
+  console.log(formatSuiteSummary(report));
 
   if (reportPath) {
     console.log(`\nJSON report written to: ${reportPath}`);

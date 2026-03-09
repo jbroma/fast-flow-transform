@@ -251,6 +251,34 @@ describe('programmatic transform', () => {
     });
   });
 
+  it('forwards preserveComments without preserveWhitespace', async () => {
+    const { bindingTransform } = mockNativeBinding(() =>
+      Promise.resolve({
+        code: '/* keep */\nconst value = 1;\n',
+      })
+    );
+
+    const { default: transform } = await importTransform();
+    await transform({
+      filename: '/tmp/input.js',
+      preserveComments: true,
+      source: '/* keep */\nconst value: number = 1;',
+      sourcemap: false,
+    } as never);
+
+    expect(bindingTransform).toHaveBeenCalledWith({
+      code: '/* keep */\nconst value: number = 1;',
+      dialect: 'flow-detect',
+      enumRuntimeModule: 'flow-enums-runtime',
+      filename: '/tmp/input.js',
+      format: 'pretty',
+      preserveComments: true,
+      preserveWhitespace: false,
+      reactRuntimeTarget: '18',
+      sourcemap: false,
+    });
+  });
+
   it('formats native diagnostics into transform errors', async () => {
     mockNativeBinding(() =>
       Promise.reject({

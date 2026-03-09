@@ -77,12 +77,6 @@ export function parseOptions(
     options.preserveComments ?? DEFAULT_OPTIONS.preserveComments
   );
 
-  if (preserveComments && !preserveWhitespace) {
-    throw new Error(
-      'Invalid fast-flow-transform option `preserveComments`: preserveWhitespace must be true'
-    );
-  }
-
   const sourcemap =
     preserveWhitespace && options.sourcemap === undefined
       ? false

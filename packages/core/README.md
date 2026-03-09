@@ -51,11 +51,13 @@ fast-flow-transform src/input.js \
 Output defaults to readable `pretty` formatting. Pass `--format compact`, or
 set `format: 'compact'` in adapter options, when you want minified output.
 
+Enable `preserveComments: true` or pass `--preserve-comments` when you want
+ordinary comments preserved on normal `pretty` or `compact` output.
+
 For source-preserving output, enable `preserveWhitespace: true` or pass
-`--preserve-whitespace`. Add `preserveComments: true` or
-`--preserve-comments` when you want comments kept on that path as well.
-This mode currently supports subtractive Flow stripping only and disables
-source maps.
+`--preserve-whitespace`. That path preserves original layout where possible,
+can optionally keep comments too, currently supports subtractive Flow stripping
+only, and disables source maps.
 
 If you want code on stdout instead of a file, disable source maps:
 

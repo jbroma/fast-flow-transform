@@ -18,6 +18,8 @@ use sourcemap::SourceMap;
 use sourcemap::SourceMapBuilder;
 
 use crate::ast::*;
+use crate::comments::CommentTable;
+use crate::comments::PrintedComment;
 use crate::sema::DeclKind;
 use crate::sema::Resolution;
 use crate::sema::SemContext;
@@ -39,6 +41,9 @@ pub struct Opt<'s> {
     /// If `Some`, doc block to print at the top of the file.
     pub doc_block: Option<Rc<String>>,
 
+    /// Statement/container comments to preserve while printing.
+    pub comments: Option<CommentTable>,
+
     /// Delimiter to use for string literals.
     pub quote: QuoteChar,
 }
@@ -51,6 +56,7 @@ impl Default for Opt<'_> {
             annotation: Annotation::No,
             force_async_arrow_space: true,
             doc_block: None,
+            comments: None,
             quote: QuoteChar::Single,
         }
     }
@@ -309,19 +315,14 @@ impl GenJS<'_, '_> {
         }
 
         root.visit(ctx, &mut gen_js, None);
-        gen_js.force_newline();
+        gen_js.ensure_trailing_newline();
 
         gen_js.flush_cur_token();
         match gen_js.error {
-            None => gen_js
-                .out
-                .flush()
-                .and(Ok(
-                    gen_js
-                        .sourcemap
-                        .unwrap_or_else(|| SourceMapBuilder::new(None))
-                        .into_sourcemap(),
-                )),
+            None => gen_js.out.flush().and(Ok(gen_js
+                .sourcemap
+                .unwrap_or_else(|| SourceMapBuilder::new(None))
+                .into_sourcemap())),
             Some(err) => Err(err),
         }
     }
@@ -372,6 +373,112 @@ impl GenJS<'_, '_> {
         self.position.col += s.chars().count() as u32;
     }
 
+    fn take_dangling_comments(&mut self, range: SourceRange) -> Vec<PrintedComment> {
+        match &mut self.opt.comments {
+            Some(table) => table.take_dangling(range),
+            None => Vec::new(),
+        }
+    }
+
+    fn take_leading_comments(&mut self, range: SourceRange) -> Vec<PrintedComment> {
+        match &mut self.opt.comments {
+            Some(table) => table.take_leading(range),
+            None => Vec::new(),
+        }
+    }
+
+    fn take_trailing_comments(&mut self, range: SourceRange) -> Vec<PrintedComment> {
+        match &mut self.opt.comments {
+            Some(table) => table.take_trailing(range),
+            None => Vec::new(),
+        }
+    }
+
+    fn emit_comment(&mut self, comment: &PrintedComment) {
+        self.flush_cur_token();
+        let mut buf = [0u8; 4];
+        for ch in comment.text.chars() {
+            if ch == '\n' {
+                self.force_newline_without_indent();
+            } else {
+                self.write_char(ch, &mut buf);
+            }
+        }
+    }
+
+    fn emit_own_line_comments(
+        &mut self,
+        comments: Vec<PrintedComment>,
+        break_after_last: bool,
+    ) -> bool {
+        if comments.is_empty() {
+            return false;
+        }
+
+        for (index, comment) in comments.iter().enumerate() {
+            self.emit_comment(comment);
+            if comment.kind.is_line_like() || index + 1 < comments.len() || break_after_last {
+                self.force_newline();
+            }
+        }
+        true
+    }
+
+    fn emit_trailing_comments(&mut self, range: SourceRange) {
+        let comments = self.take_trailing_comments(range);
+        let mut needs_break = false;
+        for comment in comments.iter() {
+            if self.opt.pretty == Pretty::Yes {
+                out!(self, " ");
+            }
+            self.emit_comment(comment);
+            needs_break = comment.kind.is_line_like();
+        }
+        if needs_break {
+            self.force_newline();
+        }
+    }
+
+    fn newline_if_needed(&mut self) {
+        if self.opt.pretty == Pretty::Yes && self.position.col != 1 {
+            self.force_newline();
+        }
+    }
+
+    fn ensure_trailing_newline(&mut self) {
+        if self.position.col != 1 || self.position.line == 1 {
+            self.force_newline();
+        }
+    }
+
+    fn emit_braced_body<'gc>(
+        &mut self,
+        ctx: &'gc GCLock,
+        body: &NodeList<'gc>,
+        path: Path<'gc>,
+        range: SourceRange,
+    ) {
+        let dangling = self.take_dangling_comments(range);
+        if body.is_empty() && dangling.is_empty() {
+            out!(self, "{{}}");
+            return;
+        }
+
+        out!(self, "{{");
+        self.inc_indent();
+        self.newline();
+        if !body.is_empty() {
+            self.visit_stmt_list(ctx, body, path);
+            if !dangling.is_empty() && self.position.col != 1 {
+                self.newline();
+            }
+        }
+        self.emit_own_line_comments(dangling, true);
+        self.dec_indent();
+        self.newline_if_needed();
+        out!(self, "}}");
+    }
+
     /// Generate the JS for each node kind.
     fn gen_node<'gc>(&mut self, ctx: &'gc GCLock, node: &'gc Node<'gc>, path: Option<Path<'gc>>) {
         match node {
@@ -379,10 +486,20 @@ impl GenJS<'_, '_> {
             Node::Metadata(_) => {}
 
             Node::Program(Program { metadata: _, body }) => {
+                let dangling = self.take_dangling_comments(*node.range());
                 self.visit_stmt_list(ctx, body, Path::new(node, NodeField::body));
+                if !body.is_empty() && !dangling.is_empty() && self.position.col != 1 {
+                    self.newline();
+                }
+                self.emit_own_line_comments(dangling, false);
             }
             Node::Module(Module { metadata: _, body }) => {
+                let dangling = self.take_dangling_comments(*node.range());
                 self.visit_stmt_list(ctx, body, Path::new(node, NodeField::body));
+                if !body.is_empty() && !dangling.is_empty() && self.position.col != 1 {
+                    self.newline();
+                }
+                self.emit_own_line_comments(dangling, false);
             }
 
             Node::FunctionExpression(FunctionExpression {
@@ -647,32 +764,12 @@ impl GenJS<'_, '_> {
                 body,
                 implicit: _,
             }) => {
-                if body.is_empty() {
-                    out!(self, "{{}}");
-                } else {
-                    out!(self, "{{");
-                    self.inc_indent();
-                    self.newline();
-                    self.visit_stmt_list(ctx, body, Path::new(node, NodeField::body));
-                    self.dec_indent();
-                    self.newline();
-                    out!(self, "}}");
-                }
+                self.emit_braced_body(ctx, body, Path::new(node, NodeField::body), *node.range());
             }
             Node::StaticBlock(StaticBlock { metadata: _, body }) => {
                 out!(self, "static");
                 self.space(ForceSpace::Yes);
-                if body.is_empty() {
-                    out!(self, "{{}}");
-                } else {
-                    out!(self, "{{");
-                    self.inc_indent();
-                    self.newline();
-                    self.visit_stmt_list(ctx, body, Path::new(node, NodeField::body));
-                    self.dec_indent();
-                    self.newline();
-                    out!(self, "}}");
-                }
+                self.emit_braced_body(ctx, body, Path::new(node, NodeField::body), *node.range());
             }
 
             Node::BreakStatement(BreakStatement { metadata: _, label }) => {
@@ -740,7 +837,9 @@ impl GenJS<'_, '_> {
                 self.newline();
                 for case in cases.iter() {
                     case.visit(ctx, self, Some(Path::new(node, NodeField::cases)));
-                    self.newline();
+                    if self.position.col != 1 {
+                        self.newline();
+                    }
                 }
                 out!(self, "}}");
             }
@@ -759,10 +858,21 @@ impl GenJS<'_, '_> {
                     }
                 };
                 out!(self, ":");
-                if !consequent.is_empty() {
+                let dangling = self.take_dangling_comments(*node.range());
+                if !consequent.is_empty() || !dangling.is_empty() {
                     self.inc_indent();
                     self.newline();
-                    self.visit_stmt_list(ctx, consequent, Path::new(node, NodeField::consequent));
+                    if !consequent.is_empty() {
+                        self.visit_stmt_list(
+                            ctx,
+                            consequent,
+                            Path::new(node, NodeField::consequent),
+                        );
+                        if !dangling.is_empty() && self.position.col != 1 {
+                            self.newline();
+                        }
+                    }
+                    self.emit_own_line_comments(dangling, true);
                     self.dec_indent();
                 }
             }
@@ -3786,19 +3896,8 @@ impl GenJS<'_, '_> {
             implicit: _,
         }) = &node
         {
-            if body.is_empty() {
-                self.space(ForceSpace::No);
-                out!(self, "{{}}");
-                return true;
-            }
             self.space(ForceSpace::No);
-            out!(self, "{{");
-            self.inc_indent();
-            self.newline();
-            self.visit_stmt_list(ctx, body, Path::new(node, NodeField::body));
-            self.dec_indent();
-            self.newline();
-            out!(self, "}}");
+            self.emit_braced_body(ctx, body, Path::new(node, NodeField::body), *node.range());
             return true;
         }
         if force_block == ForceBlock::Yes {
@@ -3808,7 +3907,7 @@ impl GenJS<'_, '_> {
             self.newline();
             self.visit_stmt_in_block(ctx, node, path);
             self.dec_indent();
-            self.newline();
+            self.newline_if_needed();
             out!(self, "}}");
             self.newline();
             true
@@ -3823,7 +3922,7 @@ impl GenJS<'_, '_> {
 
     fn visit_stmt_list<'gc>(&mut self, ctx: &'gc GCLock, list: &NodeList<'gc>, path: Path<'gc>) {
         for (i, stmt) in list.iter().enumerate() {
-            if i > 0 {
+            if i > 0 && self.position.col != 1 {
                 self.newline();
             }
             self.visit_stmt_in_block(ctx, stmt, path);
@@ -3836,10 +3935,13 @@ impl GenJS<'_, '_> {
         stmt: &'gc Node<'gc>,
         path: Path<'gc>,
     ) {
+        let leading = self.take_leading_comments(*stmt.range());
+        self.emit_own_line_comments(leading, true);
         stmt.visit(ctx, self, Some(path));
         if !stmt_skip_semi(ctx, Some(stmt)) {
             out!(self, ";");
         }
+        self.emit_trailing_comments(*stmt.range());
     }
 
     fn emit_match_pattern_value<'gc>(

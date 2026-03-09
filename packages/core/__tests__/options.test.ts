@@ -47,11 +47,19 @@ describe('parseOptions', () => {
     });
   });
 
-  it('rejects preserveComments without preserveWhitespace', () => {
-    expect(() =>
+  it('accepts preserveComments without preserveWhitespace', () => {
+    expect(
       parseOptions({
         preserveComments: true,
       } as never)
-    ).toThrow(/preserveComments/u);
+    ).toEqual({
+      dialect: 'flow-detect',
+      enumRuntimeModule: 'flow-enums-runtime',
+      format: 'pretty',
+      preserveComments: true,
+      preserveWhitespace: false,
+      reactRuntimeTarget: '18',
+      sourcemap: true,
+    });
   });
 });

@@ -39,7 +39,7 @@ Options:
   --dialect <value>           flow | flow-detect | flow-unambiguous
   --format <value>            compact | pretty (default: pretty)
   --preserve-whitespace       Preserve original whitespace where possible
-  --preserve-comments         Preserve comments with --preserve-whitespace
+  --preserve-comments         Preserve comments during transform output
   --react-runtime-target <n>  18 | 19
   --enum-runtime-module <id>  Override enum runtime module
   --source-map                Enable source map output

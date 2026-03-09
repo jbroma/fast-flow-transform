@@ -7,6 +7,7 @@
 
 pub use fft_ast as ast;
 
+pub mod comments;
 pub mod gen_js;
 pub mod hparser;
 pub mod resolve_dependency;

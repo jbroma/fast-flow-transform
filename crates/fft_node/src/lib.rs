@@ -1,6 +1,8 @@
 use napi_derive::napi;
 
+mod comment_support;
 mod preserve;
+mod printer_comments;
 mod transform;
 
 use crate::transform::TransformRequest;

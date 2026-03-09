@@ -137,6 +137,29 @@ describe('CLI runner', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
+  it('forwards preserveComments without preserveWhitespace', async () => {
+    const { deps, readFile, stdout, transform, writeFile } = createDeps();
+    readFile.mockResolvedValue('/* keep */\nconst answer: number = 42;');
+    transform.mockResolvedValue({
+      code: '/* keep */\nconst answer = 42;\n',
+    });
+
+    const exitCode = await runCli(
+      ['src/input.js', '--preserve-comments', '--no-source-map'],
+      deps
+    );
+
+    expect(exitCode).toBe(0);
+    expect(transform).toHaveBeenCalledWith({
+      filename: '/repo/src/input.js',
+      preserveComments: true,
+      source: '/* keep */\nconst answer: number = 42;',
+      sourcemap: false,
+    });
+    expect(stdout).toEqual(['/* keep */\nconst answer = 42;\n']);
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
   it('loads an input sourcemap file and forwards it to transform', async () => {
     const { deps, readFile, transform, writeFile } = createDeps();
     const inputMap = createMap('/repo/src/input.js');

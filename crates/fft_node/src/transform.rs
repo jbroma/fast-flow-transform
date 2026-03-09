@@ -9,6 +9,7 @@ use fft_pass::strip_flow::StripFlowOptions;
 use fft_support::NullTerminatedBuf;
 
 use crate::preserve;
+use crate::printer_comments;
 
 #[derive(Debug, Clone)]
 pub struct TransformRequest {
@@ -97,45 +98,12 @@ fn parser_flags(dialect: ParserDialect) -> hparser::ParserFlags {
     flags
 }
 
-fn parse_ast(
-    ctx: &mut ast::Context,
-    request: &TransformRequest,
-    dialect: ParserDialect,
-) -> Result<ast::NodeRc, TransformFailure> {
-    let file_id = ctx.sm_mut().add_source(
-        request.filename.clone(),
-        NullTerminatedBuf::from_str_copy(request.code.as_str()),
-    );
-    let input = ctx.sm().source_buffer_rc(file_id);
-    let parsed = hparser::ParsedJS::parse(parser_flags(dialect), &input);
-
-    if let Some((loc, message)) = parsed.first_error() {
-        return Err(TransformFailure {
-            message,
-            line: Some(loc.line),
-            column: Some(loc.col),
-        });
-    }
-
-    let ast = {
-        let gc = ast::GCLock::new(ctx);
-        parsed
-            .to_ast(&gc, file_id)
-            .map(|node| ast::NodeRc::from_node(&gc, node))
-    };
-
-    ast.ok_or_else(|| TransformFailure {
-        message: "failed to convert parser AST".to_string(),
-        line: None,
-        column: None,
-    })
-}
-
 fn generate_output(
     ctx: &mut ast::Context,
     request: &TransformRequest,
     program: &ast::NodeRc,
     pretty: gen_js::Pretty,
+    comments: Option<fft::comments::CommentTable>,
 ) -> Result<TransformOutput, TransformFailure> {
     let mut output = Vec::<u8>::new();
     let generated_map = gen_js::generate(
@@ -143,6 +111,7 @@ fn generate_output(
         ctx,
         program,
         gen_js::Opt {
+            comments,
             pretty,
             sourcemap: request.sourcemap,
             ..gen_js::Opt::new()
@@ -182,27 +151,61 @@ fn transform_once(
     react_runtime_target: ReactRuntimeTarget,
 ) -> Result<TransformOutput, TransformFailure> {
     let mut ctx = ast::Context::new();
-    let ast = parse_ast(&mut ctx, request, dialect)?;
+    let file_id = ctx.sm_mut().add_source(
+        request.filename.clone(),
+        NullTerminatedBuf::from_str_copy(request.code.as_str()),
+    );
+    let input = ctx.sm().source_buffer_rc(file_id);
+    let source_text = &input.as_bytes()[..input.len().saturating_sub(1)];
+    let mut flags = parser_flags(dialect);
+    flags.store_comments = request.preserve_comments;
+    let parsed = hparser::ParsedJS::parse(flags, &input);
+
+    if let Some((loc, message)) = parsed.first_error() {
+        return Err(TransformFailure {
+            message,
+            line: Some(loc.line),
+            column: Some(loc.col),
+        });
+    }
+
+    let original = {
+        let gc = ast::GCLock::new(&mut ctx);
+        parsed
+            .to_ast(&gc, file_id)
+            .map(|node| ast::NodeRc::from_node(&gc, node))
+    }
+    .ok_or_else(|| TransformFailure {
+        message: "failed to convert parser AST".to_string(),
+        line: None,
+        column: None,
+    })?;
+
     let transformed = PassManager::strip_flow_with_options(StripFlowOptions {
         react_runtime_target,
         enum_runtime_module: request.enum_runtime_module.clone(),
     })
-    .run(&mut ctx, ast);
+    .run(&mut ctx, original.clone());
 
-    generate_output(&mut ctx, request, &transformed, pretty)
+    let comments = if request.preserve_comments {
+        let gc = ast::GCLock::new(&mut ctx);
+        Some(printer_comments::build_comment_table(
+            &gc,
+            original.node(&gc),
+            transformed.node(&gc),
+            parsed.comments(),
+            source_text,
+        ))
+    } else {
+        None
+    };
+
+    generate_output(&mut ctx, request, &transformed, pretty, comments)
 }
 
 pub fn transform(request: &TransformRequest) -> Result<TransformOutput, TransformFailure> {
     let requested_dialect = parse_dialect(request.dialect.as_str())?;
     let react_runtime_target = parse_react_runtime_target(request.react_runtime_target.as_str())?;
-
-    if request.preserve_comments && !request.preserve_whitespace {
-        return Err(TransformFailure {
-            message: "preserveComments requires preserveWhitespace".to_string(),
-            line: None,
-            column: None,
-        });
-    }
 
     if request.preserve_whitespace {
         return if requested_dialect == ParserDialect::FlowDetect {
@@ -223,7 +226,12 @@ pub fn transform(request: &TransformRequest) -> Result<TransformOutput, Transfor
     let pretty = parse_format(request.format.as_str())?;
 
     if requested_dialect == ParserDialect::FlowDetect {
-        match transform_once(request, ParserDialect::FlowDetect, pretty, react_runtime_target) {
+        match transform_once(
+            request,
+            ParserDialect::FlowDetect,
+            pretty,
+            react_runtime_target,
+        ) {
             Ok(result) => Ok(result),
             Err(primary_error) => {
                 match transform_once(request, ParserDialect::Flow, pretty, react_runtime_target) {
@@ -270,11 +278,16 @@ mod tests {
         input
     }
 
+    fn comment_request(code: &str) -> TransformRequest {
+        let mut input = pretty_request(code);
+        input.preserve_comments = true;
+        input
+    }
+
     #[test]
     fn strips_basic_flow_annotations() {
-        let result =
-            transform(&request("function f(x: number): number { return x; }"))
-                .expect("transform should succeed");
+        let result = transform(&request("function f(x: number): number { return x; }"))
+            .expect("transform should succeed");
 
         assert!(result.code.contains("function f(x)"));
         assert!(result.map_json.is_some(), "expected source map payload");
@@ -356,7 +369,7 @@ mod tests {
     }
 
     #[test]
-    fn preserves_comments_when_requested() {
+    fn preserves_comments_when_requested_on_preserve_whitespace_path() {
         let mut input = preserve_request(
             "const value: number = 1;\n\n// keep me\nexport function read(node: number): number {\n  return node + value;\n}\n",
         );
@@ -367,6 +380,69 @@ mod tests {
         assert_eq!(
             result.code,
             "const value = 1;\n\n// keep me\nexport function read(node) {\n  return node + value;\n}\n"
+        );
+    }
+
+    #[test]
+    fn preserves_comments_in_pretty_output_without_preserve_whitespace() {
+        let result = transform(&comment_request(
+            "// @flow\n/* eslint-disable no-console */\nconst value: number = 1; // trailing keep\nexport default value;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "/* eslint-disable no-console */\nconst value = 1; // trailing keep\nexport default value;\n"
+        );
+        assert!(result.map_json.is_some(), "expected source map payload");
+    }
+
+    #[test]
+    fn preserves_comments_in_compact_output_without_preserve_whitespace() {
+        let mut input =
+            comment_request("const value: number = 1; // trailing keep\nexport default value;\n");
+        input.format = "compact".to_string();
+
+        let result = transform(&input).expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "const value=1;// trailing keep\nexport default value;\n"
+        );
+        assert!(result.map_json.is_some(), "expected source map payload");
+    }
+
+    #[test]
+    fn reanchors_comments_from_removed_flow_only_declarations() {
+        let result = transform(&comment_request(
+            "// @flow\n// moved comment\ntype User = string;\nconst value: User = \"x\";\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(result.code, "// moved comment\nconst value = 'x';\n");
+    }
+
+    #[test]
+    fn drops_ambiguous_comments_from_removed_flow_only_syntax() {
+        let result = transform(&comment_request(
+            "import type /* ambiguous */ { User } from \"./types.js\";\nconst value: number = 1;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(result.code, "const value = 1;\n");
+        assert!(!result.code.contains("ambiguous"));
+    }
+
+    #[test]
+    fn reanchors_inline_annotation_comments_to_surviving_value_nodes() {
+        let result = transform(&comment_request(
+            "const value: /* inline */ number = 1;\nexport default value;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "const value = 1; /* inline */\nexport default value;\n"
         );
     }
 
@@ -584,8 +660,7 @@ mod tests {
 
     #[test]
     fn supports_comment_only_programs() {
-        let mut input =
-            request("// Empty module as a target for NormalModuleReplacementPlugin.");
+        let mut input = request("// Empty module as a target for NormalModuleReplacementPlugin.");
         input.dialect = "flow-detect".to_string();
 
         let result = transform(&input).expect("transform should succeed");

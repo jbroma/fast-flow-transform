@@ -90,6 +90,51 @@ function preserveCases(): SnapshotCase[] {
   ];
 }
 
+function commentCases(): SnapshotCase[] {
+  return [
+    {
+      fixture: 'comment-preserve',
+      options: {
+        format: 'pretty',
+        preserveComments: true,
+        sourcemap: false,
+      },
+      snapshotFile: 'comment-preserve.pretty-comments.js',
+      title: 'comment-preserve keeps comments in pretty output',
+    },
+    {
+      fixture: 'comment-preserve',
+      options: {
+        format: 'compact',
+        preserveComments: true,
+        sourcemap: false,
+      },
+      snapshotFile: 'comment-preserve.compact-comments.js',
+      title: 'comment-preserve keeps comments in compact output',
+    },
+    {
+      fixture: 'comment-reanchor',
+      options: {
+        format: 'pretty',
+        preserveComments: true,
+        sourcemap: false,
+      },
+      snapshotFile: 'comment-reanchor.pretty-comments.js',
+      title: 'comment-reanchor moves comments off removed Flow declarations',
+    },
+    {
+      fixture: 'comment-ambiguous-drop',
+      options: {
+        format: 'pretty',
+        preserveComments: true,
+        sourcemap: false,
+      },
+      snapshotFile: 'comment-ambiguous-drop.pretty-comments.js',
+      title: 'comment-ambiguous-drop removes ambiguous comments',
+    },
+  ];
+}
+
 async function expectFixtureSnapshot(
   snapshotCase: SnapshotCase
 ): Promise<void> {
@@ -106,7 +151,11 @@ async function expectFixtureSnapshot(
 
 describe('transform correctness snapshots', () => {
   const fixtures = fixtureNames();
-  const cases = [...standardCases(fixtures), ...preserveCases()];
+  const cases = [
+    ...standardCases(fixtures),
+    ...preserveCases(),
+    ...commentCases(),
+  ];
 
   it('discovers at least one transform fixture', () => {
     expect(fixtures.length).toBeGreaterThan(0);

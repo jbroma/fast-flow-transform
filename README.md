@@ -13,7 +13,7 @@ own project with its own packaging, workspace layout, and integration surface.
   compatibility.
 - First-class webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown, and
   esbuild integration for bundler pipelines.
-- Cargo workspace for the native transform binary (`fft-strip`).
+- Cargo workspace for the native transform binding (`fft_node`).
 - Root `pnpm` workspace for active packages under `packages/` and `bindings/`.
 - The publishable loader package now lives at `packages/core` and is published as
   `fast-flow-transform`.

@@ -100,4 +100,21 @@ describe('resolveBindingPathForTest', () => {
       })
     ).toBe(bindingPath);
   });
+
+  it('throws when no binding artifact can be resolved', () => {
+    expect(() =>
+      resolveBindingPathForTest({
+        arch: 'arm64',
+        env: {},
+        exists: () => false,
+        moduleDirectory: '/repo/packages/core/dist/transform',
+        platform: 'darwin',
+        resolveModule: () => {
+          throw new Error('optional package not installed');
+        },
+      })
+    ).toThrow(
+      'Unable to resolve fast-flow-transform native binding for darwin-arm64. Install the matching optional package or set FFT_NATIVE_BINDING.'
+    );
+  });
 });

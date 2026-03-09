@@ -13,8 +13,8 @@
   "exclude": [
     "__tests__/**",
     "artifacts/**",
-    "bin/**",
     "dist/**",
+    "native/**",
     "scripts/**",
     "vitest.config.ts"
   ]

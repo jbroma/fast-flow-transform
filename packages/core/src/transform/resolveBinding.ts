@@ -99,16 +99,24 @@ function resolveFromWorkspaceBuild(
 
 function resolveBindingPathWithOptions(
   options: BindingResolutionOptions
-): string | null {
-  return (
+): string {
+  const bindingPath =
     resolveBindingFromEnvironment(options) ??
     resolveFromBundledBinding(options) ??
     resolveFromOptionalPackage(options) ??
-    resolveFromWorkspaceBuild(options)
+    resolveFromWorkspaceBuild(options);
+
+  if (bindingPath) {
+    return bindingPath;
+  }
+
+  throw new Error(
+    `Unable to resolve fast-flow-transform native binding for ${options.platform}-${options.arch}. ` +
+      'Install the matching optional package or set FFT_NATIVE_BINDING.'
   );
 }
 
-export function resolveBindingPath(): string | null {
+export function resolveBindingPath(): string {
   return resolveBindingPathWithOptions({
     arch: process.arch,
     env: process.env,

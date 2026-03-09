@@ -37,6 +37,7 @@ describe('binding packages', () => {
       };
 
       expect(existsSync(path.join(packageRoot, 'index.ts'))).toBe(false);
+      expect(existsSync(path.join(packageRoot, 'index.js'))).toBe(false);
       expect(existsSync(path.join(packageRoot, 'tsconfig.json'))).toBe(false);
       expect(existsSync(path.join(packageRoot, 'tsconfig.build.json'))).toBe(
         false

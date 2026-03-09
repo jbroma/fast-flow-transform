@@ -17,7 +17,7 @@
   },
   "files": [
     "dist",
-    "bin",
+    "native",
     "README.md"
   ],
   "type": "module",

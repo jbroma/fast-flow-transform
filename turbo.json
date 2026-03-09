@@ -7,14 +7,14 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "bin/**"]
+      "outputs": ["dist/**"]
     },
     "test": {
       "dependsOn": ["^build"],
       "outputs": []
     },
     "e2e": {
-      "dependsOn": ["^build", "//#sync-binary"],
+      "dependsOn": ["^build", "//#sync-binding"],
       "outputs": []
     },
     "typecheck": {
@@ -23,17 +23,17 @@
     "//#pack:local:root": {
       "cache": false
     },
-    "//#sync-binary": {
+    "//#sync-binding": {
       "inputs": [
         "Cargo.lock",
         "Cargo.toml",
         "crates/**",
-        "scripts/sync-binary.mts"
+        "scripts/sync-binding.mts"
       ],
       "outputs": [
-        "bindings/*/bin/**",
-        "packages/core/bin/**",
-        "target/release/fft-strip*"
+        "bindings/*/*.node",
+        "packages/core/native/**",
+        "target/release/fast-flow-transform.*.node"
       ]
     }
   }

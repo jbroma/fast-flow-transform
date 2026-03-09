@@ -116,17 +116,12 @@ function toNativeBinding(value: unknown): NativeBinding {
   };
 }
 
-export function loadNativeBinding(): NativeBinding | null {
-  if (cachedBinding !== undefined) {
+export function loadNativeBinding(): NativeBinding {
+  if (cachedBinding) {
     return cachedBinding;
   }
 
   const bindingPath = resolveBindingPath();
-  if (!bindingPath) {
-    cachedBinding = null;
-    return cachedBinding;
-  }
-
   cachedBinding = toNativeBinding(require(bindingPath));
   return cachedBinding;
 }

@@ -10,5 +10,5 @@
     "src/**/*.ts",
     "vitest.config.ts"
   ],
-  "exclude": ["artifacts/**", "bin/**", "dist/**"]
+  "exclude": ["artifacts/**", "dist/**", "native/**"]
 }

@@ -1,7 +1,5 @@
 import { spawnSync } from 'node:child_process';
 import {
-  chmodSync,
-  copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -9,13 +7,12 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 interface WorkspaceContext {
   corePackageRoot: string;
   platformPackageRoot: string;
-  targetKey: string;
   workspaceRoot: string;
 }
 
@@ -35,6 +32,7 @@ function workspaceRootDir(): string {
 function run(command: string, args: string[], cwd: string): void {
   const result = spawnSync(command, args, {
     cwd,
+    env: process.env,
     shell: process.platform === 'win32',
     stdio: 'inherit',
   });
@@ -48,19 +46,6 @@ function run(command: string, args: string[], cwd: string): void {
 
 function ensureDirectory(targetPath: string): void {
   mkdirSync(targetPath, { recursive: true });
-}
-
-function copyBinary(binaryPath: string, targetDirectory: string): string {
-  ensureDirectory(targetDirectory);
-
-  const destinationPath = join(targetDirectory, basename(binaryPath));
-  copyFileSync(binaryPath, destinationPath);
-
-  if (process.platform !== 'win32') {
-    chmodSync(destinationPath, 0o755);
-  }
-
-  return destinationPath;
 }
 
 function platformPackageNameFor(platform: string, arch: string): string | null {
@@ -105,27 +90,8 @@ function workspaceContext(): WorkspaceContext {
   return {
     corePackageRoot,
     platformPackageRoot: join(root, 'bindings', platformPackageName),
-    targetKey,
     workspaceRoot: root,
   };
-}
-
-function builtBinaryPath(rootDir: string, targetKey: string): string {
-  const overrideBinaryPath = process.env.FFT_STRIP_BINARY;
-  const binaryName =
-    process.platform === 'win32' ? 'fft-strip.exe' : 'fft-strip';
-  const defaultBinaryPath = join(rootDir, 'target', 'release', binaryName);
-
-  if (overrideBinaryPath) {
-    process.stdout.write(
-      `Using existing native binary for ${targetKey}: ${overrideBinaryPath}\n`
-    );
-    return overrideBinaryPath;
-  }
-
-  process.stdout.write(`Building native binary for ${targetKey}...\n`);
-  run('cargo', ['build', '--release', '-p', 'fft_strip'], rootDir);
-  return defaultBinaryPath;
 }
 
 function cleanDirectory(targetPath: string): void {
@@ -157,11 +123,7 @@ function buildPackages(corePackageRoot: string): void {
 
 function packPackages(outputDirectory: string, packageRoots: string[]): void {
   for (const packageRoot of packageRoots) {
-    run(
-      'npm',
-      ['pack', '--ignore-scripts', '--pack-destination', outputDirectory],
-      packageRoot
-    );
+    run('pnpm', ['pack', '--pack-destination', outputDirectory], packageRoot);
   }
 }
 
@@ -198,27 +160,35 @@ function withPackedCoreManifest(
   }
 }
 
-function verifiedBinaryPath(rootDir: string, targetKey: string): string {
-  const binaryPath = builtBinaryPath(rootDir, targetKey);
-  if (!existsSync(binaryPath)) {
-    throw new Error(`Expected built binary not found at ${binaryPath}`);
-  }
-
-  return binaryPath;
+function bindingFileNameFor(platform: string, arch: string): string {
+  return `fast-flow-transform.${platform}-${arch}.node`;
 }
 
-function copyPackageBinaries(
-  binaryPath: string,
-  corePackageRoot: string,
-  platformPackageRoot: string
-): void {
-  const platformBinaryPath = copyBinary(
-    binaryPath,
-    join(platformPackageRoot, 'bin')
+function assertSyncedBinding(root: string, targetDirectory: string): void {
+  const bindingPath = join(
+    root,
+    targetDirectory,
+    bindingFileNameFor(process.platform, process.arch)
   );
-  const coreBinaryPath = copyBinary(binaryPath, join(corePackageRoot, 'bin'));
-  process.stdout.write(`Copied binary to: ${platformBinaryPath}\n`);
-  process.stdout.write(`Copied binary to: ${coreBinaryPath}\n`);
+
+  if (!existsSync(bindingPath)) {
+    throw new Error(`Expected synced binding not found at ${bindingPath}`);
+  }
+}
+
+function syncBinding(root: string): void {
+  run('pnpm', ['sync-binding'], root);
+  assertSyncedBinding(root, join('packages', 'core', 'native'));
+
+  const platformPackageName = platformPackageNameFor(
+    process.platform,
+    process.arch
+  );
+  if (!platformPackageName) {
+    return;
+  }
+
+  assertSyncedBinding(root, join('bindings', platformPackageName));
 }
 
 function packTarballs(
@@ -236,12 +206,9 @@ function packTarballs(
 }
 
 function main(): void {
-  const { corePackageRoot, platformPackageRoot, targetKey, workspaceRoot } =
+  const { corePackageRoot, platformPackageRoot, workspaceRoot } =
     workspaceContext();
-  const binaryPath = verifiedBinaryPath(workspaceRoot, targetKey);
-
-  run('pnpm', ['sync-binding'], workspaceRoot);
-  copyPackageBinaries(binaryPath, corePackageRoot, platformPackageRoot);
+  syncBinding(workspaceRoot);
   packTarballs(corePackageRoot, platformPackageRoot);
 }
 

@@ -15,7 +15,6 @@
     "pack:local": "turbo run pack:local:root --log-prefix=none",
     "pack:local:root": "node scripts/pack-local.mts",
     "sync-binding": "cargo build --release -p fft_node && node scripts/sync-binding.mts",
-    "sync-binary": "cargo build --release -p fft_strip && node scripts/sync-binary.mts",
     "test:codegen:rust": "node --test scripts/generate-rust-bindings.test.mts",
     "e2e": "turbo run e2e --log-prefix=none --filter=@fft-tests/*",
     "e2e:parcel": "turbo run e2e --log-prefix=none --filter=@fft-tests/parcel",

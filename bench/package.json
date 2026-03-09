@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "benchmark": "node compare.ts",
-    "prebenchmark": "pnpm --dir .. sync-binding && cargo build --release -p fft_strip --manifest-path ../Cargo.toml && pnpm --filter fast-flow-transform build",
+    "prebenchmark": "pnpm --dir .. sync-binding && pnpm --filter fast-flow-transform build",
     "pretest": "pnpm --filter fast-flow-transform build",
     "test": "vitest run --globals compare.test.ts"
   },

@@ -1,8 +1,6 @@
 import { mergeSourceMaps } from './mergeSourceMaps.js';
 import { loadNativeBinding } from './nativeBinding.js';
-import { runNativeTransform } from './nativeTransform.js';
 import { parseOptions } from './options.js';
-import { resolveBinaryPath } from './resolveBinary.js';
 import type {
   NativeErrorLike,
   NativeTransformRequest,
@@ -30,9 +28,9 @@ function transformErrorMessage(
   const message =
     typeof nativeError.message === 'string'
       ? nativeError.message
-      : 'Unknown fft-strip native error';
+      : 'Unknown fast-flow-transform native error';
 
-  return `fft-strip transform failed${location}: ${message}`;
+  return `fast-flow-transform native transform failed${location}: ${message}`;
 }
 
 function toTransformError(error: unknown, filename: string): Error {
@@ -97,9 +95,7 @@ export async function transform(
   const nativeBinding = loadNativeBinding();
 
   try {
-    const result = nativeBinding
-      ? await nativeBinding.transform(request)
-      : await runNativeTransform(resolveBinaryPath(), request);
+    const result = await nativeBinding.transform(request);
     const map = outputMap(
       options,
       input.inputSourceMap,

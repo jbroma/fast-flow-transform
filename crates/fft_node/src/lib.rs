@@ -1,5 +1,8 @@
-use fft_strip::TransformRequest;
 use napi_derive::napi;
+
+mod transform;
+
+use crate::transform::TransformRequest;
 
 #[napi(object)]
 pub struct BindingTransformRequest {
@@ -36,7 +39,7 @@ fn transform_request(input: BindingTransformRequest) -> TransformRequest {
 
 #[napi]
 pub fn transform(input: BindingTransformRequest) -> BindingTransformResponse {
-    match fft_strip::transform(&transform_request(input)) {
+    match crate::transform::transform(&transform_request(input)) {
         Ok(result) => BindingTransformResponse {
             ok: true,
             code: Some(result.code),

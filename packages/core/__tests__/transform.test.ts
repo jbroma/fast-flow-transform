@@ -33,54 +33,39 @@ async function importTransform() {
   return await import('../src/index.js');
 }
 
+function mockNativeBinding(transform: (input: unknown) => unknown): {
+  bindingTransform: ReturnType<typeof vi.fn>;
+  loadNativeBinding: ReturnType<typeof vi.fn>;
+} {
+  const bindingTransform = vi.fn(transform);
+  const loadNativeBinding = vi.fn(() => ({
+    transform: bindingTransform,
+  }));
+
+  vi.doMock('../src/transform/nativeBinding.js', () => ({
+    loadNativeBinding,
+  }));
+
+  return { bindingTransform, loadNativeBinding };
+}
+
 describe('programmatic transform', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    vi.doMock('../src/transform/nativeBinding.js', () => ({
-      loadNativeBinding: vi.fn(() => null),
-    }));
   });
 
-  it('prefers the in-process native binding when available', async () => {
-    vi.doMock('../src/transform/resolveBinary.js', () => ({
-      resolveBinaryPath: vi.fn(() => process.execPath),
-    }));
-
-    const runNativeTransform = vi.fn(() =>
-      Promise.resolve({
-        code: 'const fallback = true;\n',
-        map: createSingleMappingMap({
-          file: 'generated.js',
-          generatedColumn: 0,
-          generatedLine: 1,
-          originalColumn: 0,
-          originalLine: 1,
-          source: '/tmp/input.js',
-        }),
-      })
-    );
-
-    vi.doMock('../src/transform/nativeTransform.js', () => ({
-      runNativeTransform,
-    }));
-
-    const loadNativeBinding = vi.fn(() => ({
-      transform: vi.fn(() => ({
-        code: 'const bound = true;\n',
-        map: createSingleMappingMap({
-          file: 'generated.js',
-          generatedColumn: 0,
-          generatedLine: 1,
-          originalColumn: 0,
-          originalLine: 1,
-          source: '/tmp/input.js',
-        }),
-      })),
-    }));
-
-    vi.doMock('../src/transform/nativeBinding.js', () => ({
-      loadNativeBinding,
+  it('uses the in-process native binding', async () => {
+    const { bindingTransform, loadNativeBinding } = mockNativeBinding(() => ({
+      code: 'const bound = true;\n',
+      map: createSingleMappingMap({
+        file: 'generated.js',
+        generatedColumn: 0,
+        generatedLine: 1,
+        originalColumn: 0,
+        originalLine: 1,
+        source: '/tmp/input.js',
+      }),
     }));
 
     const { default: transform } = await importTransform();
@@ -91,17 +76,13 @@ describe('programmatic transform', () => {
     });
 
     expect(loadNativeBinding).toHaveBeenCalledTimes(1);
-    expect(runNativeTransform).not.toHaveBeenCalled();
+    expect(bindingTransform).toHaveBeenCalledTimes(1);
     expect(result).toEqual({
       code: 'const bound = true;\n',
     });
   });
 
   it('defaults sourcemap to true and merges source maps', async () => {
-    vi.doMock('../src/transform/resolveBinary.js', () => ({
-      resolveBinaryPath: vi.fn(() => process.execPath),
-    }));
-
     const nativeMap = createSingleMappingMap({
       file: 'generated.js',
       generatedColumn: 0,
@@ -111,16 +92,12 @@ describe('programmatic transform', () => {
       source: '/tmp/input.js',
     });
 
-    const runNativeTransform = vi.fn(() =>
+    const { bindingTransform } = mockNativeBinding(() =>
       Promise.resolve({
         code: 'const answer = 42;\n',
         map: nativeMap,
       })
     );
-
-    vi.doMock('../src/transform/nativeTransform.js', () => ({
-      runNativeTransform,
-    }));
 
     const inputMap = createSingleMappingMap({
       file: 'input.js',
@@ -138,7 +115,7 @@ describe('programmatic transform', () => {
       source: 'const answer: number = 42;',
     });
 
-    expect(runNativeTransform).toHaveBeenCalledTimes(1);
+    expect(bindingTransform).toHaveBeenCalledTimes(1);
     expect(result.code).toBe('const answer = 42;\n');
     expect(result.map).not.toBeUndefined();
 
@@ -158,11 +135,7 @@ describe('programmatic transform', () => {
   });
 
   it('skips source maps when sourcemap is false', async () => {
-    vi.doMock('../src/transform/resolveBinary.js', () => ({
-      resolveBinaryPath: vi.fn(() => process.execPath),
-    }));
-
-    const runNativeTransform = vi.fn(() =>
+    const { bindingTransform } = mockNativeBinding(() =>
       Promise.resolve({
         code: 'const value = 1;\n',
         map: createSingleMappingMap({
@@ -176,10 +149,6 @@ describe('programmatic transform', () => {
       })
     );
 
-    vi.doMock('../src/transform/nativeTransform.js', () => ({
-      runNativeTransform,
-    }));
-
     const { default: transform } = await importTransform();
     const result = await transform({
       filename: '/tmp/input.js',
@@ -187,26 +156,20 @@ describe('programmatic transform', () => {
       sourcemap: false,
     });
 
-    expect(runNativeTransform).toHaveBeenCalledTimes(1);
+    expect(bindingTransform).toHaveBeenCalledTimes(1);
     expect(result).toEqual({
       code: 'const value = 1;\n',
     });
   });
 
   it('formats native diagnostics into transform errors', async () => {
-    vi.doMock('../src/transform/resolveBinary.js', () => ({
-      resolveBinaryPath: vi.fn(() => process.execPath),
-    }));
-
-    vi.doMock('../src/transform/nativeTransform.js', () => ({
-      runNativeTransform: vi.fn(() =>
-        Promise.reject({
-          column: 10,
-          line: 2,
-          message: 'Unexpected token',
-        })
-      ),
-    }));
+    mockNativeBinding(() =>
+      Promise.reject({
+        column: 10,
+        line: 2,
+        message: 'Unexpected token',
+      })
+    );
 
     const { default: transform } = await importTransform();
 
@@ -216,7 +179,7 @@ describe('programmatic transform', () => {
         source: 'const value = ;',
       })
     ).rejects.toThrow(
-      'fft-strip transform failed (/tmp/bad.js:2:10): Unexpected token'
+      'fast-flow-transform native transform failed (/tmp/bad.js:2:10): Unexpected token'
     );
   });
 });

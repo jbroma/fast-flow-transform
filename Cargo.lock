@@ -128,7 +128,10 @@ dependencies = [
 name = "fft_node"
 version = "0.0.1"
 dependencies = [
- "fft_strip",
+ "anyhow",
+ "fft",
+ "fft_pass",
+ "fft_support",
  "napi",
  "napi-build",
  "napi-derive",
@@ -140,18 +143,6 @@ version = "0.0.1"
 dependencies = [
  "fft",
  "fft_support",
-]
-
-[[package]]
-name = "fft_strip"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "fft",
- "fft_pass",
- "fft_support",
- "serde",
- "serde_json",
 ]
 
 [[package]]

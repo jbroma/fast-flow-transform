@@ -265,10 +265,10 @@ await build({
 });
 ```
 
-If you need to override binary resolution during development, set:
+If you need to override native binding resolution during development, set:
 
 ```bash
-FFT_STRIP_BINARY=/absolute/path/to/fft-strip
+FFT_NATIVE_BINDING=/absolute/path/to/fast-flow-transform.<platform>-<arch>.node
 ```
 
 ## Local Testing
@@ -281,15 +281,10 @@ cd packages/core
 # 1) Build the ESM package output.
 pnpm run build
 
-# 2) Build native binary in the standalone workspace root.
+# 2) Build and sync the native binding from the workspace root.
 cd ../..
-cargo build --release -p fft_strip
-
-# 3) Point the package to the local binary.
-export FFT_STRIP_BINARY="$PWD/target/release/fft-strip"
+pnpm sync-binding
 ```
-
-On Windows use `target\\release\\fft-strip.exe`.
 
 ## Create Movable Tarballs
 
@@ -301,18 +296,9 @@ pnpm pack:local
 
 This command will:
 
-1. Build `fft_strip` natively.
-2. Copy the binary into:
-   - `fast-flow-transform/bin/` (bundled fallback)
-   - the current platform package
-     (`bindings/fast-flow-transform-<platform>-<arch>/bin/`)
+1. Build and sync the N-API binding into `packages/core/native/`.
+2. Copy the matching `.node` artifact into the current platform package.
 3. Emit `.tgz` files in `packages/core/artifacts/`.
-
-If you already built the native executable, skip Cargo build:
-
-```bash
-FFT_STRIP_BINARY=/abs/path/to/fft-strip pnpm pack:local
-```
 
 Install elsewhere:
 

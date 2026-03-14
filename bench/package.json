@@ -4,8 +4,6 @@
   "type": "module",
   "scripts": {
     "benchmark": "node compare.ts",
-    "prebenchmark": "pnpm --dir .. sync-binding && pnpm --filter fast-flow-transform build",
-    "pretest": "pnpm --dir .. sync-binding && pnpm --filter fast-flow-transform build",
     "test": "vitest run --globals *.test.ts"
   },
   "dependencies": {

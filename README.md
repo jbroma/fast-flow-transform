@@ -26,7 +26,7 @@ live in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 - FFT builds on top of Hermes Juno:
   <https://github.com/facebook/hermes/tree/static_h/unsupported/juno>
-- Vendored Hermes source lives in `third_party/hermes` as an upstream submodule.
+- Vendored Hermes source lives in `hermes` as an upstream submodule.
 - FFT's own MIT license lives in [LICENSE](./LICENSE).
 - Hermes/Juno third-party license details live in
   [THIRD_PARTY_LICENSES](./THIRD_PARTY_LICENSES).

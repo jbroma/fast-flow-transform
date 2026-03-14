@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,11 +39,23 @@ export function defaultWorkspaceRoot(): string {
   return resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 }
 
+function isHermesRoot(path: string): boolean {
+  return ['CMakeLists.txt', 'include', 'lib', 'external'].every((entry) =>
+    existsSync(resolve(path, entry))
+  );
+}
+
 export function resolveHermesSourceDir(
   workspaceRoot: string,
   env: NodeJS.ProcessEnv
 ): string {
-  return resolve(workspaceRoot, env.HERMES_SOURCE_DIR ?? 'third_party/hermes');
+  const configuredPath = env.HERMES_SOURCE_DIR
+    ? resolve(workspaceRoot, env.HERMES_SOURCE_DIR)
+    : null;
+  if (configuredPath && isHermesRoot(configuredPath)) {
+    return configuredPath;
+  }
+  return resolve(workspaceRoot, 'hermes');
 }
 
 export function resolveHermesBuildDir(
@@ -132,6 +145,30 @@ export function hasConfiguredBuildDir(
     resolve(buildDir, 'Makefile'),
     resolve(buildDir, 'CMakeFiles', 'TargetDirectories.txt'),
   ].some(fileExists);
+}
+
+export function configuredHermesSourceDir(
+  buildDir: string,
+  fileExists: (path: string) => boolean,
+  readFile: (path: string) => string
+): string | null {
+  const cachePath = resolve(buildDir, 'CMakeCache.txt');
+  if (!fileExists(cachePath)) {
+    return null;
+  }
+
+  const cache = readFile(cachePath);
+  for (const key of [
+    'Hermes_SOURCE_DIR:STATIC=',
+    'CMAKE_HOME_DIRECTORY:INTERNAL=',
+  ]) {
+    const match = cache.match(new RegExp(`^${key}(.*)$`, 'm'));
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
 }
 
 export function normalizeRustgenSource(source: string): string {

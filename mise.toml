@@ -5,7 +5,7 @@ rust = "1.88.0"
 cmake = "4.1.2"
 
 [env]
-HERMES_SOURCE_DIR = "{{config_root}}/third_party/hermes"
+HERMES_SOURCE_DIR = "{{config_root}}/hermes"
 
 [tasks.rust-test]
 description = "Run all Rust workspace tests"

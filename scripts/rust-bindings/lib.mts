@@ -1,10 +1,17 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 import {
   buildHermesConfigureArgs,
   buildRustgenCompileArgs,
+  configuredHermesSourceDir,
   defaultWorkspaceRoot,
   hasConfiguredBuildDir,
   normalizeRustgenSource,
@@ -31,6 +38,7 @@ interface RuntimeOptions {
     args: string[],
     options?: CommandOptions
   ) => string;
+  rmtree?: (path: string) => void;
   workspaceRoot?: string;
 }
 
@@ -49,11 +57,13 @@ interface RuntimeContext {
   env: NodeJS.ProcessEnv;
   fileExists: (path: string) => boolean;
   mkdirp: (path: string) => void;
+  readFile: (path: string) => string;
   runCommand: (
     file: string,
     args: string[],
     options?: CommandOptions
   ) => string;
+  rmtree: (path: string) => void;
   workspaceRoot: string;
 }
 
@@ -90,14 +100,36 @@ function defaultWriteFile(path: string, source: string): void {
   writeFileSync(path, source);
 }
 
+function defaultRemoveTree(path: string): void {
+  rmSync(path, { force: true, recursive: true });
+}
+
 function resolveRuntimeContext(options: RuntimeOptions): RuntimeContext {
   return {
     env: options.env ?? process.env,
     fileExists: options.existsSync ?? existsSync,
     mkdirp: options.mkdirp ?? defaultMkdirp,
+    readFile: defaultReadFile,
     runCommand: options.runCommand ?? defaultRunCommand,
+    rmtree: options.rmtree ?? defaultRemoveTree,
     workspaceRoot: options.workspaceRoot ?? defaultWorkspaceRoot(),
   };
+}
+
+function buildDirMatchesHermesSource(
+  context: RuntimeContext,
+  buildDir: string,
+  hermesSourceDir: string
+): boolean {
+  const configuredSourceDir = configuredHermesSourceDir(
+    buildDir,
+    context.fileExists,
+    context.readFile
+  );
+  if (!configuredSourceDir) {
+    return false;
+  }
+  return resolve(configuredSourceDir) === resolve(hermesSourceDir);
 }
 
 function preferredGenerator(
@@ -141,9 +173,13 @@ function configureHermesBuild(
   hermesSourceDir: string,
   buildDir: string
 ): void {
-  if (hasConfiguredBuildDir(buildDir, context.fileExists)) {
+  if (
+    hasConfiguredBuildDir(buildDir, context.fileExists) &&
+    buildDirMatchesHermesSource(context, buildDir, hermesSourceDir)
+  ) {
     return;
   }
+  context.rmtree(buildDir);
   context.runCommand(
     'cmake',
     buildHermesConfigureArgs(

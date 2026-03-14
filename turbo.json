@@ -14,7 +14,7 @@
       "outputs": []
     },
     "e2e": {
-      "dependsOn": ["^build", "//#sync-binding"],
+      "dependsOn": ["build", "^build", "//#sync-binding"],
       "outputs": []
     },
     "typecheck": {

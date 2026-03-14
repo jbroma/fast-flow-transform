@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "webpack --config webpack.config.mjs",
-    "e2e": "webpack --config webpack.config.mjs && vitest --config vitest.config.ts run",
+    "e2e": "vitest --config vitest.config.ts run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {},

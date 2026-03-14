@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "rolldown -c rolldown.config.mjs",
-    "e2e": "rolldown -c rolldown.config.mjs && vitest --config vitest.config.ts run",
+    "e2e": "vitest --config vitest.config.ts run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {

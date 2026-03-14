@@ -6,7 +6,9 @@
     "bindings/**",
     "packages/**/__tests__/**",
     "packages/**/bench/**",
-    "packages/fft-loader/bench/fixtures/**"
+    "packages/fft-loader/bench/fixtures/**",
+    "test/correctness/**/*.js",
+    "test/bundlers/parcel/src/**/*.js"
   ],
   "rules": {
     "eslint/eqeqeq": "off",

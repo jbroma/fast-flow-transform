@@ -5,7 +5,7 @@
   "main": "dist/bundle.cjs",
   "scripts": {
     "build": "parcel build ../../fixtures/project/index.js --target main --no-cache",
-    "e2e": "parcel build ../../fixtures/project/index.js --target main --no-cache && vitest --config vitest.config.ts run",
+    "e2e": "vitest --config vitest.config.ts run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {},

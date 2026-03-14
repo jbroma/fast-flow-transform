@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "rsbuild build --config rsbuild.config.mjs",
-    "e2e": "rsbuild build --config rsbuild.config.mjs && vitest --config vitest.config.ts run",
+    "e2e": "vitest --config vitest.config.ts run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {},

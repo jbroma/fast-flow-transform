@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build --config vite.config.mjs",
-    "e2e": "vite build --config vite.config.mjs && vitest --config vitest.config.ts run",
+    "e2e": "vitest --config vitest.config.ts run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {

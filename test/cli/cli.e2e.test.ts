@@ -9,7 +9,7 @@ const execFileAsync = promisify(execFile);
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = resolve(
   TEST_DIR,
-  'node_modules/fast-flow-transform/dist/cli.js'
+  'node_modules/fast-flow-transform/dist/cli/index.js'
 );
 const FLOW_INPUT =
   "// @flow\nimport type { Node } from './types.js';\nconst value: Node = { id: 1 };\nexport default value.id;\n";

@@ -16,7 +16,7 @@ type LoaderContext = {
 };
 
 async function runLoader(
-  loaderPath: '../src/webpack.js' | '../src/rspack.js',
+  loaderPath: '../src/adapters/webpack.js' | '../src/adapters/rspack.js',
   context: Omit<LoaderContext, 'async'>,
   inputMap: RawSourceMap | null = null
 ) {
@@ -77,7 +77,7 @@ describe('webpack and rspack wrappers', () => {
       transform,
     }));
 
-    const result = await runLoader('../src/webpack.js', {
+    const result = await runLoader('../src/adapters/webpack.js', {
       getOptions: () => ({ format: 'pretty' }),
       resourcePath: '/tmp/input.js',
       sourceMap: false,
@@ -107,7 +107,7 @@ describe('webpack and rspack wrappers', () => {
       transform,
     }));
 
-    await runLoader('../src/rspack.js', {
+    await runLoader('../src/adapters/rspack.js', {
       query: { dialect: 'flow' },
       resourcePath: '/tmp/rspack-input.js',
     });

@@ -1,4 +1,4 @@
-import type { TransformOptionsInput } from './transform/types.js';
+import type { TransformOptionsInput } from '../transform/types.js';
 
 const FAST_FLOW_TRANSFORM_LOADER_ID = 'fast-flow-transform';
 const FAST_FLOW_TRANSFORM_RSPACK_LOADER = 'fast-flow-transform/rspack';
@@ -41,7 +41,7 @@ interface RsbuildPlugin {
   setup(api: RsbuildPluginApi): void;
 }
 
-export function applyFastFlowTransformRsbuild(
+function applyFastFlowTransformRsbuildImpl(
   chain: BundlerChain,
   utils: BundlerChainUtils,
   options: TransformOptionsInput = {}
@@ -54,17 +54,21 @@ export function applyFastFlowTransformRsbuild(
     .options(options);
 }
 
-function pluginFastFlowTransformRsbuild(
+function createRsbuildPlugin(
   options: TransformOptionsInput = {}
 ): RsbuildPlugin {
   return {
     name: 'rsbuild:fast-flow-transform',
     setup(api) {
       api.modifyBundlerChain((chain, utils) => {
-        applyFastFlowTransformRsbuild(chain, utils, options);
+        applyFastFlowTransformRsbuildImpl(chain, utils, options);
       });
     },
   };
 }
 
-export default pluginFastFlowTransformRsbuild;
+const pluginFastFlowTransformRsbuild = Object.assign(createRsbuildPlugin, {
+  applyFastFlowTransformRsbuild: applyFastFlowTransformRsbuildImpl,
+});
+
+export = pluginFastFlowTransformRsbuild;

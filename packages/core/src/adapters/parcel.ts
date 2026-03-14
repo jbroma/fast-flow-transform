@@ -1,11 +1,11 @@
 import { Transformer } from '@parcel/plugin';
 import SourceMap from '@parcel/source-map';
 
-import fft from './index.js';
+import fft from '../index.js';
 import type {
   SourceMapLike,
   TransformOptionsInput,
-} from './transform/types.js';
+} from '../transform/types.js';
 
 interface ParcelAssetMap {
   toVLQ(): SourceMapLike;

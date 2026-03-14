@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { runCli } from '../src/cli-run.js';
+import { runCli } from '../src/cli/run.js';
 
 type RawSourceMap = import('source-map').RawSourceMap;
 

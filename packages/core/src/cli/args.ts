@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import type { TransformOptionsInput } from './transform/types.js';
+import type { TransformOptionsInput } from '../transform/types.js';
 
 export interface CliCommand {
   inputFile: string;

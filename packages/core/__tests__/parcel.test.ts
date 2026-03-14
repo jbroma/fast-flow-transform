@@ -103,7 +103,7 @@ describe('parcel integration', () => {
       setCode: vi.fn(),
       setMap: vi.fn(),
     };
-    const parcel = await import('../src/parcel.js');
+    const parcel = await import('../src/adapters/parcel.js');
     const plugin = parcel.createFastFlowTransformParcel({
       dialect: 'flow-detect',
       format: 'compact',
@@ -155,7 +155,7 @@ describe('parcel integration', () => {
       setCode: vi.fn(),
       setMap: vi.fn(),
     };
-    const { default: plugin } = await import('../src/parcel.js');
+    const { default: plugin } = await import('../src/adapters/parcel.js');
 
     await (plugin as unknown as ParcelPlugin).transform({
       asset,

@@ -65,7 +65,8 @@ describe('rollup-family and vite adapters', () => {
       transform,
     }));
 
-    const { createFastFlowTransformRollup } = await import('../src/rollup.js');
+    const { createFastFlowTransformRollup } =
+      await import('../src/adapters/rollup.js');
     const plugin = createFastFlowTransformRollup({
       format: 'pretty',
     }) as RollupLikePlugin;
@@ -95,8 +96,8 @@ describe('rollup-family and vite adapters', () => {
   });
 
   it('rolldown entrypoint aliases the rollup adapter', async () => {
-    const rollupModule = await import('../src/rollup.js');
-    const rolldownModule = await import('../src/rolldown.js');
+    const rollupModule = await import('../src/adapters/rollup.js');
+    const rolldownModule = await import('../src/adapters/rolldown.js');
 
     expect(rolldownModule.default).toBe(rollupModule.default);
     expect(rolldownModule.createFastFlowTransformRolldown).toBe(
@@ -117,10 +118,12 @@ describe('rollup-family and vite adapters', () => {
       transform,
     }));
 
-    const { createFastFlowTransformRollup } = await import('../src/rollup.js');
+    const { createFastFlowTransformRollup } =
+      await import('../src/adapters/rollup.js');
     const { createFastFlowTransformRolldown } =
-      await import('../src/rolldown.js');
-    const { createFastFlowTransformVite } = await import('../src/vite.js');
+      await import('../src/adapters/rolldown.js');
+    const { createFastFlowTransformVite } =
+      await import('../src/adapters/vite.js');
 
     const rollupPlugin = createFastFlowTransformRollup() as RollupLikePlugin;
     const rolldownPlugin =
@@ -172,7 +175,8 @@ describe('rollup-family and vite adapters', () => {
       transform,
     }));
 
-    const { createFastFlowTransformVite } = await import('../src/vite.js');
+    const { createFastFlowTransformVite } =
+      await import('../src/adapters/vite.js');
     const plugin = createFastFlowTransformVite() as VitePlugin;
 
     expect(plugin.enforce).toBe('pre');
@@ -226,7 +230,7 @@ describe('esbuild adapter', () => {
     }));
 
     const { createFastFlowTransformEsbuild } =
-      await import('../src/esbuild.js');
+      await import('../src/adapters/esbuild.js');
     const plugin = createFastFlowTransformEsbuild() as EsbuildPlugin;
 
     let onLoadCallback:

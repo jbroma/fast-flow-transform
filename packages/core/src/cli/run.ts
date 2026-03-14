@@ -4,16 +4,16 @@ import {
 } from 'node:fs/promises';
 import { basename, dirname, relative } from 'node:path';
 
-import { HELP_TEXT, parseCliArgs } from './cli-args.js';
-import type { CliCommand, UnparsedCliOptions } from './cli-args.js';
-import fft from './index.js';
-import { parseOptions } from './transform/options.js';
+import fft from '../index.js';
+import { parseOptions } from '../transform/options.js';
 import type {
   SourceMapLike,
   TransformInput,
   TransformOptionsInput,
   TransformResult,
-} from './transform/types.js';
+} from '../transform/types.js';
+import { HELP_TEXT, parseCliArgs } from './args.js';
+import type { CliCommand, UnparsedCliOptions } from './args.js';
 
 interface StreamLike {
   write(chunk: string): unknown;

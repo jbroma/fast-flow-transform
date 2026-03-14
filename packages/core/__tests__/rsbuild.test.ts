@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import pluginFastFlowTransformRsbuild, {
   applyFastFlowTransformRsbuild,
-} from '../src/rsbuild.js';
+} from '../src/adapters/rsbuild.js';
 
 function createBundlerChainSpy() {
   const calls: Record<string, unknown> = {};

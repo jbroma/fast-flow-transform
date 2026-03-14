@@ -1,8 +1,8 @@
-import fft from './index.js';
+import fft from '../index.js';
 import type {
   SourceMapLike,
   TransformOptionsInput,
-} from './transform/types.js';
+} from '../transform/types.js';
 
 type LoaderCallback = (
   error: Error | null,

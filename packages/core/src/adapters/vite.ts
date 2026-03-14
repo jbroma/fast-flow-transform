@@ -4,8 +4,8 @@ import type {
 } from 'rollup';
 import type { Plugin as VitePlugin } from 'vite';
 
-import fft from './index.js';
-import type { TransformOptionsInput } from './transform/types.js';
+import fft from '../index.js';
+import type { TransformOptionsInput } from '../transform/types.js';
 
 export type FastFlowTransformViteOptions = TransformOptionsInput;
 

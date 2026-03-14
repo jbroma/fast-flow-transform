@@ -42,6 +42,7 @@
     "eslint/no-eq-null": "off",
     "eslint/no-negated-condition": "off",
     "eslint/sort-keys": "off",
+    "import/no-relative-parent-imports": "off",
     "promise/avoid-new": "off",
     "promise/no-callback-in-promise": "off",
     "promise/prefer-await-to-callbacks": "off",

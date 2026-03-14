@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
-import fft from './index.js';
-import type { TransformOptionsInput } from './transform/types.js';
+import fft from '../index.js';
+import type { TransformOptionsInput } from '../transform/types.js';
 
 export type FastFlowTransformEsbuildOptions = TransformOptionsInput;
 

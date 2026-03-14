@@ -4,6 +4,7 @@
     "types": ["node", "vitest/globals"]
   },
   "include": [
+    "__tests__/**/*.ts",
     "scripts/**/*.ts",
     "src/**/*.cts",
     "src/**/*.ts",

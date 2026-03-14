@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import fft from 'fast-flow-transform';
+import fft from '../src/index.js';
 
 type Format = 'compact' | 'pretty';
 interface SnapshotCase {

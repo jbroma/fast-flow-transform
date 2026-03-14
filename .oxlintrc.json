@@ -7,7 +7,8 @@
     "packages/**/__tests__/**",
     "packages/**/bench/**",
     "packages/fft-loader/bench/fixtures/**",
-    "test/correctness/**/*.js",
+    "packages/core/__tests__/inputs/**/*.js",
+    "packages/core/__tests__/outputs/**/*.js",
     "test/bundlers/parcel/src/**/*.js"
   ],
   "rules": {

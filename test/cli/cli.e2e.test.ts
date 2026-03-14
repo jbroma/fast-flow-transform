@@ -7,7 +7,10 @@ import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
-const CLI_PATH = resolve(TEST_DIR, 'node_modules/.bin/fast-flow-transform');
+const CLI_PATH = resolve(
+  TEST_DIR,
+  'node_modules/fast-flow-transform/dist/cli.js'
+);
 const FLOW_INPUT =
   "// @flow\nimport type { Node } from './types.js';\nconst value: Node = { id: 1 };\nexport default value.id;\n";
 
@@ -35,7 +38,7 @@ function outputFilePath(dir: string): string {
 }
 
 async function runCli(args: string[], cwd: string) {
-  return await execFileAsync(CLI_PATH, args, { cwd });
+  return await execFileAsync(process.execPath, [CLI_PATH, ...args], { cwd });
 }
 
 async function readSourceMap(outputFile: string): Promise<SourceMapJson> {

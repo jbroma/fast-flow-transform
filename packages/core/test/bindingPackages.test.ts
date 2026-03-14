@@ -2,8 +2,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from 'vitest';
-
 const workspaceRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../..'
@@ -36,15 +34,29 @@ describe('binding packages', () => {
         types?: string;
       };
 
-      expect(existsSync(path.join(packageRoot, 'index.ts'))).toBe(false);
-      expect(existsSync(path.join(packageRoot, 'index.js'))).toBe(false);
-      expect(existsSync(path.join(packageRoot, 'tsconfig.json'))).toBe(false);
-      expect(existsSync(path.join(packageRoot, 'tsconfig.build.json'))).toBe(
-        false
-      );
-      expect(packageJson.files).toEqual([expectedBindingFile(packageName)]);
-      expect(packageJson.main).toBe(`./${expectedBindingFile(packageName)}`);
-      expect(packageJson.types).toBeUndefined();
+      expect({
+        files: packageJson.files,
+        fsEntriesPresent: {
+          indexJs: existsSync(path.join(packageRoot, 'index.js')),
+          indexTs: existsSync(path.join(packageRoot, 'index.ts')),
+          tsconfig: existsSync(path.join(packageRoot, 'tsconfig.json')),
+          tsconfigBuild: existsSync(
+            path.join(packageRoot, 'tsconfig.build.json')
+          ),
+        },
+        main: packageJson.main,
+        types: packageJson.types,
+      }).toStrictEqual({
+        files: [expectedBindingFile(packageName)],
+        fsEntriesPresent: {
+          indexJs: false,
+          indexTs: false,
+          tsconfig: false,
+          tsconfigBuild: false,
+        },
+        main: `./${expectedBindingFile(packageName)}`,
+        types: undefined,
+      });
     }
   });
 });

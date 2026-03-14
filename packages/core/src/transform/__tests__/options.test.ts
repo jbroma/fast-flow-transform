@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseOptions } from '../src/transform/options.js';
+import { parseOptions } from '../options.js';
 
 describe('parseOptions', () => {
   it('normalizes default values for a minimal options object', () => {

@@ -86,7 +86,7 @@ describe('parcel integration', () => {
       })
     );
 
-    vi.doMock('../src/index.js', () => ({
+    vi.doMock('../../index.js', () => ({
       default: transform,
       transform,
     }));
@@ -103,7 +103,7 @@ describe('parcel integration', () => {
       setCode: vi.fn(),
       setMap: vi.fn(),
     };
-    const parcel = await import('../src/adapters/parcel.js');
+    const parcel = await import('../parcel.js');
     const plugin = parcel.createFastFlowTransformParcel({
       dialect: 'flow-detect',
       format: 'compact',
@@ -142,7 +142,7 @@ describe('parcel integration', () => {
       })
     );
 
-    vi.doMock('../src/index.js', () => ({
+    vi.doMock('../../index.js', () => ({
       default: transform,
       transform,
     }));
@@ -155,7 +155,7 @@ describe('parcel integration', () => {
       setCode: vi.fn(),
       setMap: vi.fn(),
     };
-    const { default: plugin } = await import('../src/adapters/parcel.js');
+    const { default: plugin } = await import('../parcel.js');
 
     await (plugin as unknown as ParcelPlugin).transform({
       asset,

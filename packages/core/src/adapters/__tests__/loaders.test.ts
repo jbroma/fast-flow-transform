@@ -16,7 +16,7 @@ type LoaderContext = {
 };
 
 async function runLoader(
-  loaderPath: '../src/adapters/webpack.js' | '../src/adapters/rspack.js',
+  loaderPath: '../webpack.js' | '../rspack.js',
   context: Omit<LoaderContext, 'async'>,
   inputMap: RawSourceMap | null = null
 ) {
@@ -72,12 +72,12 @@ describe('webpack and rspack wrappers', () => {
       })
     );
 
-    vi.doMock('../src/index.js', () => ({
+    vi.doMock('../../index.js', () => ({
       default: transform,
       transform,
     }));
 
-    const result = await runLoader('../src/adapters/webpack.js', {
+    const result = await runLoader('../webpack.js', {
       getOptions: () => ({ format: 'pretty' }),
       resourcePath: '/tmp/input.js',
       sourceMap: false,
@@ -102,12 +102,12 @@ describe('webpack and rspack wrappers', () => {
       })
     );
 
-    vi.doMock('../src/index.js', () => ({
+    vi.doMock('../../index.js', () => ({
       default: transform,
       transform,
     }));
 
-    await runLoader('../src/adapters/rspack.js', {
+    await runLoader('../rspack.js', {
       query: { dialect: 'flow' },
       resourcePath: '/tmp/rspack-input.js',
     });

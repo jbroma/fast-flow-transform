@@ -30,7 +30,7 @@ function createSingleMappingMap({
 }
 
 async function importTransform() {
-  return await import('../src/index.js');
+  return await import('../index.js');
 }
 
 function mockNativeBinding(transform: (input: unknown) => unknown): {
@@ -42,7 +42,7 @@ function mockNativeBinding(transform: (input: unknown) => unknown): {
     transform: bindingTransform,
   }));
 
-  vi.doMock('../src/transform/nativeBinding.js', () => ({
+  vi.doMock('../transform/nativeBinding.js', () => ({
     loadNativeBinding,
   }));
 

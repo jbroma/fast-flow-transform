@@ -4,7 +4,7 @@ import {
   bindingFileNameFor,
   platformPackageNameFor,
   resolveBindingPathForTest,
-} from '../src/transform/resolveBinding.js';
+} from '../resolveBinding.js';
 
 describe('platformPackageNameFor', () => {
   it('returns the renamed package for each supported target', () => {

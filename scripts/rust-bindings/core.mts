@@ -139,6 +139,7 @@ export function normalizeRustgenSource(source: string): string {
     .split('\n')
     .map((line) =>
       line
+        .replace(/^use fft_hermes::parser::\*;$/, 'use hermes::parser::*;')
         .replace(
           /^(\s*let )([A-Za-z_][A-Za-z0-9_]*)( = )/,
           (_match, prefix, identifier, suffix) =>

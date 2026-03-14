@@ -8,6 +8,14 @@
 use std::env;
 use std::path::PathBuf;
 
+fn emit_cpp_runtime_link() {
+    if cfg!(target_os = "macos") {
+        println!("cargo:rustc-link-lib=c++");
+    } else if cfg!(target_os = "linux") {
+        println!("cargo:rustc-link-lib=stdc++");
+    }
+}
+
 fn is_hermes_root(path: &PathBuf) -> bool {
     path.join("CMakeLists.txt").exists()
         && path.join("include").exists()
@@ -41,6 +49,7 @@ fn detect_hermes_root() -> PathBuf {
 }
 
 fn main() {
+    emit_cpp_runtime_link();
     let hermes_root = detect_hermes_root();
 
     println!(

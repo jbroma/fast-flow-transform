@@ -9,7 +9,6 @@ repository = "https://github.com/jbroma/fast-flow-transform"
 
 [dependencies]
 fft_support = { path = "../fft_support" }
-libcplusplus = { path = "../libcplusplus" }
 libc = "0.2"
 thiserror = "1.0"
 

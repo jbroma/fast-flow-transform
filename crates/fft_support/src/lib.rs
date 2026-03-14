@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-extern crate libcplusplus;
-
 mod nullbuf;
 pub use nullbuf::NullTerminatedBuf;
 mod timer;

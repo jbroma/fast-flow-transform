@@ -9,8 +9,6 @@
 //!
 //! This library exports selected Hermes interfaces to Rust
 
-extern crate libcplusplus;
-
 #[allow(dead_code)]
 pub mod parser;
 

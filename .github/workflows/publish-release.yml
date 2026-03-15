@@ -6,34 +6,55 @@ on:
       - main
     types:
       - closed
+  workflow_run:
+    workflows:
+      - canary-release
+    types:
+      - completed
 
 permissions:
   contents: read
   id-token: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.workflow_run.id || github.ref }}
   cancel-in-progress: false
 
 jobs:
   prepare-publish:
     name: prepare-publish
-    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') }}
+    if: ${{ (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v')) || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-24.04
     outputs:
-      checkout_ref: ${{ steps.resolve.outputs.checkout_ref }}
+      checkout_ref: ${{ steps.resolve_stable.outputs.checkout_ref || steps.resolve_canary.outputs.checkout_ref }}
+      publish_mode: ${{ steps.resolve_stable.outputs.publish_mode || steps.resolve_canary.outputs.publish_mode }}
 
     steps:
       - name: Fail if release PR source is external
-        if: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        if: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
           echo "Release publish is only allowed for refs originating from this repository." >&2
           exit 1
 
+      - name: Fail if canary source is external
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository }}
+        run: |
+          echo "Canary publish is only allowed for refs originating from this repository." >&2
+          exit 1
+
       - name: Resolve stable publish context
-        id: resolve
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        run: echo "checkout_ref=${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
+        id: resolve_stable
+        if: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          echo "checkout_ref=${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
+          echo "publish_mode=stable" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve canary publish context
+        id: resolve_canary
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository }}
+        run: |
+          echo "checkout_ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          echo "publish_mode=canary" >> "$GITHUB_OUTPUT"
 
   publish-linux-bindings:
     name: publish-linux-bindings
@@ -48,31 +69,10 @@ jobs:
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Set up workspace
-        uses: ./.github/actions/setup-pr-ci
-
-      - name: Update npm
-        run: npm install --global npm@latest
-
-      - name: Install Linux cross-compilers
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-      - name: Install Rust targets
-        run: rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
-
-      - name: Build and publish Linux bindings
-        run: node scripts/release/publish-binding-package.mts --target x86_64-unknown-linux-gnu
-
-      - name: Build and publish Linux ARM64 binding
-        env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-          CMAKE_CXX_COMPILER: aarch64-linux-gnu-g++
-          CMAKE_C_COMPILER: aarch64-linux-gnu-gcc
-          CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-        run: node scripts/release/publish-binding-package.mts --target aarch64-unknown-linux-gnu
+      - name: Publish Linux bindings
+        uses: ./.github/actions/publish-linux-bindings
+        with:
+          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
 
   publish-windows-bindings:
     name: publish-windows-bindings
@@ -87,22 +87,10 @@ jobs:
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Set up workspace
-        uses: ./.github/actions/setup-pr-ci
-
-      - name: Update npm
-        run: npm install --global npm@latest
-
-      - name: Install Rust targets
-        run: rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
-
-      - name: Build and publish Windows bindings
-        run: node scripts/release/publish-binding-package.mts --target x86_64-pc-windows-msvc
-
-      - name: Build and publish Windows ARM64 binding
-        env:
-          CMAKE_GENERATOR_PLATFORM: ARM64
-        run: node scripts/release/publish-binding-package.mts --target aarch64-pc-windows-msvc
+      - name: Publish Windows bindings
+        uses: ./.github/actions/publish-windows-bindings
+        with:
+          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
 
   publish-macos-bindings:
     name: publish-macos-bindings
@@ -117,28 +105,10 @@ jobs:
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Set up workspace
-        uses: ./.github/actions/setup-pr-ci
-
-      - name: Update npm
-        run: npm install --global npm@latest
-
-      - name: Install Rust targets
-        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
-
-      - name: Build and publish macOS bindings
-        env:
-          CFLAGS_aarch64_apple_darwin: -arch arm64
-          CMAKE_OSX_ARCHITECTURES: arm64
-          CXXFLAGS_aarch64_apple_darwin: -arch arm64
-        run: node scripts/release/publish-binding-package.mts --target aarch64-apple-darwin
-
-      - name: Build and publish macOS x64 binding
-        env:
-          CFLAGS_x86_64_apple_darwin: -arch x86_64
-          CMAKE_OSX_ARCHITECTURES: x86_64
-          CXXFLAGS_x86_64_apple_darwin: -arch x86_64
-        run: node scripts/release/publish-binding-package.mts --target x86_64-apple-darwin
+      - name: Publish macOS bindings
+        uses: ./.github/actions/publish-macos-bindings
+        with:
+          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
 
   publish-package:
     name: publish-package
@@ -160,30 +130,18 @@ jobs:
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Set up workspace
-        uses: ./.github/actions/setup-pr-ci
-
-      - name: Update npm
-        run: npm install --global npm@latest
-
-      - name: Build main package
-        run: |
-          pnpm sync-binding
-          pnpm --dir packages/core run build
-
       - name: Publish main package
         id: publish
-        run: |
-          node scripts/release/publish-package.mts \
-            --package-dir packages/core \
-            --version-output release_version
+        uses: ./.github/actions/publish-main-package
+        with:
+          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
 
   finalize-release:
     name: finalize-release
     needs:
       - prepare-publish
       - publish-package
-    if: ${{ needs.prepare-publish.result == 'success' }}
+    if: ${{ needs.prepare-publish.result == 'success' && needs.prepare-publish.outputs.publish_mode == 'stable' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write

@@ -1,0 +1,51 @@
+name: Publish Main Package
+description: Build and publish the main package for a release.
+
+inputs:
+  publish-mode:
+    description: Release mode, either stable or canary.
+    required: true
+
+outputs:
+  release_version:
+    description: Published stable version, if this was a stable release.
+    value: ${{ steps.publish.outputs.release_version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up workspace
+      uses: ./.github/actions/setup-pr-ci
+
+    - name: Apply canary version
+      if: ${{ inputs.publish-mode == 'canary' }}
+      run: node scripts/release/apply-release-version.mts --canary
+      shell: bash
+
+    - name: Update npm
+      run: npm install --global npm@latest
+      shell: bash
+
+    - name: Build main package
+      run: |
+        pnpm sync-binding
+        pnpm --dir packages/core run build
+      shell: bash
+
+    - name: Publish main package for stable release
+      id: publish
+      if: ${{ inputs.publish-mode == 'stable' }}
+      run: |
+        node scripts/release/publish-package.mts \
+          --package-dir packages/core \
+          --tag latest \
+          --version-output release_version
+      shell: bash
+
+    - name: Publish main package for canary release
+      if: ${{ inputs.publish-mode == 'canary' }}
+      run: |
+        node scripts/release/publish-package.mts \
+          --package-dir packages/core \
+          --tag canary
+      shell: bash

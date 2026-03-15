@@ -1,0 +1,36 @@
+name: Publish Windows Bindings
+description: Build and publish the Windows binding packages for a release.
+
+inputs:
+  publish-mode:
+    description: Release mode, either stable or canary.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up workspace
+      uses: ./.github/actions/setup-pr-ci
+
+    - name: Apply canary version
+      if: ${{ inputs.publish-mode == 'canary' }}
+      run: node scripts/release/apply-release-version.mts --canary
+      shell: pwsh
+
+    - name: Update npm
+      run: npm install --global npm@latest
+      shell: pwsh
+
+    - name: Install Rust targets
+      run: rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
+      shell: pwsh
+
+    - name: Build and publish Windows bindings
+      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target x86_64-pc-windows-msvc
+      shell: pwsh
+
+    - name: Build and publish Windows ARM64 binding
+      env:
+        CMAKE_GENERATOR_PLATFORM: ARM64
+      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target aarch64-pc-windows-msvc
+      shell: pwsh

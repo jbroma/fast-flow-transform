@@ -72,7 +72,9 @@ notes.
 
 Manual canary releases also run through GitHub. Dispatch the
 `canary-release` workflow from any same-repo branch, including the branch
-backing an open PR, to publish that exact ref under the npm `canary` dist-tag.
+backing an open PR. That workflow hands off to the non-dispatchable
+`publish-release` workflow, which performs the trusted npm publish for that
+exact ref under the npm `canary` dist-tag.
 Canary versions are derived from the checked-out package version plus the
 commit timestamp and short SHA, and they do not create a git tag or GitHub
 Release.

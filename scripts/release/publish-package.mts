@@ -3,7 +3,7 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 function commandName(name: 'npm'): string {
-  return process.platform === 'win32' ? `${name}.cmd` : name;
+  return name;
 }
 
 function requiredFlag(name: string): string {
@@ -23,6 +23,7 @@ function optionalFlag(name: string): string | null {
 }
 
 interface CommandResult {
+  error: string | null;
   status: number | null;
   stderr: string;
   stdout: string;
@@ -37,11 +38,12 @@ function runResult(
     cwd,
     encoding: 'utf8',
     env: process.env,
-    shell: false,
+    shell: process.platform === 'win32',
     stdio,
   });
 
   return {
+    error: result.error?.message ?? null,
     status: result.status,
     stderr: result.stderr ?? '',
     stdout: result.stdout ?? '',
@@ -53,9 +55,9 @@ function run(args: string[], cwd: string, stdio: 'inherit' | 'pipe'): string {
 
   if (result.status !== 0) {
     throw new Error(
-      `npm ${args.join(' ')} failed with ${String(result.status)}\n${
-        result.stdout
-      }${result.stderr}`
+      `npm ${args.join(' ')} failed with ${String(result.status)}${
+        result.error ? ` (${result.error})` : ''
+      }\n${result.stdout}${result.stderr}`
     );
   }
 
@@ -147,9 +149,9 @@ function publishOrSkip(
   }
 
   throw new Error(
-    `npm publish failed with ${String(publishResult.status)}\n${
-      publishResult.stdout
-    }${publishResult.stderr}`
+    `npm publish failed with ${String(publishResult.status)}${
+      publishResult.error ? ` (${publishResult.error})` : ''
+    }\n${publishResult.stdout}${publishResult.stderr}`
   );
 }
 

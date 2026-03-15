@@ -5,18 +5,15 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  prepare-publish:
-    name: prepare-publish
+  request-canary:
+    name: request-canary
     runs-on: ubuntu-24.04
-    outputs:
-      checkout_ref: ${{ steps.resolve.outputs.checkout_ref }}
 
     steps:
       - name: Fail if manual dispatch is not from a branch
@@ -25,155 +22,7 @@ jobs:
           echo "Manual canary publish must be dispatched from a repository branch." >&2
           exit 1
 
-      - name: Resolve canary publish context
-        id: resolve
-        run: echo "checkout_ref=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-
-  publish-linux-bindings:
-    name: publish-linux-bindings
-    needs: prepare-publish
-    if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-          submodules: recursive
-
-      - name: Set up workspace
-        uses: ./.github/actions/setup-pr-ci
-
-      - name: Apply canary version
-        run: node scripts/release/apply-release-version.mts --canary
-
-      - name: Update npm
-        run: npm install --global npm@latest
-
-      - name: Install Linux cross-compilers
+      - name: Confirm handoff to publish-release
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-      - name: Install Rust targets
-        run: rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
-
-      - name: Build and publish Linux bindings
-        run: node scripts/release/publish-binding-package.mts --tag canary --target x86_64-unknown-linux-gnu
-
-      - name: Build and publish Linux ARM64 binding
-        env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-          CMAKE_CXX_COMPILER: aarch64-linux-gnu-g++
-          CMAKE_C_COMPILER: aarch64-linux-gnu-gcc
-          CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-        run: node scripts/release/publish-binding-package.mts --tag canary --target aarch64-unknown-linux-gnu
-
-  publish-windows-bindings:
-    name: publish-windows-bindings
-    needs: prepare-publish
-    if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: windows-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-          submodules: recursive
-
-      - name: Set up workspace
-        uses: ./.github/actions/setup-pr-ci
-
-      - name: Apply canary version
-        run: node scripts/release/apply-release-version.mts --canary
-
-      - name: Update npm
-        run: npm install --global npm@latest
-
-      - name: Install Rust targets
-        run: rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
-
-      - name: Build and publish Windows bindings
-        run: node scripts/release/publish-binding-package.mts --tag canary --target x86_64-pc-windows-msvc
-
-      - name: Build and publish Windows ARM64 binding
-        env:
-          CMAKE_GENERATOR_PLATFORM: ARM64
-        run: node scripts/release/publish-binding-package.mts --tag canary --target aarch64-pc-windows-msvc
-
-  publish-macos-bindings:
-    name: publish-macos-bindings
-    needs: prepare-publish
-    if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: macos-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-          submodules: recursive
-
-      - name: Set up workspace
-        uses: ./.github/actions/setup-pr-ci
-
-      - name: Apply canary version
-        run: node scripts/release/apply-release-version.mts --canary
-
-      - name: Update npm
-        run: npm install --global npm@latest
-
-      - name: Install Rust targets
-        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
-
-      - name: Build and publish macOS bindings
-        env:
-          CFLAGS_aarch64_apple_darwin: -arch arm64
-          CMAKE_OSX_ARCHITECTURES: arm64
-          CXXFLAGS_aarch64_apple_darwin: -arch arm64
-        run: node scripts/release/publish-binding-package.mts --tag canary --target aarch64-apple-darwin
-
-      - name: Build and publish macOS x64 binding
-        env:
-          CFLAGS_x86_64_apple_darwin: -arch x86_64
-          CMAKE_OSX_ARCHITECTURES: x86_64
-          CXXFLAGS_x86_64_apple_darwin: -arch x86_64
-        run: node scripts/release/publish-binding-package.mts --tag canary --target x86_64-apple-darwin
-
-  publish-package:
-    name: publish-package
-    needs:
-      - prepare-publish
-      - publish-linux-bindings
-      - publish-windows-bindings
-      - publish-macos-bindings
-    if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-          submodules: recursive
-
-      - name: Set up workspace
-        uses: ./.github/actions/setup-pr-ci
-
-      - name: Apply canary version
-        run: node scripts/release/apply-release-version.mts --canary
-
-      - name: Update npm
-        run: npm install --global npm@latest
-
-      - name: Build main package
-        run: |
-          pnpm sync-binding
-          pnpm --dir packages/core run build
-
-      - name: Publish main package
-        run: node scripts/release/publish-package.mts --package-dir packages/core --tag canary
+          echo "Canary publish requested for ${GITHUB_REF_NAME} at ${GITHUB_SHA}."
+          echo "The trusted publish happens in the publish-release workflow."

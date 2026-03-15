@@ -1,0 +1,46 @@
+name: Publish Linux Bindings
+description: Build and publish the Linux binding packages for a release.
+
+inputs:
+  publish-mode:
+    description: Release mode, either stable or canary.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up workspace
+      uses: ./.github/actions/setup-pr-ci
+
+    - name: Apply canary version
+      if: ${{ inputs.publish-mode == 'canary' }}
+      run: node scripts/release/apply-release-version.mts --canary
+      shell: bash
+
+    - name: Update npm
+      run: npm install --global npm@latest
+      shell: bash
+
+    - name: Install Linux cross-compilers
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+      shell: bash
+
+    - name: Install Rust targets
+      run: rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+      shell: bash
+
+    - name: Build and publish Linux bindings
+      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target x86_64-unknown-linux-gnu
+      shell: bash
+
+    - name: Build and publish Linux ARM64 binding
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+        CMAKE_CXX_COMPILER: aarch64-linux-gnu-g++
+        CMAKE_C_COMPILER: aarch64-linux-gnu-gcc
+        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target aarch64-unknown-linux-gnu
+      shell: bash

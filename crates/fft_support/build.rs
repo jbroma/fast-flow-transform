@@ -46,9 +46,7 @@ fn detect_hermes_root() -> PathBuf {
         }
     }
 
-    panic!(
-        "Unable to locate Hermes sources. Set HERMES_SOURCE_DIR or initialize hermes."
-    );
+    panic!("Unable to locate Hermes sources. Set HERMES_SOURCE_DIR or initialize hermes.");
 }
 
 fn main() {

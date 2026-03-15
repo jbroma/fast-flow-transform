@@ -488,9 +488,8 @@ fn test_replace_var_decls() {
 #[test]
 fn test_arrow_functions_have_no_id() {
     let mut ctx = Context::new();
-    let ast =
-        hparser::parse_with_flags(Default::default(), "const f = async (x) => x;", &mut ctx)
-            .unwrap();
+    let ast = hparser::parse_with_flags(Default::default(), "const f = async (x) => x;", &mut ctx)
+        .unwrap();
 
     let gc = GCLock::new(&mut ctx);
     let program = node_cast!(Node::Program, ast.node(&gc));

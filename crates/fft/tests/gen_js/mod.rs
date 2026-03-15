@@ -589,7 +589,6 @@ fn test_declare() {
     test_roundtrip_flow("declare export function foo(): number;");
 }
 
-
 #[test]
 fn test_enum() {
     test_roundtrip_flow("enum Foo {}");

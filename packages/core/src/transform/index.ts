@@ -70,12 +70,12 @@ function transformRequest(
   };
 }
 
-function outputMap(
+async function outputMap(
   options: TransformOptions,
   inputSourceMap: SourceMapLike | null | undefined,
   nativeMap: SourceMapLike | undefined,
   filename: string
-): SourceMapLike | undefined {
+): Promise<SourceMapLike | undefined> {
   if (!options.sourcemap) {
     return undefined;
   }
@@ -85,7 +85,7 @@ function outputMap(
   }
 
   return inputSourceMap
-    ? mergeSourceMaps(inputSourceMap, nativeMap, filename)
+    ? await mergeSourceMaps(inputSourceMap, nativeMap, filename)
     : nativeMap;
 }
 
@@ -98,7 +98,7 @@ export async function transform(
 
   try {
     const result = await nativeBinding.transform(request);
-    const map = outputMap(
+    const map = await outputMap(
       options,
       input.inputSourceMap,
       result.map,

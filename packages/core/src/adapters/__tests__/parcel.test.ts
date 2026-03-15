@@ -70,14 +70,14 @@ describe('parcel integration', () => {
       mappings: 'AAAA',
       names: [],
       sources: ['input.js'],
-      version: '3',
+      version: 3,
     };
     const outputMap: RawSourceMap = {
       file: 'output.js',
       mappings: 'BBBB',
       names: [],
       sources: ['input.js'],
-      version: '3',
+      version: 3,
     };
     const transform = vi.fn(() =>
       Promise.resolve({

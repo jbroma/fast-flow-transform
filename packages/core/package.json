@@ -79,20 +79,27 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@parcel/plugin": "^2.16.1",
-    "@parcel/source-map": "^2.1.1",
-    "esbuild": "^0.27.3",
-    "source-map": "^0.6.1"
+    "source-map": "^0.7.6"
   },
   "devDependencies": {
+    "@parcel/plugin": "^2.16.1",
+    "@parcel/source-map": "^2.1.1",
     "rollup": "^4.59.0",
     "vite": "^7.3.1",
     "vitest": "^4.0.16"
   },
   "peerDependencies": {
+    "@parcel/plugin": "^2.16.1",
+    "@parcel/source-map": "^2.1.1",
     "vite": "^7.0.0"
   },
   "peerDependenciesMeta": {
+    "@parcel/plugin": {
+      "optional": true
+    },
+    "@parcel/source-map": {
+      "optional": true
+    },
     "vite": {
       "optional": true
     }

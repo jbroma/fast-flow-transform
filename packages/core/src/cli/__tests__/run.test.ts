@@ -10,7 +10,7 @@ function createMap(file: string): RawSourceMap {
     mappings: '',
     names: [],
     sources: ['/tmp/input.js'],
-    version: '3',
+    version: 3,
   };
 }
 

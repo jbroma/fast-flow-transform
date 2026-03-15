@@ -40,6 +40,6 @@ export function exampleMap(file: string): RawSourceMap {
     mappings: 'AAAA',
     names: [],
     sources: [file],
-    version: '3',
+    version: 3,
   };
 }

@@ -152,19 +152,20 @@ describe('programmatic transform', () => {
     expect(result.code).toBe('const answer = 42;\n');
     expect(result.map).not.toBeUndefined();
 
-    const consumer = new SourceMapConsumer(result.map as RawSourceMap);
-    const originalPosition = consumer.originalPositionFor({
-      column: 0,
-      line: 1,
-    });
+    await SourceMapConsumer.with(
+      result.map as RawSourceMap,
+      null,
+      async (consumer) => {
+        const originalPosition = consumer.originalPositionFor({
+          column: 0,
+          line: 1,
+        });
 
-    expect(originalPosition.source).toBe('/tmp/original.js');
-    expect(originalPosition.line).toBe(5);
-    expect(originalPosition.column).toBe(7);
-
-    const destroy = (consumer as SourceMapConsumer & { destroy?: () => void })
-      .destroy;
-    destroy?.call(consumer);
+        expect(originalPosition.source).toBe('/tmp/original.js');
+        expect(originalPosition.line).toBe(5);
+        expect(originalPosition.column).toBe(7);
+      }
+    );
   });
 
   it('skips source maps when sourcemap is false', async () => {

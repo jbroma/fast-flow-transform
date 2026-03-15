@@ -1,12 +1,12 @@
 import { SourceMapConsumer, SourceMapGenerator } from 'source-map';
-import type { RawSourceMap } from 'source-map';
+import type { BasicSourceMapConsumer, RawSourceMap } from 'source-map';
 
 type JsonSourceMapGenerator = SourceMapGenerator & {
   toJSON(): RawSourceMap;
 };
 
 function sourceContentFor(
-  consumer: SourceMapConsumer,
+  consumer: BasicSourceMapConsumer,
   source: string
 ): string | null {
   try {
@@ -18,12 +18,12 @@ function sourceContentFor(
 
 function addMergedMappings(
   merged: SourceMapGenerator,
-  inputConsumer: SourceMapConsumer,
-  outputConsumer: SourceMapConsumer
+  inputConsumer: BasicSourceMapConsumer,
+  outputConsumer: BasicSourceMapConsumer
 ): void {
   outputConsumer.eachMapping(
     (
-      mapping: Parameters<SourceMapConsumer['eachMapping']>[0] extends (
+      mapping: Parameters<BasicSourceMapConsumer['eachMapping']>[0] extends (
         item: infer T,
         ...rest: never[]
       ) => void
@@ -60,23 +60,14 @@ function addMergedMappings(
 }
 
 function copySourceContent(
-  consumer: SourceMapConsumer,
+  consumer: BasicSourceMapConsumer,
   merged: SourceMapGenerator
 ): void {
-  const { sources } = consumer as SourceMapConsumer & { sources: string[] };
-
-  for (const source of sources) {
+  for (const source of consumer.sources) {
     const content = sourceContentFor(consumer, source);
     if (content !== null) {
       merged.setSourceContent(source, content);
     }
-  }
-}
-
-function destroyConsumer(consumer: SourceMapConsumer): void {
-  const { destroy } = consumer as SourceMapConsumer & { destroy?: () => void };
-  if (typeof destroy === 'function') {
-    destroy.call(consumer);
   }
 }
 
@@ -90,8 +81,8 @@ function createMergedGenerator(
 }
 
 function mergedSourceMap(
-  inputConsumer: SourceMapConsumer,
-  outputConsumer: SourceMapConsumer,
+  inputConsumer: BasicSourceMapConsumer,
+  outputConsumer: BasicSourceMapConsumer,
   outputMap: RawSourceMap,
   generatedFile: string
 ): RawSourceMap {
@@ -100,24 +91,30 @@ function mergedSourceMap(
   addMergedMappings(merged, inputConsumer, outputConsumer);
   copySourceContent(outputConsumer, merged);
   copySourceContent(inputConsumer, merged);
-  destroyConsumer(outputConsumer);
-  destroyConsumer(inputConsumer);
   return (merged as JsonSourceMapGenerator).toJSON();
 }
 
-export function mergeSourceMaps(
+async function withBasicConsumer<T>(
+  map: RawSourceMap,
+  callback: (consumer: BasicSourceMapConsumer) => Promise<T> | T
+): Promise<T> {
+  return await SourceMapConsumer.with(map, null, (consumer) =>
+    callback(consumer as BasicSourceMapConsumer)
+  );
+}
+
+export async function mergeSourceMaps(
   inputMap: RawSourceMap | null | undefined,
   outputMap: RawSourceMap,
   generatedFile: string
-): RawSourceMap {
+): Promise<RawSourceMap> {
   if (!inputMap) {
     return outputMap;
   }
 
-  return mergedSourceMap(
-    new SourceMapConsumer(inputMap),
-    new SourceMapConsumer(outputMap),
-    outputMap,
-    generatedFile
+  return await withBasicConsumer(inputMap, (inputConsumer) =>
+    withBasicConsumer(outputMap, (outputConsumer) =>
+      mergedSourceMap(inputConsumer, outputConsumer, outputMap, generatedFile)
+    )
   );
 }

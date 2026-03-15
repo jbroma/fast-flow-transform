@@ -8,6 +8,9 @@ inputs:
   publish-mode:
     description: Release mode, either stable or canary.
     required: true
+  target:
+    description: Rust target triple for the Windows binding to publish.
+    required: true
 
 runs:
   using: composite
@@ -18,7 +21,7 @@ runs:
     - name: Cache Rust artifacts
       uses: Swatinem/rust-cache@v2
       with:
-        shared-key: publish-bindings-${{ runner.os }}
+        shared-key: publish-bindings-${{ runner.os }}-${{ inputs.target }}
 
     - name: Apply canary version
       if: ${{ inputs.publish-mode == 'canary' }}
@@ -37,19 +40,27 @@ runs:
       shell: pwsh
 
     - name: Install Rust targets
-      run: rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
+      run: rustup target add "${{ inputs.target }}"
       shell: pwsh
 
-    - name: Build and publish Windows bindings
+    - name: Build and publish Windows x64 binding
+      if: ${{ inputs.target == 'x86_64-pc-windows-msvc' }}
       env:
         CMAKE_GENERATOR: Visual Studio 17 2022
         CMAKE_GENERATOR_PLATFORM: x64
-      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target x86_64-pc-windows-msvc
+      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target "${{ inputs.target }}"
       shell: pwsh
 
     - name: Build and publish Windows ARM64 binding
+      if: ${{ inputs.target == 'aarch64-pc-windows-msvc' }}
       env:
         CMAKE_GENERATOR: Visual Studio 17 2022
         CMAKE_GENERATOR_PLATFORM: ARM64
-      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target aarch64-pc-windows-msvc
+      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target "${{ inputs.target }}"
+      shell: pwsh
+
+    - name: Fail for unsupported Windows target
+      if: ${{ inputs.target != 'x86_64-pc-windows-msvc' && inputs.target != 'aarch64-pc-windows-msvc' }}
+      run: |
+        Write-Error "Unsupported Windows target: ${{ inputs.target }}"
       shell: pwsh

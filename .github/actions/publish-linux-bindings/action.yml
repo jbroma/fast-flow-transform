@@ -8,6 +8,9 @@ inputs:
   publish-mode:
     description: Release mode, either stable or canary.
     required: true
+  target:
+    description: Rust target triple for the Linux binding to publish.
+    required: true
 
 runs:
   using: composite
@@ -18,7 +21,7 @@ runs:
     - name: Cache Rust artifacts
       uses: Swatinem/rust-cache@v2
       with:
-        shared-key: publish-bindings-${{ runner.os }}
+        shared-key: publish-bindings-${{ runner.os }}-${{ inputs.target }}
 
     - name: Apply canary version
       if: ${{ inputs.publish-mode == 'canary' }}
@@ -37,6 +40,7 @@ runs:
       shell: bash
 
     - name: Install Linux cross-compilers
+      if: ${{ inputs.target == 'aarch64-unknown-linux-gnu' }}
       run: |
         sudo dpkg --add-architecture arm64
         sudo apt-get update
@@ -47,14 +51,16 @@ runs:
       shell: bash
 
     - name: Install Rust targets
-      run: rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+      run: rustup target add "${{ inputs.target }}"
       shell: bash
 
-    - name: Build and publish Linux bindings
-      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target x86_64-unknown-linux-gnu
+    - name: Build and publish Linux x64 binding
+      if: ${{ inputs.target == 'x86_64-unknown-linux-gnu' }}
+      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target "${{ inputs.target }}"
       shell: bash
 
     - name: Build and publish Linux ARM64 binding
+      if: ${{ inputs.target == 'aarch64-unknown-linux-gnu' }}
       env:
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
         CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
@@ -63,5 +69,12 @@ runs:
         CMAKE_C_COMPILER: aarch64-linux-gnu-gcc
         CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
         PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig
-      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target aarch64-unknown-linux-gnu
+      run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target "${{ inputs.target }}"
+      shell: bash
+
+    - name: Fail for unsupported Linux target
+      if: ${{ inputs.target != 'x86_64-unknown-linux-gnu' && inputs.target != 'aarch64-unknown-linux-gnu' }}
+      run: |
+        echo "Unsupported Linux target: ${{ inputs.target }}" >&2
+        exit 1
       shell: bash

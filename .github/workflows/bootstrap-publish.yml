@@ -41,8 +41,8 @@ jobs:
         run: |
           echo "checkout_ref=${{ github.event.inputs.target_ref }}" >> "$GITHUB_OUTPUT"
 
-  publish-linux-bindings:
-    name: publish-linux-bindings
+  publish-linux-x64-binding:
+    name: publish-linux-x64-binding
     needs: prepare-bootstrap
     if: ${{ needs.prepare-bootstrap.result == 'success' }}
     runs-on: ubuntu-24.04
@@ -54,14 +54,35 @@ jobs:
           ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Publish Linux bindings
+      - name: Publish Linux x64 binding
         uses: ./.github/actions/publish-linux-bindings
         with:
           npm-token: ${{ secrets.NPM_TOKEN }}
           publish-mode: canary
+          target: x86_64-unknown-linux-gnu
 
-  publish-windows-bindings:
-    name: publish-windows-bindings
+  publish-linux-arm64-binding:
+    name: publish-linux-arm64-binding
+    needs: prepare-bootstrap
+    if: ${{ needs.prepare-bootstrap.result == 'success' }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
+          submodules: recursive
+
+      - name: Publish Linux ARM64 binding
+        uses: ./.github/actions/publish-linux-bindings
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          publish-mode: canary
+          target: aarch64-unknown-linux-gnu
+
+  publish-windows-x64-binding:
+    name: publish-windows-x64-binding
     needs: prepare-bootstrap
     if: ${{ needs.prepare-bootstrap.result == 'success' }}
     runs-on: windows-latest
@@ -73,14 +94,35 @@ jobs:
           ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Publish Windows bindings
+      - name: Publish Windows x64 binding
         uses: ./.github/actions/publish-windows-bindings
         with:
           npm-token: ${{ secrets.NPM_TOKEN }}
           publish-mode: canary
+          target: x86_64-pc-windows-msvc
 
-  publish-macos-bindings:
-    name: publish-macos-bindings
+  publish-windows-arm64-binding:
+    name: publish-windows-arm64-binding
+    needs: prepare-bootstrap
+    if: ${{ needs.prepare-bootstrap.result == 'success' }}
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
+          submodules: recursive
+
+      - name: Publish Windows ARM64 binding
+        uses: ./.github/actions/publish-windows-bindings
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          publish-mode: canary
+          target: aarch64-pc-windows-msvc
+
+  publish-macos-x64-binding:
+    name: publish-macos-x64-binding
     needs: prepare-bootstrap
     if: ${{ needs.prepare-bootstrap.result == 'success' }}
     runs-on: macos-latest
@@ -92,19 +134,43 @@ jobs:
           ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Publish macOS bindings
+      - name: Publish macOS x64 binding
         uses: ./.github/actions/publish-macos-bindings
         with:
           npm-token: ${{ secrets.NPM_TOKEN }}
           publish-mode: canary
+          target: x86_64-apple-darwin
+
+  publish-macos-arm64-binding:
+    name: publish-macos-arm64-binding
+    needs: prepare-bootstrap
+    if: ${{ needs.prepare-bootstrap.result == 'success' }}
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
+          submodules: recursive
+
+      - name: Publish macOS ARM64 binding
+        uses: ./.github/actions/publish-macos-bindings
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          publish-mode: canary
+          target: aarch64-apple-darwin
 
   publish-package:
     name: publish-package
     needs:
       - prepare-bootstrap
-      - publish-linux-bindings
-      - publish-windows-bindings
-      - publish-macos-bindings
+      - publish-linux-x64-binding
+      - publish-linux-arm64-binding
+      - publish-windows-x64-binding
+      - publish-windows-arm64-binding
+      - publish-macos-x64-binding
+      - publish-macos-arm64-binding
     if: ${{ needs.prepare-bootstrap.result == 'success' }}
     runs-on: ubuntu-24.04
 

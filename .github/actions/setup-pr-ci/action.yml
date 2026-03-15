@@ -1,0 +1,28 @@
+name: Setup PR CI
+description: Set up the shared toolchain and dependencies for PR CI jobs.
+
+runs:
+  using: composite
+  steps:
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10.29.2
+        run_install: false
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+
+    - name: Set up Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: 1.88.0
+        components: rustfmt
+        cache: false
+        rustflags: ''
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      shell: bash

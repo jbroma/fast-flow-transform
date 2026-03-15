@@ -1,0 +1,81 @@
+name: pr-hygiene
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  title-and-labels:
+    name: title-and-labels
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Validate PR title
+        id: semantic
+        uses: amannn/action-semantic-pull-request@v6
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          requireScope: true
+          types: |
+            feat
+            fix
+            chore
+            refactor
+            docs
+            test
+            perf
+            build
+            ci
+            revert
+
+      - name: Check out trusted base revision
+        if: ${{ always() }}
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Ensure managed labels exist
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const ensureManagedLabels = require(
+              `${process.env.GITHUB_WORKSPACE}/.github/scripts/ensure-managed-labels.cjs`
+            );
+            await ensureManagedLabels({ github, context });
+
+      - name: Sync PR labels from title
+        if: ${{ always() }}
+        uses: github/issue-labeler@v3.4
+        with:
+          configuration-path: .github/pr-labeler.yml
+          enable-versioned-regex: 0
+          include-title: 1
+          include-body: 0
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          sync-labels: 1
+
+      - name: Fail on invalid PR title
+        if: ${{ steps.semantic.outcome != 'success' }}
+        run: |
+          echo "PR titles must match type(scope)!: description." >&2
+          echo "Allowed types: feat, fix, chore, refactor, docs, test, perf, build, ci, revert." >&2
+          exit 1

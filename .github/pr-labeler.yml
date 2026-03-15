@@ -1,0 +1,32 @@
+'type: feat':
+  - '/^feat\([^)]+\)(!)?: .+/'
+
+'type: fix':
+  - '/^fix\([^)]+\)(!)?: .+/'
+
+'type: chore':
+  - '/^chore\([^)]+\)(!)?: .+/'
+
+'type: refactor':
+  - '/^refactor\([^)]+\)(!)?: .+/'
+
+'type: docs':
+  - '/^docs\([^)]+\)(!)?: .+/'
+
+'type: test':
+  - '/^test\([^)]+\)(!)?: .+/'
+
+'type: perf':
+  - '/^perf\([^)]+\)(!)?: .+/'
+
+'type: build':
+  - '/^build\([^)]+\)(!)?: .+/'
+
+'type: ci':
+  - '/^ci\([^)]+\)(!)?: .+/'
+
+'type: revert':
+  - '/^revert\([^)]+\)(!)?: .+/'
+
+'breaking-change':
+  - '/^(feat|fix|chore|refactor|docs|test|perf|build|ci|revert)\([^)]+\)!: .+/'

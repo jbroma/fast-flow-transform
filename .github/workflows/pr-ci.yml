@@ -1,0 +1,123 @@
+name: pr-ci
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-js:
+    name: lint-js
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up PR CI
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Run format check
+        run: pnpm format:check
+
+      - name: Run Rust bindings check
+        run: pnpm codegen:rust:check
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up PR CI
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Run typecheck
+        run: pnpm typecheck
+
+  lint-rust:
+    name: lint-rust
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up PR CI
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Run rustfmt check
+        run: cargo fmt --all --check
+
+  build:
+    name: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up PR CI
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Run build
+        run: pnpm build
+
+  test:
+    name: test
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up PR CI
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Run tests
+        run: pnpm test
+
+  e2e-test:
+    name: e2e-test
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up PR CI
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Run end-to-end tests
+        run: pnpm e2e

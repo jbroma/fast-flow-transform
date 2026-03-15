@@ -1,0 +1,26 @@
+changelog:
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking-change
+    - title: Features
+      labels:
+        - 'type: feat'
+    - title: Bug Fixes
+      labels:
+        - 'type: fix'
+    - title: Documentation
+      labels:
+        - 'type: docs'
+    - title: Maintenance
+      labels:
+        - 'type: chore'
+        - 'type: refactor'
+        - 'type: perf'
+        - 'type: build'
+        - 'type: ci'
+        - 'type: test'
+        - 'type: revert'
+    - title: Other Changes
+      labels:
+        - '*'

@@ -1,5 +1,47 @@
 # Contributing
 
+## Pull Requests
+
+Before you open or update a PR, run the same gates CI expects:
+
+```bash
+pnpm check
+pnpm build
+pnpm test
+pnpm e2e
+cargo fmt --all --check
+```
+
+PR titles must use this format:
+
+```text
+type(scope)!: description
+```
+
+Allowed types:
+
+- `feat`
+- `fix`
+- `chore`
+- `refactor`
+- `docs`
+- `test`
+- `perf`
+- `build`
+- `ci`
+- `revert`
+
+Matching titles are labeled automatically from their type, and titles using `!`
+also receive the `breaking-change` label.
+
+Examples:
+
+- `feat(core): add parser flag`
+- `fix(core)!: change parser default`
+- `ci(actions): add PR build workflow`
+- `docs(contributing): document PR title rules`
+- `refactor(bindings): simplify native sync step`
+
 ## Local Registry Testing
 
 Use the local Verdaccio workflow when you want to publish a canary build of

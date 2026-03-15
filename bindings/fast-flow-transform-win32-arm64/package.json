@@ -16,6 +16,7 @@
   "files": [
     "fast-flow-transform.win32-arm64.node",
     "LICENSE",
+    "README.md",
     "THIRD_PARTY_LICENSES"
   ],
   "publishConfig": {

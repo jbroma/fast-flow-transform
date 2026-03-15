@@ -16,6 +16,7 @@
   "files": [
     "fast-flow-transform.darwin-x64.node",
     "LICENSE",
+    "README.md",
     "THIRD_PARTY_LICENSES"
   ],
   "publishConfig": {

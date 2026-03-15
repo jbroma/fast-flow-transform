@@ -50,6 +50,7 @@ describe('binding packages', () => {
         files: [
           expectedBindingFile(packageName),
           'LICENSE',
+          'README.md',
           'THIRD_PARTY_LICENSES',
         ],
         fsEntriesPresent: {

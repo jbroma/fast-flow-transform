@@ -22,7 +22,10 @@
     ],
     "cpu": [
       "x64"
-    ]
+    ],
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
   },
   "main": "./fast-flow-transform.linux-x64.node",
   "engines": {

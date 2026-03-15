@@ -1,0 +1,120 @@
+name: bootstrap-publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: Branch, tag, or exact commit SHA from this repository to bootstrap.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.inputs.target_ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare-bootstrap:
+    name: prepare-bootstrap
+    runs-on: ubuntu-24.04
+    outputs:
+      checkout_ref: ${{ steps.resolve.outputs.checkout_ref }}
+
+    steps:
+      - name: Fail if NPM_TOKEN is missing
+        env:
+          BOOTSTRAP_NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$BOOTSTRAP_NPM_TOKEN" ]; then
+            echo "Bootstrap publishing requires the NPM_TOKEN repository secret." >&2
+            exit 1
+          fi
+
+      - name: Resolve bootstrap publish context
+        id: resolve
+        run: |
+          echo "checkout_ref=${{ github.event.inputs.target_ref }}" >> "$GITHUB_OUTPUT"
+
+  publish-linux-bindings:
+    name: publish-linux-bindings
+    needs: prepare-bootstrap
+    if: ${{ needs.prepare-bootstrap.result == 'success' }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
+          submodules: recursive
+
+      - name: Publish Linux bindings
+        uses: ./.github/actions/publish-linux-bindings
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          publish-mode: canary
+
+  publish-windows-bindings:
+    name: publish-windows-bindings
+    needs: prepare-bootstrap
+    if: ${{ needs.prepare-bootstrap.result == 'success' }}
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
+          submodules: recursive
+
+      - name: Publish Windows bindings
+        uses: ./.github/actions/publish-windows-bindings
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          publish-mode: canary
+
+  publish-macos-bindings:
+    name: publish-macos-bindings
+    needs: prepare-bootstrap
+    if: ${{ needs.prepare-bootstrap.result == 'success' }}
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
+          submodules: recursive
+
+      - name: Publish macOS bindings
+        uses: ./.github/actions/publish-macos-bindings
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          publish-mode: canary
+
+  publish-package:
+    name: publish-package
+    needs:
+      - prepare-bootstrap
+      - publish-linux-bindings
+      - publish-windows-bindings
+      - publish-macos-bindings
+    if: ${{ needs.prepare-bootstrap.result == 'success' }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare-bootstrap.outputs.checkout_ref }}
+          submodules: recursive
+
+      - name: Publish main package
+        uses: ./.github/actions/publish-main-package
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          publish-mode: canary

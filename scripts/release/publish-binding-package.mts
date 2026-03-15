@@ -145,14 +145,7 @@ function alreadyPublished(result: CommandResult): boolean {
 }
 
 function publishArgs(publishTag: string): string[] {
-  return [
-    'publish',
-    '--provenance',
-    '--tag',
-    publishTag,
-    '--registry',
-    'https://registry.npmjs.org/',
-  ];
+  return ['publish', '--tag', publishTag];
 }
 
 function publishPackage(

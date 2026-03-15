@@ -2,6 +2,9 @@ name: Publish macOS Bindings
 description: Build and publish the macOS binding packages for a release.
 
 inputs:
+  npm-token:
+    description: Optional npm token for npm registry authentication.
+    required: false
   publish-mode:
     description: Release mode, either stable or canary.
     required: true
@@ -19,6 +22,13 @@ runs:
 
     - name: Update npm
       run: npm install --global npm@latest
+      shell: bash
+
+    - name: Configure npm auth
+      if: ${{ inputs.npm-token != '' }}
+      env:
+        NPM_TOKEN: ${{ inputs.npm-token }}
+      run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
       shell: bash
 
     - name: Install Rust targets

@@ -22,7 +22,10 @@
     ],
     "cpu": [
       "arm64"
-    ]
+    ],
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
   },
   "main": "./fast-flow-transform.win32-arm64.node",
   "engines": {

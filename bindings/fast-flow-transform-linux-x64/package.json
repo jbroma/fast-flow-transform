@@ -14,7 +14,9 @@
   },
   "type": "module",
   "files": [
-    "fast-flow-transform.linux-x64.node"
+    "fast-flow-transform.linux-x64.node",
+    "LICENSE",
+    "THIRD_PARTY_LICENSES"
   ],
   "publishConfig": {
     "os": [
@@ -26,6 +28,10 @@
     "access": "public",
     "provenance": true,
     "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "postpack": "node ../../scripts/release/cleanup-package-assets.mts",
+    "prepack": "node ../../scripts/release/stage-package-assets.mts"
   },
   "main": "./fast-flow-transform.linux-x64.node",
   "engines": {

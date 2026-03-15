@@ -71,20 +71,6 @@ function resolveFromOptionalPackage(
   }
 }
 
-function resolveFromBundledBinding(
-  options: BindingResolutionOptions
-): string | null {
-  const bindingPath = resolve(
-    options.moduleDirectory,
-    '..',
-    '..',
-    'native',
-    bindingFileNameFor(options.platform, options.arch)
-  );
-
-  return options.exists(bindingPath) ? bindingPath : null;
-}
-
 function resolveFromWorkspaceBuild(
   options: BindingResolutionOptions
 ): string | null {
@@ -102,7 +88,6 @@ function resolveBindingPathWithOptions(
 ): string {
   const bindingPath =
     resolveBindingFromEnvironment(options) ??
-    resolveFromBundledBinding(options) ??
     resolveFromOptionalPackage(options) ??
     resolveFromWorkspaceBuild(options);
 

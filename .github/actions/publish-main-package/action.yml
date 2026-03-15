@@ -26,12 +26,6 @@ runs:
       run: npm install --global npm@latest
       shell: bash
 
-    - name: Build main package
-      run: |
-        pnpm sync-binding
-        pnpm --dir packages/core run build
-      shell: bash
-
     - name: Publish main package for stable release
       id: publish
       if: ${{ inputs.publish-mode == 'stable' }}

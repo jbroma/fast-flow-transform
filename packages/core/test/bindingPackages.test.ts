@@ -23,7 +23,7 @@ function expectedBindingFile(
 }
 
 describe('binding packages', () => {
-  it('describe native .node artifacts without TypeScript baggage', () => {
+  it('describe native .node artifacts with publish-time license metadata only', () => {
     for (const packageName of bindingPackageNames) {
       const packageRoot = path.join(workspaceRoot, 'bindings', packageName);
       const packageJson = JSON.parse(
@@ -47,7 +47,11 @@ describe('binding packages', () => {
         main: packageJson.main,
         types: packageJson.types,
       }).toStrictEqual({
-        files: [expectedBindingFile(packageName)],
+        files: [
+          expectedBindingFile(packageName),
+          'LICENSE',
+          'THIRD_PARTY_LICENSES',
+        ],
         fsEntriesPresent: {
           indexJs: false,
           indexTs: false,

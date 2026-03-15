@@ -79,13 +79,8 @@ function main(): void {
     sourcePath,
     join(root, 'target', 'release')
   );
-  const copiedBundledBinding = copyBinding(
-    sourcePath,
-    join(root, 'packages', 'core', 'native')
-  );
 
   reportCopiedBinding(copiedTargetBinding);
-  reportCopiedBinding(copiedBundledBinding);
   copyPackageBinding(root, sourcePath);
 }
 

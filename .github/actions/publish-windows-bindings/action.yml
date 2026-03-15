@@ -26,11 +26,15 @@ runs:
       shell: pwsh
 
     - name: Build and publish Windows bindings
+      env:
+        CMAKE_GENERATOR: Visual Studio 17 2022
+        CMAKE_GENERATOR_PLATFORM: x64
       run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target x86_64-pc-windows-msvc
       shell: pwsh
 
     - name: Build and publish Windows ARM64 binding
       env:
+        CMAKE_GENERATOR: Visual Studio 17 2022
         CMAKE_GENERATOR_PLATFORM: ARM64
       run: node scripts/release/publish-binding-package.mts --tag "${{ inputs.publish-mode == 'canary' && 'canary' || 'latest' }}" --target aarch64-pc-windows-msvc
       shell: pwsh

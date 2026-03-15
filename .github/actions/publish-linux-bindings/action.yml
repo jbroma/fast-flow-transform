@@ -42,6 +42,36 @@ runs:
     - name: Install Linux cross-compilers
       if: ${{ inputs.target == 'aarch64-unknown-linux-gnu' }}
       run: |
+        source /etc/os-release
+        sudo tee /etc/apt/sources.list.d/ubuntu.sources > /dev/null <<EOF
+        Types: deb
+        URIs: http://azure.archive.ubuntu.com/ubuntu/
+        Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates ${VERSION_CODENAME}-backports
+        Components: main restricted universe multiverse
+        Architectures: amd64
+        Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+        Types: deb
+        URIs: http://security.ubuntu.com/ubuntu/
+        Suites: ${VERSION_CODENAME}-security
+        Components: main restricted universe multiverse
+        Architectures: amd64
+        Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+        Types: deb
+        URIs: http://ports.ubuntu.com/ubuntu-ports/
+        Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates ${VERSION_CODENAME}-backports
+        Components: main restricted universe multiverse
+        Architectures: arm64
+        Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+        Types: deb
+        URIs: http://ports.ubuntu.com/ubuntu-ports/
+        Suites: ${VERSION_CODENAME}-security
+        Components: main restricted universe multiverse
+        Architectures: arm64
+        Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+        EOF
         sudo dpkg --add-architecture arm64
         sudo apt-get update
         sudo apt-get install --yes \

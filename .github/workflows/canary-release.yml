@@ -1,39 +1,33 @@
-name: publish-release
+name: canary-release
 
 on:
-  pull_request_target:
-    branches:
-      - main
-    types:
-      - closed
+  workflow_dispatch:
 
 permissions:
   contents: read
   id-token: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   prepare-publish:
     name: prepare-publish
-    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') }}
     runs-on: ubuntu-24.04
     outputs:
       checkout_ref: ${{ steps.resolve.outputs.checkout_ref }}
 
     steps:
-      - name: Fail if release PR source is external
-        if: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+      - name: Fail if manual dispatch is not from a branch
+        if: ${{ github.ref_type != 'branch' }}
         run: |
-          echo "Release publish is only allowed for refs originating from this repository." >&2
+          echo "Manual canary publish must be dispatched from a repository branch." >&2
           exit 1
 
-      - name: Resolve stable publish context
+      - name: Resolve canary publish context
         id: resolve
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        run: echo "checkout_ref=${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
+        run: echo "checkout_ref=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
   publish-linux-bindings:
     name: publish-linux-bindings
@@ -51,6 +45,9 @@ jobs:
       - name: Set up workspace
         uses: ./.github/actions/setup-pr-ci
 
+      - name: Apply canary version
+        run: node scripts/release/apply-release-version.mts --canary
+
       - name: Update npm
         run: npm install --global npm@latest
 
@@ -63,7 +60,7 @@ jobs:
         run: rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
 
       - name: Build and publish Linux bindings
-        run: node scripts/release/publish-binding-package.mts --target x86_64-unknown-linux-gnu
+        run: node scripts/release/publish-binding-package.mts --tag canary --target x86_64-unknown-linux-gnu
 
       - name: Build and publish Linux ARM64 binding
         env:
@@ -72,7 +69,7 @@ jobs:
           CMAKE_CXX_COMPILER: aarch64-linux-gnu-g++
           CMAKE_C_COMPILER: aarch64-linux-gnu-gcc
           CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-        run: node scripts/release/publish-binding-package.mts --target aarch64-unknown-linux-gnu
+        run: node scripts/release/publish-binding-package.mts --tag canary --target aarch64-unknown-linux-gnu
 
   publish-windows-bindings:
     name: publish-windows-bindings
@@ -90,6 +87,9 @@ jobs:
       - name: Set up workspace
         uses: ./.github/actions/setup-pr-ci
 
+      - name: Apply canary version
+        run: node scripts/release/apply-release-version.mts --canary
+
       - name: Update npm
         run: npm install --global npm@latest
 
@@ -97,12 +97,12 @@ jobs:
         run: rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
 
       - name: Build and publish Windows bindings
-        run: node scripts/release/publish-binding-package.mts --target x86_64-pc-windows-msvc
+        run: node scripts/release/publish-binding-package.mts --tag canary --target x86_64-pc-windows-msvc
 
       - name: Build and publish Windows ARM64 binding
         env:
           CMAKE_GENERATOR_PLATFORM: ARM64
-        run: node scripts/release/publish-binding-package.mts --target aarch64-pc-windows-msvc
+        run: node scripts/release/publish-binding-package.mts --tag canary --target aarch64-pc-windows-msvc
 
   publish-macos-bindings:
     name: publish-macos-bindings
@@ -120,6 +120,9 @@ jobs:
       - name: Set up workspace
         uses: ./.github/actions/setup-pr-ci
 
+      - name: Apply canary version
+        run: node scripts/release/apply-release-version.mts --canary
+
       - name: Update npm
         run: npm install --global npm@latest
 
@@ -131,14 +134,14 @@ jobs:
           CFLAGS_aarch64_apple_darwin: -arch arm64
           CMAKE_OSX_ARCHITECTURES: arm64
           CXXFLAGS_aarch64_apple_darwin: -arch arm64
-        run: node scripts/release/publish-binding-package.mts --target aarch64-apple-darwin
+        run: node scripts/release/publish-binding-package.mts --tag canary --target aarch64-apple-darwin
 
       - name: Build and publish macOS x64 binding
         env:
           CFLAGS_x86_64_apple_darwin: -arch x86_64
           CMAKE_OSX_ARCHITECTURES: x86_64
           CXXFLAGS_x86_64_apple_darwin: -arch x86_64
-        run: node scripts/release/publish-binding-package.mts --target x86_64-apple-darwin
+        run: node scripts/release/publish-binding-package.mts --tag canary --target x86_64-apple-darwin
 
   publish-package:
     name: publish-package
@@ -149,8 +152,6 @@ jobs:
       - publish-macos-bindings
     if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: ubuntu-24.04
-    outputs:
-      release_version: ${{ steps.publish.outputs.release_version }}
 
     steps:
       - name: Check out repository
@@ -163,6 +164,9 @@ jobs:
       - name: Set up workspace
         uses: ./.github/actions/setup-pr-ci
 
+      - name: Apply canary version
+        run: node scripts/release/apply-release-version.mts --canary
+
       - name: Update npm
         run: npm install --global npm@latest
 
@@ -172,30 +176,4 @@ jobs:
           pnpm --dir packages/core run build
 
       - name: Publish main package
-        id: publish
-        run: |
-          node scripts/release/publish-package.mts \
-            --package-dir packages/core \
-            --version-output release_version
-
-  finalize-release:
-    name: finalize-release
-    needs:
-      - prepare-publish
-      - publish-package
-    if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-
-      - name: Create tag and GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/release/finalize-release.mts --version "${{ needs.publish-package.outputs.release_version }}"
+        run: node scripts/release/publish-package.mts --package-dir packages/core --tag canary

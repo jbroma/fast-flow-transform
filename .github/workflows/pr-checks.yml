@@ -1,4 +1,4 @@
-name: pr-ci
+name: pr-checks
 
 on:
   pull_request:

@@ -60,21 +60,22 @@ Examples:
 
 ## Releases
 
-Stable releases are prepared from `main` by running the `prepare-release`
+Stable releases are prepared from `main` by running the `create-release`
 workflow in GitHub. That workflow generates a temporary Changesets release
 entry from merged PR release labels, opens a `release/vX.Y.Z` PR with
 synchronized package and crate version bumps, and does not require
 contributors to author `.changeset/*.md` files manually. Merging that PR
-publishes the binding packages first, then publishes `fast-flow-transform`,
+triggers the non-dispatchable `publish-release` workflow, which publishes the
+binding packages first, then publishes `fast-flow-transform`,
 creates the git tag, and creates the GitHub Release with generated release
 notes.
 
 Manual canary releases also run through GitHub. Dispatch the
-`publish-release` workflow from any same-repo branch, including the branch
-backing an open PR, to publish that exact ref under the npm `canary`
-dist-tag. Canary versions are derived from the checked-out package version plus
-the commit timestamp and short SHA, and they do not create a git tag or
-GitHub Release.
+`canary-release` workflow from any same-repo branch, including the branch
+backing an open PR, to publish that exact ref under the npm `canary` dist-tag.
+Canary versions are derived from the checked-out package version plus the
+commit timestamp and short SHA, and they do not create a git tag or GitHub
+Release.
 
 ## Local Registry Testing
 

@@ -1,4 +1,4 @@
-name: prepare-release
+name: create-release
 
 on:
   workflow_dispatch:
@@ -15,10 +15,15 @@ concurrency:
 jobs:
   prepare:
     name: prepare
-    if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-24.04
 
     steps:
+      - name: Fail if manual dispatch is not from main
+        if: ${{ github.ref_name != 'main' }}
+        run: |
+          echo "create-release must be dispatched from main." >&2
+          exit 1
+
       - name: Check out repository
         uses: actions/checkout@v6
         with:

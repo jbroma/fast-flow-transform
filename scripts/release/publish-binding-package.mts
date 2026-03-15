@@ -216,9 +216,16 @@ function main(): void {
   const target = requiredFlag('--target');
   const publishTag = optionalFlag('--tag') ?? 'latest';
   const config = resolveTarget(target);
+  const manifest = manifestFor(config.packageDir);
+
+  if (versionExists(manifest.name, manifest.version)) {
+    process.stdout.write(
+      `Skipping existing package before build: ${manifest.name}@${manifest.version}\n`
+    );
+    return;
+  }
 
   buildBinding(target, config);
-  const manifest = manifestFor(config.packageDir);
   publishPackage(
     config.packageDir,
     manifest.name,

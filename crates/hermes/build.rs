@@ -75,6 +75,14 @@ fn detect_hermes_root() -> PathBuf {
     panic!("Unable to locate Hermes sources. Set HERMES_SOURCE_DIR or initialize hermes.");
 }
 
+fn configure_target_specific_cmake(config: &mut cmake::Config) {
+    if matches!(env::var("TARGET").as_deref(), Ok("aarch64-pc-windows-msvc")) {
+        config.define("BOOST_CONTEXT_ABI", "aapcs");
+        config.define("BOOST_CONTEXT_ARCHITECTURE", "arm64");
+        config.define("BOOST_CONTEXT_ASSEMBLER", "armasm");
+    }
+}
+
 fn main() {
     emit_cpp_runtime_link();
     let hermes_root = detect_hermes_root();
@@ -102,9 +110,10 @@ fn main() {
 
     // Build sourceMap library because it depends on everything we depend on here
     // via the hermesParser library.
-    let dst = cmake::Config::new(&hermes_root)
-        .build_target("hermesSourceMap")
-        .build();
+    let mut config = cmake::Config::new(&hermes_root);
+    configure_target_specific_cmake(&mut config);
+
+    let dst = config.build_target("hermesSourceMap").build();
 
     emit_link_search(dst.join("build/lib/Parser"));
     emit_link_search(dst.join("build/lib/Platform/Unicode"));

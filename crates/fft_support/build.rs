@@ -77,9 +77,8 @@ fn detect_hermes_root() -> PathBuf {
 
 fn configure_target_specific_cmake(config: &mut cmake::Config) {
     if matches!(env::var("TARGET").as_deref(), Ok("aarch64-pc-windows-msvc")) {
-        config.define("BOOST_CONTEXT_ABI", "aapcs");
         config.define("BOOST_CONTEXT_ARCHITECTURE", "arm64");
-        config.define("BOOST_CONTEXT_ASSEMBLER", "armasm");
+        config.define("BOOST_CONTEXT_IMPLEMENTATION", "winfib");
     }
 }
 

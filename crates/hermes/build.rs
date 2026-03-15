@@ -16,6 +16,32 @@ fn emit_cpp_runtime_link() {
     }
 }
 
+fn is_msvc_target() -> bool {
+    matches!(env::var("CARGO_CFG_TARGET_ENV").as_deref(), Ok("msvc"))
+}
+
+fn cmake_profile_dir() -> &'static str {
+    let profile = env::var("PROFILE").unwrap_or_default();
+    let debug = env::var("DEBUG").unwrap_or_default();
+
+    match (profile.as_str(), debug.as_str()) {
+        ("debug", _) => "Debug",
+        ("release" | "bench", "true") => "RelWithDebInfo",
+        _ => "Release",
+    }
+}
+
+fn emit_link_search(path: PathBuf) {
+    println!("cargo:rustc-link-search=native={}", path.display());
+
+    if is_msvc_target() {
+        println!(
+            "cargo:rustc-link-search=native={}",
+            path.join(cmake_profile_dir()).display()
+        );
+    }
+}
+
 fn is_hermes_root(path: &Path) -> bool {
     path.join("CMakeLists.txt").exists()
         && path.join("include").exists()
@@ -80,29 +106,14 @@ fn main() {
         .build_target("hermesSourceMap")
         .build();
 
-    println!("cargo:rustc-link-search={}/build/lib/Parser", dst.display());
-    println!(
-        "cargo:rustc-link-search={}/build/lib/Platform/Unicode",
-        dst.display()
-    );
-    println!(
-        "cargo:rustc-link-search={}/build/lib/SourceMap",
-        dst.display()
-    );
-    println!("cargo:rustc-link-search={}/build/lib/Regex", dst.display());
-    println!("cargo:rustc-link-search={}/build/lib/AST", dst.display());
-    println!(
-        "cargo:rustc-link-search={}/build/lib/Support",
-        dst.display()
-    );
-    println!(
-        "cargo:rustc-link-search={}/build/external/dtoa",
-        dst.display()
-    );
-    println!(
-        "cargo:rustc-link-search={}/build/external/llvh/lib/Support",
-        dst.display()
-    );
+    emit_link_search(dst.join("build/lib/Parser"));
+    emit_link_search(dst.join("build/lib/Platform/Unicode"));
+    emit_link_search(dst.join("build/lib/SourceMap"));
+    emit_link_search(dst.join("build/lib/Regex"));
+    emit_link_search(dst.join("build/lib/AST"));
+    emit_link_search(dst.join("build/lib/Support"));
+    emit_link_search(dst.join("build/external/dtoa"));
+    emit_link_search(dst.join("build/external/llvh/lib/Support"));
 
     println!("cargo:rustc-link-lib=hermesSourceMap");
     println!("cargo:rustc-link-lib=hermesAST");

@@ -29,6 +29,9 @@ permissions:
   contents: read
   id-token: write
 
+env:
+  CARGO_INCREMENTAL: 0
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.inputs.release_mode || github.ref }}-${{ github.event.inputs.target_ref || github.ref }}
   cancel-in-progress: false

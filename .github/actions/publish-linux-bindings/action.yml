@@ -15,6 +15,11 @@ runs:
     - name: Set up workspace
       uses: ./.github/actions/setup-pr-ci
 
+    - name: Cache Rust artifacts
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: publish-bindings-${{ runner.os }}
+
     - name: Apply canary version
       if: ${{ inputs.publish-mode == 'canary' }}
       run: node scripts/release/apply-release-version.mts --canary

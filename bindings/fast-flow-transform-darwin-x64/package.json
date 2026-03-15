@@ -2,6 +2,14 @@
   "name": "fast-flow-transform-darwin-x64",
   "version": "0.0.1",
   "description": "Platform native binding package for fast-flow-transform (darwin-x64)",
+  "keywords": [
+    "flowtype",
+    "strip-flow",
+    "napi",
+    "node-addon",
+    "darwin",
+    "x64"
+  ],
   "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
   "bugs": {
     "url": "https://github.com/jbroma/fast-flow-transform/issues"

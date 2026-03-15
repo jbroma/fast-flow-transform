@@ -2,6 +2,18 @@
   "name": "fast-flow-transform",
   "version": "0.0.1",
   "description": "Native Hermes/FFT Flow stripping transform with webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown, and esbuild adapters",
+  "keywords": [
+    "esbuild",
+    "flowtype",
+    "parcel",
+    "rolldown",
+    "rollup",
+    "rsbuild",
+    "rspack",
+    "strip-flow",
+    "vite",
+    "webpack"
+  ],
   "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
   "bugs": {
     "url": "https://github.com/jbroma/fast-flow-transform/issues"

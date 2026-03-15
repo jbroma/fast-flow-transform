@@ -6,7 +6,7 @@
       "cache": false
     },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["//#sync-binding", "^build"],
       "outputs": ["dist/**"]
     },
     "test": {
@@ -14,7 +14,7 @@
       "outputs": []
     },
     "e2e": {
-      "dependsOn": ["build", "^build", "//#sync-binding"],
+      "dependsOn": ["build", "^build"],
       "outputs": []
     },
     "typecheck": {

@@ -15,12 +15,13 @@
     "e2e": "turbo run e2e --log-prefix=none --filter=@fft-tests/*",
     "local-registry:publish": "node scripts/local-registry/publish.mts",
     "local-registry:start": "node scripts/local-registry/start.mts",
+    "test": "turbo run test --log-prefix=none --filter=!@fft/bench",
     "typecheck": "turbo run typecheck --log-prefix=none"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "oxfmt": "0.36.0",
-    "oxlint": "1.51.0",
+    "oxlint": "1.55.0",
     "turbo": "^2.8.14",
     "typescript": "^5.9.3",
     "ultracite": "7.2.5",

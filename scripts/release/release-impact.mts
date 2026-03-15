@@ -60,7 +60,11 @@ export function releaseImpactFor(
   }
 
   if (releaseLabels.length === 1) {
-    return releaseLabels[0].replace('release: ', '') as ReleaseImpact;
+    const [releaseLabel] = releaseLabels;
+    if (!releaseLabel) {
+      throw new Error('Expected exactly one release label.');
+    }
+    return releaseLabel.replace('release: ', '') as ReleaseImpact;
   }
 
   return (

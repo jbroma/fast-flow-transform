@@ -19,7 +19,7 @@ import {
   resolveHermesBuildDir,
   resolveHermesSourceDir,
   rustgenBinaryPath,
-} from './core.ts';
+} from './core.mts';
 
 type RustgenMode = 'ffi' | 'cvt';
 

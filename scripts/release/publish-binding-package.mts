@@ -56,12 +56,23 @@ function requiredFlag(name: string): string {
   return value;
 }
 
-function run(
+function optionalFlag(name: string): string | null {
+  const flagIndex = process.argv.indexOf(name);
+  return flagIndex === -1 ? null : (process.argv[flagIndex + 1] ?? null);
+}
+
+interface CommandResult {
+  status: number | null;
+  stderr: string;
+  stdout: string;
+}
+
+function runResult(
   command: string,
   args: string[],
   cwd: string,
   stdio: 'inherit' | 'pipe'
-): string {
+): CommandResult {
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
@@ -70,15 +81,30 @@ function run(
     stdio,
   });
 
+  return {
+    status: result.status,
+    stderr: result.stderr ?? '',
+    stdout: result.stdout ?? '',
+  };
+}
+
+function run(
+  command: string,
+  args: string[],
+  cwd: string,
+  stdio: 'inherit' | 'pipe'
+): string {
+  const result = runResult(command, args, cwd, stdio);
+
   if (result.status !== 0) {
     throw new Error(
       `${command} ${args.join(' ')} failed with ${String(result.status)}\n${
-        result.stdout ?? ''
-      }${result.stderr ?? ''}`
+        result.stdout
+      }${result.stderr}`
     );
   }
 
-  return result.stdout ?? '';
+  return result.stdout;
 }
 
 function manifestFor(packageDir: string): { name: string; version: string } {
@@ -108,31 +134,64 @@ function versionExists(name: string, version: string): boolean {
   }
 }
 
-function publishPackage(packageDir: string): void {
-  const manifest = manifestFor(packageDir);
-  if (versionExists(manifest.name, manifest.version)) {
+function alreadyPublished(result: CommandResult): boolean {
+  const combinedOutput = `${result.stdout}\n${result.stderr}`;
+
+  return /cannot publish over|previously published versions|cannot modify pre-existing version|EPUBLISHCONFLICT/i.test(
+    combinedOutput
+  );
+}
+
+function publishArgs(publishTag: string): string[] {
+  return [
+    'publish',
+    '--provenance',
+    '--tag',
+    publishTag,
+    '--registry',
+    'https://registry.npmjs.org/',
+  ];
+}
+
+function publishPackage(
+  packageDir: string,
+  packageName: string,
+  version: string,
+  publishTag: string
+): void {
+  if (versionExists(packageName, version)) {
     process.stdout.write(
-      `Skipping existing package: ${manifest.name}@${manifest.version}\n`
+      `Skipping existing package: ${packageName}@${version}\n`
     );
     return;
   }
 
-  run(
+  const publishResult = runResult(
     commandName('npm'),
-    ['publish', '--provenance', '--registry', 'https://registry.npmjs.org/'],
+    publishArgs(publishTag),
     packageDir,
     'inherit'
   );
-}
 
-function main(): void {
-  const target = requiredFlag('--target');
-  const config = TARGETS[target];
-
-  if (!config) {
-    throw new Error(`Unsupported target: ${target}`);
+  if (publishResult.status === 0) {
+    return;
   }
 
+  if (alreadyPublished(publishResult) || versionExists(packageName, version)) {
+    process.stdout.write(
+      `Treating already-published package as success: ${packageName}@${version}\n`
+    );
+    return;
+  }
+
+  throw new Error(
+    `npm publish failed with ${String(publishResult.status)}\n${
+      publishResult.stdout
+    }${publishResult.stderr}`
+  );
+}
+
+function buildBinding(target: string, config: BindingTarget): void {
   run(
     commandName('cargo'),
     ['build', '--release', '-p', 'fft_node', '--target', target],
@@ -146,7 +205,31 @@ function main(): void {
   }
 
   copyFileSync(sourcePath, join(config.packageDir, config.bindingFileName));
-  publishPackage(config.packageDir);
+}
+
+function resolveTarget(target: string): BindingTarget {
+  const config = TARGETS[target];
+
+  if (!config) {
+    throw new Error(`Unsupported target: ${target}`);
+  }
+
+  return config;
+}
+
+function main(): void {
+  const target = requiredFlag('--target');
+  const publishTag = optionalFlag('--tag') ?? 'latest';
+  const config = resolveTarget(target);
+
+  buildBinding(target, config);
+  const manifest = manifestFor(config.packageDir);
+  publishPackage(
+    config.packageDir,
+    manifest.name,
+    manifest.version,
+    publishTag
+  );
 }
 
 main();

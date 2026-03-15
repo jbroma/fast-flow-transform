@@ -6,9 +6,10 @@ on:
       - main
     types:
       - closed
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   id-token: write
 
 concurrency:
@@ -16,20 +17,66 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  prepare-publish:
+    name: prepare-publish
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v')) }}
+    runs-on: ubuntu-24.04
+    outputs:
+      checkout_ref: ${{ steps.stable.outputs.checkout_ref || steps.canary.outputs.checkout_ref }}
+      create_release: ${{ steps.stable.outputs.create_release || steps.canary.outputs.create_release }}
+      publish_mode: ${{ steps.stable.outputs.publish_mode || steps.canary.outputs.publish_mode }}
+      publish_tag: ${{ steps.stable.outputs.publish_tag || steps.canary.outputs.publish_tag }}
+
+    steps:
+      - name: Fail if release PR source is external
+        if: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          echo "Release publish is only allowed for refs originating from this repository." >&2
+          exit 1
+
+      - name: Fail if manual dispatch is not from a branch
+        if: ${{ github.event_name == 'workflow_dispatch' && github.ref_type != 'branch' }}
+        run: |
+          echo "Manual canary publish must be dispatched from a repository branch." >&2
+          exit 1
+
+      - name: Resolve stable publish context
+        id: stable
+        if: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          echo "checkout_ref=${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
+          echo "create_release=true" >> "$GITHUB_OUTPUT"
+          echo "publish_mode=stable" >> "$GITHUB_OUTPUT"
+          echo "publish_tag=latest" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve canary publish context
+        id: canary
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "checkout_ref=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "create_release=false" >> "$GITHUB_OUTPUT"
+          echo "publish_mode=canary" >> "$GITHUB_OUTPUT"
+          echo "publish_tag=canary" >> "$GITHUB_OUTPUT"
+
   publish-linux-bindings:
     name: publish-linux-bindings
-    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: prepare-publish
+    if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
       - name: Set up workspace
         uses: ./.github/actions/setup-pr-ci
+
+      - name: Apply canary version
+        if: ${{ needs.prepare-publish.outputs.publish_mode == 'canary' }}
+        run: node scripts/release/apply-release-version.mts --canary
 
       - name: Update npm
         run: npm install --global npm@latest
@@ -43,7 +90,7 @@ jobs:
         run: rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
 
       - name: Build and publish Linux bindings
-        run: node scripts/release/publish-binding-package.ts --target x86_64-unknown-linux-gnu
+        run: node scripts/release/publish-binding-package.mts --tag "${{ needs.prepare-publish.outputs.publish_tag }}" --target x86_64-unknown-linux-gnu
 
       - name: Build and publish Linux ARM64 binding
         env:
@@ -52,22 +99,27 @@ jobs:
           CMAKE_CXX_COMPILER: aarch64-linux-gnu-g++
           CMAKE_C_COMPILER: aarch64-linux-gnu-gcc
           CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-        run: node scripts/release/publish-binding-package.ts --target aarch64-unknown-linux-gnu
+        run: node scripts/release/publish-binding-package.mts --tag "${{ needs.prepare-publish.outputs.publish_tag }}" --target aarch64-unknown-linux-gnu
 
   publish-windows-bindings:
     name: publish-windows-bindings
-    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: prepare-publish
+    if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: windows-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
       - name: Set up workspace
         uses: ./.github/actions/setup-pr-ci
+
+      - name: Apply canary version
+        if: ${{ needs.prepare-publish.outputs.publish_mode == 'canary' }}
+        run: node scripts/release/apply-release-version.mts --canary
 
       - name: Update npm
         run: npm install --global npm@latest
@@ -76,27 +128,32 @@ jobs:
         run: rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
 
       - name: Build and publish Windows bindings
-        run: node scripts/release/publish-binding-package.ts --target x86_64-pc-windows-msvc
+        run: node scripts/release/publish-binding-package.mts --tag "${{ needs.prepare-publish.outputs.publish_tag }}" --target x86_64-pc-windows-msvc
 
       - name: Build and publish Windows ARM64 binding
         env:
           CMAKE_GENERATOR_PLATFORM: ARM64
-        run: node scripts/release/publish-binding-package.ts --target aarch64-pc-windows-msvc
+        run: node scripts/release/publish-binding-package.mts --tag "${{ needs.prepare-publish.outputs.publish_tag }}" --target aarch64-pc-windows-msvc
 
   publish-macos-bindings:
     name: publish-macos-bindings
-    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: prepare-publish
+    if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: macos-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
       - name: Set up workspace
         uses: ./.github/actions/setup-pr-ci
+
+      - name: Apply canary version
+        if: ${{ needs.prepare-publish.outputs.publish_mode == 'canary' }}
+        run: node scripts/release/apply-release-version.mts --canary
 
       - name: Update npm
         run: npm install --global npm@latest
@@ -109,34 +166,41 @@ jobs:
           CFLAGS_aarch64_apple_darwin: -arch arm64
           CMAKE_OSX_ARCHITECTURES: arm64
           CXXFLAGS_aarch64_apple_darwin: -arch arm64
-        run: node scripts/release/publish-binding-package.ts --target aarch64-apple-darwin
+        run: node scripts/release/publish-binding-package.mts --tag "${{ needs.prepare-publish.outputs.publish_tag }}" --target aarch64-apple-darwin
 
       - name: Build and publish macOS x64 binding
         env:
           CFLAGS_x86_64_apple_darwin: -arch x86_64
           CMAKE_OSX_ARCHITECTURES: x86_64
           CXXFLAGS_x86_64_apple_darwin: -arch x86_64
-        run: node scripts/release/publish-binding-package.ts --target x86_64-apple-darwin
+        run: node scripts/release/publish-binding-package.mts --tag "${{ needs.prepare-publish.outputs.publish_tag }}" --target x86_64-apple-darwin
 
-  publish-package-and-release:
-    name: publish-package-and-release
-    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+  publish-package:
+    name: publish-package
     needs:
+      - prepare-publish
       - publish-linux-bindings
       - publish-windows-bindings
       - publish-macos-bindings
+    if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: ubuntu-24.04
+    outputs:
+      release_version: ${{ steps.publish.outputs.release_version }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
       - name: Set up workspace
         uses: ./.github/actions/setup-pr-ci
+
+      - name: Apply canary version
+        if: ${{ needs.prepare-publish.outputs.publish_mode == 'canary' }}
+        run: node scripts/release/apply-release-version.mts --canary
 
       - name: Update npm
         run: npm install --global npm@latest
@@ -149,11 +213,29 @@ jobs:
       - name: Publish main package
         id: publish
         run: |
-          node scripts/release/publish-package.ts \
+          node scripts/release/publish-package.mts \
             --package-dir packages/core \
+            --tag "${{ needs.prepare-publish.outputs.publish_tag }}" \
             --version-output release_version
 
+  finalize-release:
+    name: finalize-release
+    needs:
+      - prepare-publish
+      - publish-package
+    if: ${{ needs.prepare-publish.outputs.create_release == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
       - name: Finalize release
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
+
+      - name: Create tag and GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/release/finalize-release.ts --version "${{ steps.publish.outputs.release_version }}"
+        run: node scripts/release/finalize-release.mts --version "${{ needs.publish-package.outputs.release_version }}"

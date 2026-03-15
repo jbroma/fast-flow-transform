@@ -2,7 +2,7 @@ import {
   registryUrlFromEnv,
   runVerdaccioForeground,
   workspaceRootDir,
-} from './verdaccio.ts';
+} from './verdaccio.mts';
 
 function main(): void {
   const root = workspaceRootDir();

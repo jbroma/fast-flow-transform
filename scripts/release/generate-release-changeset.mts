@@ -11,8 +11,8 @@ import {
   highestImpact,
   releaseImpactFor,
   throwOnInvalidReleaseLabels,
-} from './release-impact.ts';
-import type { ReleaseImpact } from './release-impact.ts';
+} from './release-impact.mts';
+import type { ReleaseImpact } from './release-impact.mts';
 
 interface GitHubPullRequest {
   labels: { name: string }[];

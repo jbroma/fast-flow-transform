@@ -43,15 +43,58 @@ function tagFor(version: string): string {
   return `v${version}`;
 }
 
+interface CommandResult {
+  status: number | null;
+  stderr: string;
+  stdout: string;
+}
+
+function runResult(
+  command: string,
+  args: string[],
+  stdio: 'inherit' | 'pipe'
+): CommandResult {
+  const result = spawnSync(command, args, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    env: process.env,
+    shell: false,
+    stdio,
+  });
+
+  return {
+    status: result.status,
+    stderr: result.stderr ?? '',
+    stdout: result.stdout ?? '',
+  };
+}
+
+function tagExists(tag: string): boolean {
+  const result = runResult(
+    commandName('git'),
+    ['show-ref', '--tags', '--verify', '--quiet', `refs/tags/${tag}`],
+    'pipe'
+  );
+
+  if (result.status === 0) {
+    return true;
+  }
+
+  if (result.status === 1) {
+    return false;
+  }
+
+  throw new Error(
+    `Unable to verify tag ${tag}\n${result.stdout}${result.stderr}`
+  );
+}
+
 function existingTagSha(tag: string): string | null {
-  try {
-    return run(commandName('git'), ['rev-list', '-n', '1', tag], 'pipe').trim();
-  } catch (error) {
-    if (error instanceof Error && !error.message.includes('failed with')) {
-      throw error;
-    }
+  if (!tagExists(tag)) {
     return null;
   }
+
+  return run(commandName('git'), ['rev-list', '-n', '1', tag], 'pipe').trim();
 }
 
 function createReleaseTag(tag: string): void {
@@ -94,15 +137,23 @@ function ensureReleaseTag(version: string): string {
 }
 
 function ensureGitHubRelease(tag: string): void {
-  try {
-    run(commandName('gh'), ['release', 'view', tag], 'pipe');
-  } catch {
-    run(
-      commandName('gh'),
-      ['release', 'create', tag, '--generate-notes', '--title', tag],
-      'inherit'
+  const result = runResult(commandName('gh'), ['release', 'view', tag], 'pipe');
+
+  if (result.status === 0) {
+    return;
+  }
+
+  if (!/release not found/i.test(`${result.stdout}\n${result.stderr}`)) {
+    throw new Error(
+      `Unable to verify GitHub Release ${tag}\n${result.stdout}${result.stderr}`
     );
   }
+
+  run(
+    commandName('gh'),
+    ['release', 'create', tag, '--generate-notes', '--title', tag],
+    'inherit'
+  );
 }
 
 function main(): void {

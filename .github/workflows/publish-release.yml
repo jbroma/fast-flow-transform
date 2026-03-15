@@ -6,28 +6,41 @@ on:
       - main
     types:
       - closed
-  workflow_run:
-    workflows:
-      - canary-release
-    types:
-      - completed
+  workflow_dispatch:
+    inputs:
+      release_mode:
+        description: Release mode to publish.
+        required: true
+        default: canary
+        type: choice
+        options:
+          - canary
+          - stable
+      target_ref:
+        description: Branch, tag, or exact commit SHA from this repository to publish.
+        required: true
+        type: string
+      confirm_stable:
+        description: Type publish-stable to allow a manual stable publish.
+        required: false
+        type: string
 
 permissions:
   contents: read
   id-token: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.workflow_run.id || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.inputs.release_mode || github.ref }}-${{ github.event.inputs.target_ref || github.ref }}
   cancel-in-progress: false
 
 jobs:
   prepare-publish:
     name: prepare-publish
-    if: ${{ (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v')) || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+    if: ${{ (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v')) || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-24.04
     outputs:
-      checkout_ref: ${{ steps.resolve_stable.outputs.checkout_ref || steps.resolve_canary.outputs.checkout_ref }}
-      publish_mode: ${{ steps.resolve_stable.outputs.publish_mode || steps.resolve_canary.outputs.publish_mode }}
+      checkout_ref: ${{ steps.resolve_stable.outputs.checkout_ref || steps.resolve_manual.outputs.checkout_ref }}
+      publish_mode: ${{ steps.resolve_stable.outputs.publish_mode || steps.resolve_manual.outputs.publish_mode }}
 
     steps:
       - name: Fail if release PR source is external
@@ -36,10 +49,10 @@ jobs:
           echo "Release publish is only allowed for refs originating from this repository." >&2
           exit 1
 
-      - name: Fail if canary source is external
-        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository }}
+      - name: Fail if manual stable confirmation is missing
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_mode == 'stable' && github.event.inputs.confirm_stable != 'publish-stable' }}
         run: |
-          echo "Canary publish is only allowed for refs originating from this repository." >&2
+          echo "Manual stable publish requires confirm_stable=publish-stable." >&2
           exit 1
 
       - name: Resolve stable publish context
@@ -49,12 +62,12 @@ jobs:
           echo "checkout_ref=${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
           echo "publish_mode=stable" >> "$GITHUB_OUTPUT"
 
-      - name: Resolve canary publish context
-        id: resolve_canary
-        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository }}
+      - name: Resolve manual publish context
+        id: resolve_manual
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "checkout_ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
-          echo "publish_mode=canary" >> "$GITHUB_OUTPUT"
+          echo "checkout_ref=${{ github.event.inputs.target_ref }}" >> "$GITHUB_OUTPUT"
+          echo "publish_mode=${{ github.event.inputs.release_mode }}" >> "$GITHUB_OUTPUT"
 
   publish-linux-bindings:
     name: publish-linux-bindings

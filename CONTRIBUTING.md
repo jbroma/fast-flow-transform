@@ -65,19 +65,22 @@ workflow in GitHub. That workflow generates a temporary Changesets release
 entry from merged PR release labels, opens a `release/vX.Y.Z` PR with
 synchronized package and crate version bumps, and does not require
 contributors to author `.changeset/*.md` files manually. Merging that PR
-triggers the non-dispatchable `publish-release` workflow, which publishes the
+triggers the `publish-release` workflow automatically, which publishes the
 binding packages first, then publishes `fast-flow-transform`,
 creates the git tag, and creates the GitHub Release with generated release
 notes.
 
 Manual canary releases also run through GitHub. Dispatch the
-`canary-release` workflow from any same-repo branch, including the branch
-backing an open PR. That workflow hands off to the non-dispatchable
-`publish-release` workflow, which performs the trusted npm publish for that
-exact ref under the npm `canary` dist-tag.
+`publish-release` workflow with `release_mode=canary` and `target_ref` set to
+any same-repo branch or exact commit SHA, including the branch backing an open
+PR, to publish that ref under the npm `canary` dist-tag.
 Canary versions are derived from the checked-out package version plus the
 commit timestamp and short SHA, and they do not create a git tag or GitHub
 Release.
+
+If the automatic stable publish fails, dispatch the same `publish-release`
+workflow manually with `release_mode=stable`, `target_ref` set to the release
+commit or branch you want to publish, and `confirm_stable=publish-stable`.
 
 ## Local Registry Testing
 

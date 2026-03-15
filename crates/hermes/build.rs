@@ -76,9 +76,19 @@ fn detect_hermes_root() -> PathBuf {
 }
 
 fn configure_target_specific_cmake(config: &mut cmake::Config) {
-    if matches!(env::var("TARGET").as_deref(), Ok("aarch64-pc-windows-msvc")) {
-        config.define("BOOST_CONTEXT_ARCHITECTURE", "arm64");
-        config.define("BOOST_CONTEXT_IMPLEMENTATION", "winfib");
+    match env::var("TARGET").as_deref() {
+        // Cross builds inherit the host processor here, so pin Boost.Context
+        // to the ARM64 ELF backend instead of letting it default to x86_64.
+        Ok("aarch64-unknown-linux-gnu") => {
+            config.define("BOOST_CONTEXT_ARCHITECTURE", "arm64");
+            config.define("BOOST_CONTEXT_ABI", "aapcs");
+            config.define("BOOST_CONTEXT_ASSEMBLER", "gas");
+        }
+        Ok("aarch64-pc-windows-msvc") => {
+            config.define("BOOST_CONTEXT_ARCHITECTURE", "arm64");
+            config.define("BOOST_CONTEXT_IMPLEMENTATION", "winfib");
+        }
+        _ => {}
     }
 }
 

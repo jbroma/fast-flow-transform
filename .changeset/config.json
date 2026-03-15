@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "access": "public",
+  "baseBranch": "main",
+  "changelog": false,
+  "commit": false,
+  "fixed": [
+    [
+      "fast-flow-transform",
+      "fast-flow-transform-darwin-arm64",
+      "fast-flow-transform-darwin-x64",
+      "fast-flow-transform-linux-arm64",
+      "fast-flow-transform-linux-x64",
+      "fast-flow-transform-win32-arm64",
+      "fast-flow-transform-win32-x64"
+    ]
+  ],
+  "ignore": [],
+  "linked": [],
+  "updateInternalDependencies": "patch"
+}

@@ -1,0 +1,78 @@
+name: prepare-release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: prepare
+    if: ${{ github.ref_name == 'main' }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Generate release changeset
+        id: plan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_PR_BODY_PATH: ${{ runner.temp }}/release-pr-body.md
+        run: node scripts/release/generate-release-changeset.ts
+
+      - name: Stop when no release is needed
+        if: ${{ steps.plan.outputs.should_release != 'true' }}
+        run: echo "${{ steps.plan.outputs.release_reason }}"
+
+      - name: Set up workspace
+        if: ${{ steps.plan.outputs.should_release == 'true' }}
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Ensure managed labels exist
+        if: ${{ steps.plan.outputs.should_release == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/ensure-managed-labels.ts
+
+      - name: Version release packages
+        if: ${{ steps.plan.outputs.should_release == 'true' }}
+        id: version
+        run: |
+          pnpm changeset version
+          node scripts/release/apply-release-version.ts
+          pnpm install --lockfile-only --ignore-scripts
+          cargo generate-lockfile
+
+      - name: Create or update release PR
+        if: ${{ steps.plan.outputs.should_release == 'true' }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: |
+            Cargo.lock
+            crates/**/Cargo.toml
+            bindings/**/package.json
+            packages/core/package.json
+            pnpm-lock.yaml
+          base: main
+          body-path: ${{ runner.temp }}/release-pr-body.md
+          branch: release/v${{ steps.version.outputs.release_version }}
+          commit-message: 'release: prepare v${{ steps.version.outputs.release_version }}'
+          delete-branch: true
+          labels: 'release: ignore'
+          title: 'release: v${{ steps.version.outputs.release_version }}'

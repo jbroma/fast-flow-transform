@@ -1,0 +1,159 @@
+name: publish-release
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - closed
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-linux-bindings:
+    name: publish-linux-bindings
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          submodules: recursive
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Update npm
+        run: npm install --global npm@latest
+
+      - name: Install Linux cross-compilers
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Install Rust targets
+        run: rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+
+      - name: Build and publish Linux bindings
+        run: node scripts/release/publish-binding-package.ts --target x86_64-unknown-linux-gnu
+
+      - name: Build and publish Linux ARM64 binding
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+          CMAKE_CXX_COMPILER: aarch64-linux-gnu-g++
+          CMAKE_C_COMPILER: aarch64-linux-gnu-gcc
+          CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+        run: node scripts/release/publish-binding-package.ts --target aarch64-unknown-linux-gnu
+
+  publish-windows-bindings:
+    name: publish-windows-bindings
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          submodules: recursive
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Update npm
+        run: npm install --global npm@latest
+
+      - name: Install Rust targets
+        run: rustup target add x86_64-pc-windows-msvc aarch64-pc-windows-msvc
+
+      - name: Build and publish Windows bindings
+        run: node scripts/release/publish-binding-package.ts --target x86_64-pc-windows-msvc
+
+      - name: Build and publish Windows ARM64 binding
+        env:
+          CMAKE_GENERATOR_PLATFORM: ARM64
+        run: node scripts/release/publish-binding-package.ts --target aarch64-pc-windows-msvc
+
+  publish-macos-bindings:
+    name: publish-macos-bindings
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          submodules: recursive
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Update npm
+        run: npm install --global npm@latest
+
+      - name: Install Rust targets
+        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
+
+      - name: Build and publish macOS bindings
+        env:
+          CFLAGS_aarch64_apple_darwin: -arch arm64
+          CMAKE_OSX_ARCHITECTURES: arm64
+          CXXFLAGS_aarch64_apple_darwin: -arch arm64
+        run: node scripts/release/publish-binding-package.ts --target aarch64-apple-darwin
+
+      - name: Build and publish macOS x64 binding
+        env:
+          CFLAGS_x86_64_apple_darwin: -arch x86_64
+          CMAKE_OSX_ARCHITECTURES: x86_64
+          CXXFLAGS_x86_64_apple_darwin: -arch x86_64
+        run: node scripts/release/publish-binding-package.ts --target x86_64-apple-darwin
+
+  publish-package-and-release:
+    name: publish-package-and-release
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v') && github.event.pull_request.head.repo.full_name == github.repository }}
+    needs:
+      - publish-linux-bindings
+      - publish-windows-bindings
+      - publish-macos-bindings
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          submodules: recursive
+
+      - name: Set up workspace
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Update npm
+        run: npm install --global npm@latest
+
+      - name: Build main package
+        run: |
+          pnpm sync-binding
+          pnpm --dir packages/core run build
+
+      - name: Publish main package
+        id: publish
+        run: |
+          node scripts/release/publish-package.ts \
+            --package-dir packages/core \
+            --version-output release_version
+
+      - name: Finalize release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/release/finalize-release.ts --version "${{ steps.publish.outputs.release_version }}"

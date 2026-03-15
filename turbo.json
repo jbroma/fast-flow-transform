@@ -25,7 +25,7 @@
         "Cargo.lock",
         "Cargo.toml",
         "crates/**",
-        "scripts/sync-binding.mts"
+        "scripts/sync-binding.ts"
       ],
       "outputs": [
         "bindings/*/*.node",

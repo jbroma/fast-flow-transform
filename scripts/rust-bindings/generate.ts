@@ -1,4 +1,4 @@
-import { checkRustBindings, writeRustBindings } from './lib.mts';
+import { checkRustBindings, writeRustBindings } from './lib.ts';
 
 function isCheckMode(argv: string[]): boolean {
   return argv.includes('--check');

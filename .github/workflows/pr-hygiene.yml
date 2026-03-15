@@ -23,7 +23,7 @@ concurrency:
 jobs:
   title-and-labels:
     name: title-and-labels
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft && !startsWith(github.event.pull_request.head.ref, 'release/') }}
     runs-on: ubuntu-24.04
 
     steps:
@@ -53,14 +53,17 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.sha }}
 
-      - name: Ensure managed labels exist
-        uses: actions/github-script@v8
+      - name: Set up Node.js
+        if: ${{ always() }}
+        uses: actions/setup-node@v6
         with:
-          script: |
-            const ensureManagedLabels = require(
-              `${process.env.GITHUB_WORKSPACE}/.github/scripts/ensure-managed-labels.cjs`
-            );
-            await ensureManagedLabels({ github, context });
+          node-version: 24
+
+      - name: Ensure managed labels exist
+        if: ${{ always() }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/ensure-managed-labels.ts
 
       - name: Sync PR labels from title
         if: ${{ always() }}
@@ -72,6 +75,13 @@ jobs:
           include-body: 0
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           sync-labels: 1
+
+      - name: Sync release labels
+        if: ${{ always() }}
+        env:
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/sync-release-labels.ts
 
       - name: Fail on invalid PR title
         if: ${{ steps.semantic.outcome != 'success' }}

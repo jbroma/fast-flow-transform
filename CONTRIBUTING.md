@@ -34,6 +34,22 @@ Allowed types:
 Matching titles are labeled automatically from their type, and titles using `!`
 also receive the `breaking-change` label.
 
+Every non-draft PR must also end up with exactly one `release:` label:
+
+- `release: none`
+- `release: patch`
+- `release: minor`
+- `release: major`
+
+Default release labels are applied automatically:
+
+- `breaking-change` -> `release: major`
+- `type: feat` -> `release: minor`
+- every other valid PR type -> `release: patch`
+
+Maintainers can override the release label before merge when the default is too
+aggressive or not aggressive enough.
+
 Examples:
 
 - `feat(core): add parser flag`
@@ -41,6 +57,17 @@ Examples:
 - `ci(actions): add PR build workflow`
 - `docs(contributing): document PR title rules`
 - `refactor(bindings): simplify native sync step`
+
+## Releases
+
+Stable releases are prepared from `main` by running the `prepare-release`
+workflow in GitHub. That workflow generates a temporary Changesets release
+entry from merged PR release labels, opens a `release/vX.Y.Z` PR with
+synchronized package and crate version bumps, and does not require
+contributors to author `.changeset/*.md` files manually. Merging that PR
+publishes the binding packages first, then publishes `fast-flow-transform`,
+creates the git tag, and creates the GitHub Release with generated release
+notes.
 
 ## Local Registry Testing
 

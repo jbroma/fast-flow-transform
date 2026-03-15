@@ -8,7 +8,7 @@ import {
   registryUrlFromEnv,
   registryPublishEnv,
   workspaceRootDir,
-} from './verdaccio.mts';
+} from './verdaccio.ts';
 
 const PLATFORM_PACKAGE_NAMES: Record<string, string> = {
   'darwin-arm64': 'fast-flow-transform-darwin-arm64',

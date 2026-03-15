@@ -1,4 +1,7 @@
 changelog:
+  exclude:
+    labels:
+      - 'release: ignore'
   categories:
     - title: Breaking Changes
       labels:

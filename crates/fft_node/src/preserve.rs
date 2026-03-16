@@ -119,10 +119,12 @@ impl<'src> PreserveCollector<'src> {
             let start = self
                 .loc_to_offset(id.metadata.range.start)
                 .saturating_add(gc.str(id.name).len());
-            self.push_span(ByteSpan {
-                start,
-                end: start.saturating_add(1),
-            });
+            let end = id
+                .type_annotation
+                .map(|type_annotation| self.byte_span_for_node(type_annotation).start)
+                .unwrap_or_else(|| self.optional_marker_search_end(start));
+
+            self.remove_question_mark_between(start, end);
         }
     }
 
@@ -151,6 +153,84 @@ impl<'src> PreserveCollector<'src> {
         let start = self.byte_span_for_node(expression).end;
         let end = self.byte_span_for_node(outer).end;
         self.push_span(ByteSpan { start, end });
+    }
+
+    fn remove_as_expression_syntax(&mut self, expression: &ast::Node, outer: &ast::Node) {
+        let expression_span = self.byte_span_for_node(expression);
+        let outer_span = self.byte_span_for_node(outer);
+        let search_end = outer_span.end.min(self.source_len);
+        let Some(relative_index) = self.source_text[expression_span.end..search_end]
+            .windows(2)
+            .position(|window| window == b"as")
+        else {
+            self.remove_trailing_syntax(expression, outer);
+            return;
+        };
+
+        let mut start = expression_span.end + relative_index;
+        while start > expression_span.end && matches!(self.source_text[start - 1], b' ' | b'\t') {
+            start -= 1;
+        }
+
+        self.push_span(ByteSpan {
+            start,
+            end: outer_span.end,
+        });
+    }
+
+    fn optional_marker_search_end(&self, start: usize) -> usize {
+        let mut cursor = start;
+        while let Some(byte) = self.source_text.get(cursor) {
+            if matches!(byte, b',' | b')' | b'=' | b'{' | b'\n' | b';') {
+                break;
+            }
+            cursor += 1;
+        }
+        cursor
+    }
+
+    fn remove_question_mark_between(&mut self, start: usize, end: usize) {
+        let Some(relative_index) = self.source_text[start..end.min(self.source_len)]
+            .iter()
+            .position(|byte| *byte == b'?')
+        else {
+            return;
+        };
+
+        let question = start + relative_index;
+        self.push_span(ByteSpan {
+            start: question,
+            end: question.saturating_add(1),
+        });
+    }
+
+    fn remove_predicate(
+        &mut self,
+        return_type: Option<&ast::Node>,
+        predicate: Option<&ast::Node>,
+    ) {
+        let Some(predicate) = predicate else {
+            return;
+        };
+
+        if return_type.is_some() {
+            self.remove_node_range(predicate);
+            return;
+        }
+
+        let predicate_span = self.byte_span_for_node(predicate);
+        let mut start = predicate_span.start;
+        while start > 0 && matches!(self.source_text[start - 1], b' ' | b'\t') {
+            start -= 1;
+        }
+        if start > 0 && self.source_text[start - 1] == b':' {
+            start -= 1;
+        }
+
+        self.push_span(ByteSpan {
+            start,
+            end: predicate_span.end,
+        });
     }
 
     fn remove_this_param<'gc>(
@@ -399,19 +479,19 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
             ast::Node::FunctionDeclaration(n) => {
                 self.remove_optional_node(n.type_parameters);
                 self.remove_optional_node(n.return_type);
-                self.remove_optional_node(n.predicate);
+                self.remove_predicate(n.return_type, n.predicate);
                 self.remove_this_param(gc, n.params.iter());
             }
             ast::Node::FunctionExpression(n) => {
                 self.remove_optional_node(n.type_parameters);
                 self.remove_optional_node(n.return_type);
-                self.remove_optional_node(n.predicate);
+                self.remove_predicate(n.return_type, n.predicate);
                 self.remove_this_param(gc, n.params.iter());
             }
             ast::Node::ArrowFunctionExpression(n) => {
                 self.remove_optional_node(n.type_parameters);
                 self.remove_optional_node(n.return_type);
-                self.remove_optional_node(n.predicate);
+                self.remove_predicate(n.return_type, n.predicate);
             }
             ast::Node::ObjectPattern(n) => self.remove_optional_node(n.type_annotation),
             ast::Node::ArrayPattern(n) => self.remove_optional_node(n.type_annotation),
@@ -429,8 +509,10 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
                 self.remove_class_implements(node, n.implements.iter());
             }
             ast::Node::TypeCastExpression(n) => self.remove_node_range(n.type_annotation),
-            ast::Node::AsExpression(n) => self.remove_trailing_syntax(n.expression, node),
-            ast::Node::AsConstExpression(n) => self.remove_trailing_syntax(n.expression, node),
+            ast::Node::AsExpression(n) => self.remove_as_expression_syntax(n.expression, node),
+            ast::Node::AsConstExpression(n) => {
+                self.remove_as_expression_syntax(n.expression, node)
+            }
             ast::Node::TSTypeAssertion { .. }
             | ast::Node::TSAsExpression { .. }
             | ast::Node::ComponentDeclaration { .. }

@@ -427,6 +427,45 @@ mod tests {
     }
 
     #[test]
+    fn preserves_whitespace_for_optional_function_parameters() {
+        let result = transform(&preserve_request(
+            "async function test(x: Type, y /*.*/ ? /*.*/ , z /*.*/ ? /*.*/ : /*.*/ number = 123): string {\n  return await (x: any);\n}\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "async function test(x, y    , z     = 123) {\n  return await (x);\n}\n"
+        );
+    }
+
+    #[test]
+    fn preserves_whitespace_for_inferred_predicates_without_return_types() {
+        let result = transform(&preserve_request(
+            "function inferredPredicateWithoutType(arg: mixed): %checks {\n  return !!arg;\n}\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "function inferredPredicateWithoutType(arg) {\n  return !!arg;\n}\n"
+        );
+    }
+
+    #[test]
+    fn preserves_whitespace_for_parenthesized_as_expressions() {
+        let result = transform(&preserve_request(
+            "const asComponent = (() => {}) as component(p: number, o?: string);\nconst asFunction = (() => {}) as () => void;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "const asComponent = (() => {});\nconst asFunction = (() => {});\n"
+        );
+    }
+
+    #[test]
     fn preserves_whitespace_with_sourcemaps_for_new_span_shapes() {
         let mut input = preserve_request(
             "import { Foo, type Bar } from \"./mod.js\";\nconst typed = Foo as number;\nexport default typed;\n",

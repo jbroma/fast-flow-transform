@@ -72,6 +72,22 @@ jobs:
       - name: Run rustfmt check
         run: cargo fmt --all --check
 
+  test-rust:
+    name: test-rust
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up PR CI
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Run Rust tests
+        run: cargo test --workspace
+
   build:
     name: build
     runs-on: ubuntu-24.04

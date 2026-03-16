@@ -11,6 +11,7 @@ pnpm check
 pnpm build
 pnpm test
 pnpm e2e
+cargo test --workspace
 cargo fmt --all --check
 ```
 

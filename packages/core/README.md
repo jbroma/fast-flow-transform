@@ -42,6 +42,10 @@ Programmatic options:
 | `inputSourceMap`     | No       | `SourceMapLike \| null`                         | none            | Incoming source map from an earlier transform step to merge into FFT's output map |
 | `reactRuntimeTarget` | No       | `'18' \| '19' \| 18 \| 19`                      | `'19'`          | Only affects Flow `component` lowering; normalized to `'18'` or `'19'`            |
 
+When you provide `inputSourceMap`, FFT merges it into the emitted map. The
+current merge path preserves source and name mappings, but does not yet retain
+upstream `sourcesContent` or custom metadata fields.
+
 Flow enums always lower to the external `flow-enums-runtime` package. If your
 project uses Flow enums, install `flow-enums-runtime` as a dependency so the
 generated runtime imports resolve in your bundler and at runtime.

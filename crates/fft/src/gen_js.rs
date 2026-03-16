@@ -96,7 +96,8 @@ impl QuoteChar {
 }
 
 /// Generate JS for `root` and print it to `out`.
-/// FIXME: This currently only returns an empty SourceMap.
+/// Returns the emitted source map when `opt.sourcemap` is enabled, or an
+/// empty map otherwise.
 pub fn generate(
     out: &mut dyn Write,
     ctx: &mut Context,
@@ -303,7 +304,8 @@ impl GenJS<'_, '_> {
             indent: 0,
             position: SourceLoc { line: 1, col: 1 },
             cur_token: None,
-            // FIXME: Pass in file name here.
+            // TODO: Thread an output filename into the source map `file` field
+            // when one is available.
             sourcemap: emit_sourcemap.then(|| SourceMapBuilder::new(None)),
             error: None,
             match_tmp_index: 0,

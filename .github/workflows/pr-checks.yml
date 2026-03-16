@@ -35,7 +35,7 @@ jobs:
         run: pnpm lint
 
       - name: Run format check
-        run: pnpm format:check
+        run: pnpm format:check:js
 
       - name: Run Rust bindings check
         run: pnpm codegen:rust:check

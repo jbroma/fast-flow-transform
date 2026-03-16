@@ -370,6 +370,88 @@ mod tests {
     }
 
     #[test]
+    fn preserves_whitespace_for_mixed_value_and_type_imports() {
+        let result = transform(&preserve_request(
+            "import { Foo, type Bar } from \"./mod.js\";\nimport DefaultThing, { type Qux } from \"./mod.js\";\nimport { type OnlyType } from \"./mod.js\";\nexport default Foo;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "import { Foo } from \"./mod.js\";\nimport DefaultThing from \"./mod.js\";\n\nexport default Foo;\n"
+        );
+    }
+
+    #[test]
+    fn preserves_whitespace_for_class_implements_and_fields() {
+        let result = transform(&preserve_request(
+            "class Example extends Base implements Foo, Bar {\n  declare removed: string;\n  kept: number = 1;\n  +covariant: number = 2;\n  #hidden: number;\n  #kept: number = 3;\n}\n",
+        ))
+        .expect("transform should succeed");
+
+        assert!(!result.code.contains("implements"));
+        assert!(!result.code.contains("declare removed"));
+        assert!(!result.code.contains(": number"));
+        assert!(!result.code.contains("+covariant"));
+        assert!(result.code.contains("class Example extends Base {"));
+        assert!(result.code.contains("kept = 1;"));
+        assert!(result.code.contains("covariant = 2;"));
+        assert!(result.code.contains("#hidden;"));
+        assert!(result.code.contains("#kept = 3;"));
+    }
+
+    #[test]
+    fn preserves_whitespace_for_this_parameters() {
+        let result = transform(&preserve_request(
+            "function first(this: string) {}\nfunction second(this: string, value: number) { return value; }\nconst third = function(this: string, value: number) { return value; };\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "function first() {}\nfunction second(value) { return value; }\nconst third = function(value) { return value; };\n"
+        );
+    }
+
+    #[test]
+    fn preserves_whitespace_for_flow_cast_syntax() {
+        let result = transform(&preserve_request(
+            "const cast = (value: any);\nconst typed = foo as number;\nconst frozen = ({ ok: true } as const);\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "const cast = (value);\nconst typed = foo;\nconst frozen = ({ ok: true });\n"
+        );
+    }
+
+    #[test]
+    fn preserves_whitespace_with_sourcemaps_for_new_span_shapes() {
+        let mut input = preserve_request(
+            "import { Foo, type Bar } from \"./mod.js\";\nconst typed = Foo as number;\nexport default typed;\n",
+        );
+        input.sourcemap = true;
+
+        let result = transform(&input).expect("transform should succeed");
+        let map_json = result
+            .map_json
+            .as_ref()
+            .expect("expected source map payload");
+        let map = SourceMap::from_slice(map_json.as_bytes()).expect("valid source map");
+
+        assert_eq!(
+            result.code,
+            "import { Foo } from \"./mod.js\";\nconst typed = Foo;\nexport default typed;\n"
+        );
+        let token = map
+            .lookup_token(1, 14)
+            .expect("expected token at preserved Foo identifier");
+        assert_eq!(token.get_source(), Some("input.js"));
+        assert_eq!(token.get_src(), (1, 14));
+    }
+
+    #[test]
     fn preserves_comments_when_requested_on_preserve_whitespace_path() {
         let mut input = preserve_request(
             "const value: number = 1;\n\n// keep me\nexport function read(node: number): number {\n  return node + value;\n}\n",

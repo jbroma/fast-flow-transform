@@ -96,10 +96,18 @@ impl<'src> PreserveCollector<'src> {
         }
     }
 
-    fn remove_source_range(&mut self, range: ast::SourceRange) {
+    fn byte_span_for_node(&self, node: &ast::Node) -> ByteSpan {
+        self.byte_span_for_range(*node.range())
+    }
+
+    fn byte_span_for_range(&self, range: ast::SourceRange) -> ByteSpan {
         let start = self.loc_to_offset(range.start);
         let end = self.loc_to_offset(range.end).saturating_add(1);
-        self.push_span(ByteSpan { start, end });
+        ByteSpan { start, end }
+    }
+
+    fn remove_source_range(&mut self, range: ast::SourceRange) {
+        self.push_span(self.byte_span_for_range(range));
     }
 
     fn remove_identifier_type(&mut self, gc: &ast::GCLock, id: &ast::Identifier) {
@@ -127,6 +135,194 @@ impl<'src> PreserveCollector<'src> {
             start: span.start,
             end: span.end.min(self.source_len),
         });
+    }
+
+    fn remove_optional_marker_after(&mut self, node: &ast::Node) {
+        let start = self.byte_span_for_node(node).end;
+        if self.source_text.get(start) == Some(&b'?') {
+            self.push_span(ByteSpan {
+                start,
+                end: start.saturating_add(1),
+            });
+        }
+    }
+
+    fn remove_trailing_syntax(&mut self, expression: &ast::Node, outer: &ast::Node) {
+        let start = self.byte_span_for_node(expression).end;
+        let end = self.byte_span_for_node(outer).end;
+        self.push_span(ByteSpan { start, end });
+    }
+
+    fn remove_this_param<'gc>(
+        &mut self,
+        gc: &'gc ast::GCLock,
+        params: impl Iterator<Item = &'gc ast::Node<'gc>>,
+    ) {
+        for param in params {
+            let ast::Node::Identifier(id) = param else {
+                continue;
+            };
+            if gc.str(id.name) != "this" {
+                continue;
+            }
+
+            let span = self.byte_span_for_node(param);
+            let mut end = span.end;
+            while matches!(self.source_text.get(end), Some(byte) if byte.is_ascii_whitespace()) {
+                end += 1;
+            }
+            if self.source_text.get(end) == Some(&b',') {
+                end += 1;
+                while matches!(self.source_text.get(end), Some(byte) if byte.is_ascii_whitespace())
+                {
+                    end += 1;
+                }
+            }
+            self.push_span(ByteSpan {
+                start: span.start,
+                end,
+            });
+        }
+    }
+
+    fn remove_class_implements<'gc>(
+        &mut self,
+        class_node: &'gc ast::Node<'gc>,
+        implements: impl Iterator<Item = &'gc ast::Node<'gc>>,
+    ) {
+        let mut implements = implements;
+        let Some(first) = implements.next() else {
+            return;
+        };
+        let mut last = first;
+        for implement in implements {
+            last = implement;
+        }
+
+        let class_span = self.byte_span_for_node(class_node);
+        let first_span = self.byte_span_for_node(first);
+        let last_span = self.byte_span_for_node(last);
+        let search = &self.source_text[class_span.start..first_span.start];
+        let Some(keyword_offset) = search
+            .windows("implements".len())
+            .rposition(|window| window == b"implements")
+        else {
+            return;
+        };
+
+        let mut start = class_span.start + keyword_offset;
+        while start > class_span.start && matches!(self.source_text[start - 1], b' ' | b'\t') {
+            start -= 1;
+        }
+
+        self.push_span(ByteSpan {
+            start,
+            end: last_span.end,
+        });
+    }
+
+    fn named_import_group_span(&self, node: &ast::Node) -> Option<ByteSpan> {
+        let span = self.byte_span_for_node(node);
+        let source = &self.source_text[span.start..span.end];
+        let open = source.iter().position(|byte| *byte == b'{')?;
+        let close = source.iter().rposition(|byte| *byte == b'}')?;
+        Some(ByteSpan {
+            start: span.start + open,
+            end: span.start + close + 1,
+        })
+    }
+
+    fn remove_list_item(&mut self, item: ByteSpan, container: ByteSpan) {
+        let mut end = item.end;
+        while matches!(self.source_text.get(end), Some(byte) if byte.is_ascii_whitespace()) {
+            end += 1;
+        }
+        if self.source_text.get(end) == Some(&b',') {
+            end += 1;
+            while matches!(self.source_text.get(end), Some(b' ' | b'\t')) {
+                end += 1;
+            }
+            self.push_span(ByteSpan {
+                start: item.start,
+                end,
+            });
+            return;
+        }
+
+        let mut start = item.start;
+        while start > container.start && matches!(self.source_text[start - 1], b' ' | b'\t') {
+            start -= 1;
+        }
+        if start > container.start && self.source_text[start - 1] == b',' {
+            start -= 1;
+            while start > container.start && matches!(self.source_text[start - 1], b' ' | b'\t') {
+                start -= 1;
+            }
+        }
+
+        self.push_span(ByteSpan {
+            start,
+            end: item.end,
+        });
+    }
+
+    fn remove_named_import_group(&mut self, group: ByteSpan) {
+        let mut start = group.start;
+        while start > 0 && matches!(self.source_text[start - 1], b' ' | b'\t') {
+            start -= 1;
+        }
+        if start > 0 && self.source_text[start - 1] == b',' {
+            start -= 1;
+            while start > 0 && matches!(self.source_text[start - 1], b' ' | b'\t') {
+                start -= 1;
+            }
+        }
+        self.push_span(ByteSpan {
+            start,
+            end: group.end,
+        });
+    }
+
+    fn remove_mixed_imports<'gc>(
+        &mut self,
+        node: &'gc ast::Node<'gc>,
+        decl: &'gc ast::ImportDeclaration<'gc>,
+    ) {
+        let mut removed_named = Vec::new();
+        let mut surviving_named = 0usize;
+        let mut surviving_non_named = false;
+
+        for specifier in decl.specifiers.iter() {
+            match specifier {
+                ast::Node::ImportSpecifier(ast::ImportSpecifier { import_kind, .. }) => {
+                    if *import_kind == ast::ImportKind::Value {
+                        surviving_named += 1;
+                    } else {
+                        removed_named.push(specifier);
+                    }
+                }
+                ast::Node::ImportDefaultSpecifier(_) | ast::Node::ImportNamespaceSpecifier(_) => {
+                    surviving_non_named = true;
+                }
+                _ => {}
+            }
+        }
+
+        if surviving_named == 0 && !surviving_non_named {
+            self.remove_node_range(node);
+            return;
+        }
+
+        let Some(group) = self.named_import_group_span(node) else {
+            return;
+        };
+        for specifier in removed_named {
+            self.remove_list_item(self.byte_span_for_node(specifier), group);
+        }
+
+        if surviving_named == 0 {
+            self.remove_named_import_group(group);
+        }
     }
 
     fn unsupported(&mut self, node: &ast::Node, message: &str) {
@@ -167,11 +363,7 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
                         }) if *import_kind != ast::ImportKind::Value
                     )
                 }) {
-                    self.unsupported(
-                        node,
-                        "preserveWhitespace does not yet support mixed value/type imports",
-                    );
-                    return;
+                    self.remove_mixed_imports(node, decl);
                 }
             }
             ast::Node::ExportNamedDeclaration(decl)
@@ -208,25 +400,13 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
                 self.remove_optional_node(n.type_parameters);
                 self.remove_optional_node(n.return_type);
                 self.remove_optional_node(n.predicate);
-                if has_this_param(gc, n.params.iter()) {
-                    self.unsupported(
-                        node,
-                        "preserveWhitespace does not yet support Flow `this` parameters",
-                    );
-                    return;
-                }
+                self.remove_this_param(gc, n.params.iter());
             }
             ast::Node::FunctionExpression(n) => {
                 self.remove_optional_node(n.type_parameters);
                 self.remove_optional_node(n.return_type);
                 self.remove_optional_node(n.predicate);
-                if has_this_param(gc, n.params.iter()) {
-                    self.unsupported(
-                        node,
-                        "preserveWhitespace does not yet support Flow `this` parameters",
-                    );
-                    return;
-                }
+                self.remove_this_param(gc, n.params.iter());
             }
             ast::Node::ArrowFunctionExpression(n) => {
                 self.remove_optional_node(n.type_parameters);
@@ -241,28 +421,17 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
             ast::Node::ClassDeclaration(n) => {
                 self.remove_optional_node(n.type_parameters);
                 self.remove_optional_node(n.super_type_arguments);
-                if !n.implements.is_empty() {
-                    self.unsupported(
-                        node,
-                        "preserveWhitespace does not yet support Flow class implements clauses",
-                    );
-                    return;
-                }
+                self.remove_class_implements(node, n.implements.iter());
             }
             ast::Node::ClassExpression(n) => {
                 self.remove_optional_node(n.type_parameters);
                 self.remove_optional_node(n.super_type_arguments);
-                if !n.implements.is_empty() {
-                    self.unsupported(
-                        node,
-                        "preserveWhitespace does not yet support Flow class implements clauses",
-                    );
-                    return;
-                }
+                self.remove_class_implements(node, n.implements.iter());
             }
-            ast::Node::TypeCastExpression { .. }
-            | ast::Node::AsExpression { .. }
-            | ast::Node::TSTypeAssertion { .. }
+            ast::Node::TypeCastExpression(n) => self.remove_node_range(n.type_annotation),
+            ast::Node::AsExpression(n) => self.remove_trailing_syntax(n.expression, node),
+            ast::Node::AsConstExpression(n) => self.remove_trailing_syntax(n.expression, node),
+            ast::Node::TSTypeAssertion { .. }
             | ast::Node::TSAsExpression { .. }
             | ast::Node::ComponentDeclaration { .. }
             | ast::Node::HookDeclaration { .. }
@@ -275,29 +444,27 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
                 );
                 return;
             }
-            ast::Node::ClassProperty(n)
-                if n.declare
-                    || n.optional
-                    || n.type_annotation.is_some()
-                    || n.variance.is_some() =>
-            {
-                self.unsupported(
-                    node,
-                    "preserveWhitespace does not yet support Flow class property annotations",
-                );
-                return;
+            ast::Node::ClassProperty(n) => {
+                if n.declare || n.value.is_none() {
+                    self.remove_node_range(node);
+                    return;
+                }
+                self.remove_optional_node(n.variance);
+                self.remove_optional_node(n.type_annotation);
+                if n.optional {
+                    self.remove_optional_marker_after(n.key);
+                }
             }
-            ast::Node::ClassPrivateProperty(n)
-                if n.declare
-                    || n.optional
-                    || n.type_annotation.is_some()
-                    || n.variance.is_some() =>
-            {
-                self.unsupported(
-                    node,
-                    "preserveWhitespace does not yet support Flow class property annotations",
-                );
-                return;
+            ast::Node::ClassPrivateProperty(n) => {
+                if n.declare {
+                    self.remove_node_range(node);
+                    return;
+                }
+                self.remove_optional_node(n.variance);
+                self.remove_optional_node(n.type_annotation);
+                if n.optional {
+                    self.remove_optional_marker_after(n.key);
+                }
             }
             _ => {}
         }
@@ -359,16 +526,6 @@ pub fn transform_preserving_layout(
     }
 
     collector.build_output(request.filename.as_str(), request.sourcemap)
-}
-
-fn has_this_param<'gc>(
-    gc: &ast::GCLock,
-    mut params: impl Iterator<Item = &'gc ast::Node<'gc>>,
-) -> bool {
-    params.any(|param| match param {
-        ast::Node::Identifier(id) => gc.str(id.name) == "this",
-        _ => false,
-    })
 }
 
 fn line_starts(source: &[u8]) -> Vec<usize> {

@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    "**/*.cjs",
+    "**/*.config.mjs",
+    "**/*.e2e.test.ts",
+    "**/build.mjs",
+    "vitest.config.ts"
+  ]
+}

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const BUNDLE_PATH = fileURLToPath(new URL('dist/bundle.cjs', import.meta.url));
 
-describe('esbuild plugin e2e', () => {
+describe('esbuild react-native fixture e2e', () => {
   it('compiles substantial flow-typed dependencies from barrel imports', () => {
     const bundleText = readFileSync(BUNDLE_PATH, 'utf8');
     const runtimeValue = require(BUNDLE_PATH) as {

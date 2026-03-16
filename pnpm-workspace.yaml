@@ -1,9 +1,10 @@
 packages:
   - bench
   - bindings/*
+  - examples/*
   - packages/*
+  - test/bundlers
   - test/cli
-  - test/bundlers/*
   - test/fixtures/*
 
 autoInstallPeers: false

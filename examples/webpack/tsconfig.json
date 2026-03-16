@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["webpack.config.mjs", "webpack.e2e.test.ts", "vitest.config.ts"]
+}

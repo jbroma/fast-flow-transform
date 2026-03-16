@@ -12,7 +12,7 @@
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "sync-binding": "cargo build --release -p fft_node && node scripts/sync-binding.mts",
-    "e2e": "turbo run e2e --log-prefix=none --filter=@fft-tests/*",
+    "e2e": "turbo run e2e --log-prefix=none --filter=@fft-examples/* --filter=@fft-bundler-tests",
     "local-registry:publish": "node scripts/local-registry/publish.mts",
     "local-registry:start": "node scripts/local-registry/start.mts",
     "test": "turbo run test --log-prefix=none --filter=!@fft/bench",

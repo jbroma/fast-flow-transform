@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["rsbuild.config.mjs", "rsbuild.e2e.test.ts", "vitest.config.ts"]
+}

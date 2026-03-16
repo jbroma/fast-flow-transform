@@ -1,5 +1,5 @@
 {
-  "name": "@fft-fixtures/flow-dependency-project",
+  "name": "@fft-fixtures/react-native-project",
   "private": true,
   "type": "module",
   "dependencies": {

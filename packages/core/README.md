@@ -90,6 +90,9 @@ module.exports = {
 };
 ```
 
+Runnable example:
+[`examples/webpack`](../../examples/webpack)
+
 ## Rspack Usage
 
 ```js
@@ -109,6 +112,9 @@ module.exports = {
   },
 };
 ```
+
+Runnable example:
+[`examples/rspack`](../../examples/rspack)
 
 ## Rsbuild Usage
 
@@ -161,6 +167,9 @@ If you need lower-level control, `fast-flow-transform/rsbuild` also exposes the
 named `applyFastFlowTransformRsbuild` helper for wiring directly inside your own
 `tools.bundlerChain` logic.
 
+Runnable example:
+[`examples/rsbuild`](../../examples/rsbuild)
+
 ## Parcel Usage
 
 Parcel expects transformers to be referenced from `.parcelrc` using either a
@@ -195,6 +204,9 @@ default Parcel transformer instead:
 export { default } from 'fast-flow-transform/parcel';
 ```
 
+Runnable example:
+[`examples/parcel`](../../examples/parcel)
+
 ## Vite Usage
 
 ```ts
@@ -215,6 +227,9 @@ export default defineConfig({
 It does not lower JSX itself. Vite's normal JSX handling remains responsible
 for that phase.
 
+Runnable example:
+[`examples/vite`](../../examples/vite)
+
 ## Rollup Usage
 
 ```ts
@@ -231,6 +246,9 @@ export default {
 
 If your graph still contains JSX after Flow stripping, add your preferred
 Rollup JSX transform separately. FFT does not lower JSX.
+
+Runnable example:
+[`examples/rollup`](../../examples/rollup)
 
 ## Rolldown Usage
 
@@ -250,6 +268,9 @@ await build({
 Rolldown already supports mixed ESM and CommonJS graphs natively, so you should
 not pair this adapter with `@rollup/plugin-commonjs`.
 
+Runnable example:
+[`examples/rolldown`](../../examples/rolldown)
+
 ## esbuild Usage
 
 ```ts
@@ -267,3 +288,6 @@ await build({
   ],
 });
 ```
+
+Runnable example:
+[`examples/esbuild`](../../examples/esbuild)

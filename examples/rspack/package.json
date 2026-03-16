@@ -1,0 +1,17 @@
+{
+  "name": "@fft-examples/rspack",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rspack build --config rspack.config.mjs",
+    "e2e": "vitest --config vitest.config.ts run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@rspack/cli": "^1.5.6",
+    "@rspack/core": "^1.5.6",
+    "fast-flow-transform": "workspace:*",
+    "react": "19.2.3",
+    "vitest": "^4.0.16"
+  }
+}

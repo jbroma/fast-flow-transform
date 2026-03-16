@@ -1,0 +1,16 @@
+{
+  "name": "@fft-examples/vite",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build --config vite.config.mjs",
+    "e2e": "vitest --config vitest.config.ts run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "fast-flow-transform": "workspace:*",
+    "react": "19.2.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.16"
+  }
+}

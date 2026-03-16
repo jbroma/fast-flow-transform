@@ -1,0 +1,30 @@
+{
+  "name": "@fft-examples/parcel",
+  "private": true,
+  "type": "module",
+  "main": "dist/bundle.cjs",
+  "scripts": {
+    "build": "parcel build src/index.js --target main --no-cache",
+    "e2e": "vitest --config vitest.config.ts run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@parcel/config-default": "^2.16.4",
+    "@parcel/plugin": "^2.16.1",
+    "@parcel/source-map": "^2.1.1",
+    "fast-flow-transform": "workspace:*",
+    "parcel": "^2.16.1",
+    "react": "19.2.3",
+    "vitest": "^4.0.16"
+  },
+  "targets": {
+    "main": {
+      "context": "node",
+      "includeNodeModules": true,
+      "isLibrary": true,
+      "optimize": false,
+      "outputFormat": "commonjs",
+      "sourceMap": true
+    }
+  }
+}

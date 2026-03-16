@@ -22,6 +22,9 @@ own project with its own packaging, workspace layout, and integration surface.
 Contributor workflows, including local Verdaccio publishing for canary testing,
 live in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
+Runnable bundler integration examples live in [examples](./examples). They are
+the same workspace packages exercised by `pnpm e2e`.
+
 ## Attribution And Licensing
 
 - FFT builds on top of Hermes Juno:

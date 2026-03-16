@@ -22,7 +22,7 @@ function expectPackageSummaries(
   expect(packageSummary?.keyCount).toBeGreaterThan(0);
 }
 
-describe('rsbuild helper e2e', () => {
+describe('rsbuild react-native fixture e2e', () => {
   it('compiles substantial flow-typed dependencies from barrel imports', () => {
     const bundleText = readFileSync(BUNDLE_PATH, 'utf8');
     const runtimeValue = require(BUNDLE_PATH);

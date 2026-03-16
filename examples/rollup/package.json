@@ -1,0 +1,20 @@
+{
+  "name": "@fft-examples/rollup",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c rollup.config.mjs",
+    "e2e": "vitest --config vitest.config.ts run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@babel/preset-react": "^7.28.5",
+    "@rollup/plugin-babel": "^6.1.0",
+    "@rollup/plugin-commonjs": "^29.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "fast-flow-transform": "workspace:*",
+    "react": "19.2.3",
+    "rollup": "^4.59.0",
+    "vitest": "^4.0.16"
+  }
+}

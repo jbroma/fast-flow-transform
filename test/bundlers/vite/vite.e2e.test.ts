@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url));
 const BUNDLE_PATH = resolve(PACKAGE_ROOT, 'dist/bundle.cjs');
 
-describe('vite adapter e2e', () => {
+describe('vite react-native fixture e2e', () => {
   it('compiles substantial flow-typed dependencies from barrel imports for build output', () => {
     const bundleText = readFileSync(BUNDLE_PATH, 'utf8');
 

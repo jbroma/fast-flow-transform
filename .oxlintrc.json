@@ -4,12 +4,13 @@
   "ignorePatterns": [
     "hermes/**",
     "bindings/**",
+    "examples/**/dist/**",
+    "test/bundlers/**/dist/**",
     "packages/**/__tests__/**",
     "packages/**/bench/**",
     "packages/fft-loader/bench/fixtures/**",
     "packages/core/__tests__/inputs/**/*.js",
-    "packages/core/__tests__/outputs/**/*.js",
-    "test/bundlers/parcel/src/**/*.js"
+    "packages/core/__tests__/outputs/**/*.js"
   ],
   "rules": {
     "eslint/eqeqeq": "off",

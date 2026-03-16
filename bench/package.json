@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "benchmark": "node compare.ts",
+    "render:readme": "node renderReadmeBenchmark.ts",
     "test": "vitest run --globals *.test.ts"
   },
   "dependencies": {

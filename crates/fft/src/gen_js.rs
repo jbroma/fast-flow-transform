@@ -255,6 +255,17 @@ struct GenJS<'s, 'w> {
     match_tmp_index: usize,
 }
 
+struct MatchBinding {
+    kind: String,
+    name: String,
+    value: String,
+}
+
+struct MatchPatternPlan {
+    condition: String,
+    bindings: Vec<MatchBinding>,
+}
+
 /// Print to the output stream if no errors have been seen so far.
 /// `$gen_js` is a mutable reference to the GenJS struct.
 /// `$arg` arguments follow the format pattern used by `format!`.
@@ -881,69 +892,80 @@ impl GenJS<'_, '_> {
                 argument,
                 cases,
             }) => {
-                let tmp_name = format!("_fft_match_{}", self.match_tmp_index);
-                self.match_tmp_index += 1;
+                let tmp_name = self.next_match_name("subject");
+                let done_name = self.next_match_name("done");
 
                 out_token!(self, node, "{{");
                 self.inc_indent();
                 self.newline();
-                out!(self, "const {}=", tmp_name);
+                out!(self, "const ");
+                self.write_utf8(&tmp_name);
+                self.space(ForceSpace::Yes);
+                out!(self, "=");
+                self.space(ForceSpace::Yes);
                 argument.visit(ctx, self, Some(Path::new(node, NodeField::argument)));
                 out!(self, ";");
+                self.newline();
+                out!(self, "let ");
+                self.write_utf8(&done_name);
+                self.space(ForceSpace::Yes);
+                out!(self, "=");
+                self.space(ForceSpace::Yes);
+                out!(self, "false;");
 
-                let mut emitted_branch = false;
                 for case in cases.iter() {
                     let case_node = match case {
                         Node::MatchStatementCase(case_node) => case_node,
                         _ => continue,
                     };
+                    let plan = self.compile_match_pattern(
+                        ctx,
+                        case_node.pattern,
+                        tmp_name.as_str(),
+                    );
 
                     self.newline();
-                    if emitted_branch {
-                        out!(self, "else");
-                        self.space(ForceSpace::Yes);
-                    }
-
-                    let mut has_condition = false;
-                    if !matches!(case_node.pattern, Node::MatchWildcardPattern(_)) {
-                        has_condition = true;
-                        out!(self, "if(");
-                        out!(self, "{}===", tmp_name);
-                        self.emit_match_pattern_value(
-                            ctx,
-                            case_node.pattern,
-                            Path::new(case, NodeField::pattern),
-                        );
-                    }
-                    if let Some(guard) = case_node.guard {
-                        if has_condition {
-                            out!(self, "&&(");
-                            guard.visit(ctx, self, Some(Path::new(case, NodeField::guard)));
-                            out!(self, ")");
-                            out!(self, ")");
-                        } else {
-                            out!(self, "if(");
-                            guard.visit(ctx, self, Some(Path::new(case, NodeField::guard)));
-                            out!(self, ")");
-                        }
-                    } else if has_condition {
+                    out!(self, "if(!");
+                    self.write_utf8(&done_name);
+                    if plan.condition != "true" {
+                        out!(self, "&&(");
+                        self.write_utf8(&plan.condition);
                         out!(self, ")");
                     }
+                    out!(self, "){{");
+                    self.inc_indent();
+                    self.newline();
+                    self.emit_match_bindings(&plan.bindings);
 
+                    if let Some(guard) = case_node.guard {
+                        out!(self, "if(");
+                        guard.visit(ctx, self, Some(Path::new(case, NodeField::guard)));
+                        out!(self, "){{");
+                        self.inc_indent();
+                        self.newline();
+                    }
+
+                    self.write_utf8(&done_name);
+                    self.space(ForceSpace::Yes);
+                    out!(self, "=");
+                    self.space(ForceSpace::Yes);
+                    out!(self, "true;");
+                    self.newline();
                     self.visit_stmt_or_block(
                         ctx,
                         case_node.body,
                         ForceBlock::Yes,
                         Path::new(case, NodeField::body),
                     );
-                    emitted_branch = true;
 
-                    // A wildcard with no guard is always the terminal branch.
-                    if matches!(case_node.pattern, Node::MatchWildcardPattern(_))
-                        && case_node.guard.is_none()
-                    {
-                        break;
+                    if case_node.guard.is_some() {
+                        self.dec_indent();
+                        self.newline();
+                        out!(self, "}}");
                     }
+                    self.dec_indent();
+                    self.newline();
+                    out!(self, "}}");
                 }
 
                 self.dec_indent();
@@ -955,57 +977,74 @@ impl GenJS<'_, '_> {
                 argument,
                 cases,
             }) => {
-                let tmp_name = format!("_fft_match_{}", self.match_tmp_index);
-                self.match_tmp_index += 1;
+                let tmp_name = self.next_match_name("subject");
+                let done_name = self.next_match_name("done");
+                let result_name = self.next_match_name("result");
 
                 out_token!(self, node, "(()=>{{");
                 self.inc_indent();
                 self.newline();
-                out!(self, "const {}=", tmp_name);
+                out!(self, "const ");
+                self.write_utf8(&tmp_name);
+                self.space(ForceSpace::Yes);
+                out!(self, "=");
+                self.space(ForceSpace::Yes);
                 argument.visit(ctx, self, Some(Path::new(node, NodeField::argument)));
                 out!(self, ";");
+                self.newline();
+                out!(self, "let ");
+                self.write_utf8(&done_name);
+                self.space(ForceSpace::Yes);
+                out!(self, "=");
+                self.space(ForceSpace::Yes);
+                out!(self, "false;");
+                self.newline();
+                out!(self, "let ");
+                self.write_utf8(&result_name);
+                out!(self, ";");
 
-                let mut emitted_branch = false;
                 for case in cases.iter() {
                     let case_node = match case {
                         Node::MatchExpressionCase(case_node) => case_node,
                         _ => continue,
                     };
+                    let plan = self.compile_match_pattern(
+                        ctx,
+                        case_node.pattern,
+                        tmp_name.as_str(),
+                    );
 
                     self.newline();
-                    if emitted_branch {
-                        out!(self, "else");
-                        self.space(ForceSpace::Yes);
-                    }
-
-                    let mut has_condition = false;
-                    if !matches!(case_node.pattern, Node::MatchWildcardPattern(_)) {
-                        has_condition = true;
-                        out!(self, "if(");
-                        out!(self, "{}===", tmp_name);
-                        self.emit_match_pattern_value(
-                            ctx,
-                            case_node.pattern,
-                            Path::new(case, NodeField::pattern),
-                        );
-                    }
-                    if let Some(guard) = case_node.guard {
-                        if has_condition {
-                            out!(self, "&&(");
-                            guard.visit(ctx, self, Some(Path::new(case, NodeField::guard)));
-                            out!(self, ")");
-                            out!(self, ")");
-                        } else {
-                            out!(self, "if(");
-                            guard.visit(ctx, self, Some(Path::new(case, NodeField::guard)));
-                            out!(self, ")");
-                        }
-                    } else if has_condition {
+                    out!(self, "if(!");
+                    self.write_utf8(&done_name);
+                    if plan.condition != "true" {
+                        out!(self, "&&(");
+                        self.write_utf8(&plan.condition);
                         out!(self, ")");
                     }
+                    out!(self, "){{");
+                    self.inc_indent();
+                    self.newline();
+                    self.emit_match_bindings(&plan.bindings);
 
+                    if let Some(guard) = case_node.guard {
+                        out!(self, "if(");
+                        guard.visit(ctx, self, Some(Path::new(case, NodeField::guard)));
+                        out!(self, "){{");
+                        self.inc_indent();
+                        self.newline();
+                    }
+
+                    self.write_utf8(&done_name);
                     self.space(ForceSpace::Yes);
-                    out!(self, "return ");
+                    out!(self, "=");
+                    self.space(ForceSpace::Yes);
+                    out!(self, "true;");
+                    self.newline();
+                    self.write_utf8(&result_name);
+                    self.space(ForceSpace::Yes);
+                    out!(self, "=");
+                    self.space(ForceSpace::Yes);
                     self.print_child(
                         ctx,
                         Some(case_node.body),
@@ -1013,19 +1052,21 @@ impl GenJS<'_, '_> {
                         ChildPos::Anywhere,
                     );
                     out!(self, ";");
-                    emitted_branch = true;
 
-                    if matches!(case_node.pattern, Node::MatchWildcardPattern(_))
-                        && case_node.guard.is_none()
-                    {
-                        break;
+                    if case_node.guard.is_some() {
+                        self.dec_indent();
+                        self.newline();
+                        out!(self, "}}");
                     }
+                    self.dec_indent();
+                    self.newline();
+                    out!(self, "}}");
                 }
 
-                if emitted_branch {
-                    self.newline();
-                }
-                out!(self, "return undefined;");
+                self.newline();
+                out!(self, "return ");
+                self.write_utf8(&result_name);
+                out!(self, ";");
                 self.dec_indent();
                 self.newline();
                 out!(self, "}})()");
@@ -3944,69 +3985,381 @@ impl GenJS<'_, '_> {
         self.emit_trailing_comments(*stmt.range());
     }
 
-    fn emit_match_pattern_value<'gc>(
-        &mut self,
+    fn next_match_name(&mut self, prefix: &str) -> String {
+        let name = format!("_fft_match_{}_{}", prefix, self.match_tmp_index);
+        self.match_tmp_index += 1;
+        name
+    }
+
+    fn render_match_snippet<'gc>(&self, ctx: &'gc GCLock, node: &'gc Node<'gc>) -> String {
+        let mut buf = Vec::<u8>::new();
+        let mut snippet = GenJS {
+            out: BufWriter::new(&mut buf),
+            opt: Opt {
+                pretty: Pretty::No,
+                sourcemap: false,
+                annotation: Annotation::No,
+                force_async_arrow_space: self.opt.force_async_arrow_space,
+                doc_block: None,
+                comments: None,
+                quote: self.opt.quote,
+            },
+            indent_step: self.indent_step,
+            indent: 0,
+            position: SourceLoc { line: 1, col: 1 },
+            cur_token: None,
+            sourcemap: None,
+            error: None,
+            match_tmp_index: 0,
+        };
+
+        node.visit(ctx, &mut snippet, None);
+        snippet.flush_cur_token();
+        snippet.out.flush().expect("match snippet flush should succeed");
+        assert!(snippet.error.is_none(), "match snippet generation failed");
+        drop(snippet);
+
+        String::from_utf8(buf).expect("match snippet should be UTF-8")
+    }
+
+    fn combine_match_all(parts: Vec<String>) -> String {
+        let filtered = parts
+            .into_iter()
+            .filter(|part| part != "true")
+            .collect::<Vec<_>>();
+        if filtered.iter().any(|part| part == "false") {
+            return "false".into();
+        }
+        if filtered.is_empty() {
+            return "true".into();
+        }
+        filtered
+            .into_iter()
+            .map(|part| format!("({part})"))
+            .collect::<Vec<_>>()
+            .join("&&")
+    }
+
+    fn combine_match_any(parts: Vec<String>) -> String {
+        if parts.is_empty() {
+            return "false".into();
+        }
+        if parts.iter().any(|part| part == "true") {
+            return "true".into();
+        }
+        parts.into_iter()
+            .map(|part| format!("({part})"))
+            .collect::<Vec<_>>()
+            .join("||")
+    }
+
+    fn match_property_access<'gc>(
+        &self,
         ctx: &'gc GCLock,
-        pattern_node: &'gc Node<'gc>,
-        path: Path<'gc>,
-    ) {
-        match pattern_node {
-            Node::MatchLiteralPattern(MatchLiteralPattern { literal, .. }) => {
-                literal.visit(ctx, self, Some(path));
+        subject: &str,
+        key: &'gc Node<'gc>,
+    ) -> String {
+        match key {
+            Node::Identifier(Identifier { name, .. }) => {
+                format!("({subject}).{}", ctx.str(*name))
             }
-            Node::MatchIdentifierPattern(MatchIdentifierPattern { id, .. })
-            | Node::MatchBindingPattern(MatchBindingPattern { id, .. }) => {
-                id.visit(ctx, self, Some(path));
+            Node::MatchIdentifierPattern(MatchIdentifierPattern { id, .. }) => {
+                format!("({subject}).{}", self.render_match_snippet(ctx, id))
+            }
+            _ => format!("({subject})[{}]", self.render_match_snippet(ctx, key)),
+        }
+    }
+
+    fn match_property_key<'gc>(&self, ctx: &'gc GCLock, key: &'gc Node<'gc>) -> String {
+        match key {
+            Node::Identifier(Identifier { name, .. }) => {
+                format!("'{}'", ctx.str(*name))
+            }
+            _ => self.render_match_snippet(ctx, key),
+        }
+    }
+
+    fn compile_match_binding<'gc>(
+        &self,
+        ctx: &'gc GCLock,
+        target: &'gc Node<'gc>,
+        value: &str,
+    ) -> Option<MatchBinding> {
+        match target {
+            Node::Identifier(_) => Some(MatchBinding {
+                kind: "const".into(),
+                name: self.render_match_snippet(ctx, target),
+                value: value.into(),
+            }),
+            Node::MatchBindingPattern(MatchBindingPattern { id, kind, .. }) => {
+                Some(MatchBinding {
+                    kind: ctx.str(*kind).into(),
+                    name: self.render_match_snippet(ctx, id),
+                    value: value.into(),
+                })
+            }
+            _ => None,
+        }
+    }
+
+    fn compile_match_value_expression<'gc>(
+        &self,
+        ctx: &'gc GCLock,
+        pattern: &'gc Node<'gc>,
+    ) -> Option<String> {
+        match pattern {
+            Node::MatchLiteralPattern(MatchLiteralPattern { literal, .. }) => {
+                Some(self.render_match_snippet(ctx, literal))
+            }
+            Node::MatchIdentifierPattern(MatchIdentifierPattern { id, .. }) => {
+                Some(self.render_match_snippet(ctx, id))
             }
             Node::MatchUnaryPattern(MatchUnaryPattern {
                 argument, operator, ..
             }) => {
-                out!(
-                    self,
-                    "{}",
-                    match ctx.str(*operator) {
-                        "+" => "+",
-                        "-" => "-",
-                        _ => "",
-                    }
-                );
-                self.emit_match_pattern_value(
-                    ctx,
-                    argument,
-                    Path::new(pattern_node, NodeField::argument),
-                );
+                let inner = self.compile_match_value_expression(ctx, argument)?;
+                let op = match ctx.str(*operator) {
+                    "+" => "+",
+                    "-" => "-",
+                    _ => "",
+                };
+                Some(format!("{op}{inner}"))
             }
             Node::MatchAsPattern(MatchAsPattern { pattern, .. }) => {
-                self.emit_match_pattern_value(
-                    ctx,
-                    pattern,
-                    Path::new(pattern_node, NodeField::pattern),
-                );
+                self.compile_match_value_expression(ctx, pattern)
             }
             Node::MatchMemberPattern(MatchMemberPattern { base, property, .. }) => {
-                self.emit_match_pattern_value(ctx, base, Path::new(pattern_node, NodeField::base));
-                match property {
-                    Node::MatchIdentifierPattern(MatchIdentifierPattern { id, .. }) => {
-                        out!(self, ".");
-                        id.visit(
-                            ctx,
-                            self,
-                            Some(Path::new(pattern_node, NodeField::property)),
-                        );
-                    }
-                    _ => {
-                        out!(self, "[");
-                        self.emit_match_pattern_value(
-                            ctx,
-                            property,
-                            Path::new(pattern_node, NodeField::property),
-                        );
-                        out!(self, "]");
-                    }
-                }
+                let base_expr = self.compile_match_value_expression(ctx, base)?;
+                Some(self.match_property_access(ctx, &base_expr, property))
             }
-            // Unsupported pattern forms are lowered to a sentinel value so codegen remains stable.
-            _ => out!(self, "void 0"),
+            _ => None,
+        }
+    }
+
+    fn compile_match_or_pattern<'gc>(
+        &mut self,
+        ctx: &'gc GCLock,
+        patterns: NodeList<'gc>,
+        subject: &str,
+    ) -> MatchPatternPlan {
+        let mut conditions = Vec::new();
+        for pattern in patterns.iter() {
+            let plan = self.compile_match_pattern(ctx, pattern, subject);
+            if !plan.bindings.is_empty() {
+                return MatchPatternPlan {
+                    condition: "false".into(),
+                    bindings: Vec::new(),
+                };
+            }
+            conditions.push(plan.condition);
+        }
+        MatchPatternPlan {
+            condition: Self::combine_match_any(conditions),
+            bindings: Vec::new(),
+        }
+    }
+
+    fn compile_match_object_pattern<'gc>(
+        &mut self,
+        ctx: &'gc GCLock,
+        properties: NodeList<'gc>,
+        rest: Option<&'gc Node<'gc>>,
+        subject: &str,
+    ) -> MatchPatternPlan {
+        let mut conditions =
+            vec![format!("({subject})!==null&&typeof ({subject})==='object'")];
+        let mut bindings = Vec::new();
+        let mut keys = Vec::new();
+
+        for property in properties.iter() {
+            let Node::MatchObjectPatternProperty(MatchObjectPatternProperty {
+                key, pattern, ..
+            }) = property
+            else {
+                continue;
+            };
+
+            let key_expr = self.match_property_key(ctx, key);
+            let access_expr = self.match_property_access(ctx, subject, key);
+            conditions.push(format!(
+                "Object.prototype.hasOwnProperty.call({subject}, {key_expr})"
+            ));
+            let plan = self.compile_match_pattern(ctx, pattern, &access_expr);
+            conditions.push(plan.condition);
+            bindings.extend(plan.bindings);
+            keys.push(key_expr);
+        }
+
+        if let Some(binding) = self.compile_match_object_rest_binding(ctx, rest, subject, &keys) {
+            bindings.push(binding);
+        }
+
+        MatchPatternPlan {
+            condition: Self::combine_match_all(conditions),
+            bindings,
+        }
+    }
+
+    fn compile_match_array_pattern<'gc>(
+        &mut self,
+        ctx: &'gc GCLock,
+        elements: NodeList<'gc>,
+        rest: Option<&'gc Node<'gc>>,
+        subject: &str,
+    ) -> MatchPatternPlan {
+        let mut conditions = vec![format!("Array.isArray({subject})")];
+        let length_check = if rest.is_some() { ">=" } else { "===" };
+        conditions.push(format!("({subject}).length{length_check}{}", elements.len()));
+        let mut bindings = Vec::new();
+
+        for (index, element) in elements.iter().enumerate() {
+            let access_expr = format!("({subject})[{index}]");
+            let plan = self.compile_match_pattern(ctx, element, &access_expr);
+            conditions.push(plan.condition);
+            bindings.extend(plan.bindings);
+        }
+
+        if let Some(binding) = self.compile_match_array_rest_binding(
+            ctx,
+            rest,
+            subject,
+            elements.len(),
+        ) {
+            bindings.push(binding);
+        }
+
+        MatchPatternPlan {
+            condition: Self::combine_match_all(conditions),
+            bindings,
+        }
+    }
+
+    fn compile_match_array_rest_binding<'gc>(
+        &mut self,
+        ctx: &'gc GCLock,
+        rest: Option<&'gc Node<'gc>>,
+        subject: &str,
+        start: usize,
+    ) -> Option<MatchBinding> {
+        let rest = rest?;
+        let Node::MatchRestPattern(MatchRestPattern { argument, .. }) = rest else {
+            return None;
+        };
+        let target = (*argument)?;
+
+        match target {
+            Node::MatchBindingPattern(_) | Node::Identifier(_) => {
+                let value = format!("({subject}).slice({start})");
+                self.compile_match_binding(ctx, target, &value)
+            }
+            _ => None,
+        }
+    }
+
+    fn compile_match_object_rest_binding<'gc>(
+        &mut self,
+        ctx: &'gc GCLock,
+        rest: Option<&'gc Node<'gc>>,
+        subject: &str,
+        keys: &[String],
+    ) -> Option<MatchBinding> {
+        let rest = rest?;
+        let Node::MatchRestPattern(MatchRestPattern { argument, .. }) = rest else {
+            return None;
+        };
+        let target = (*argument)?;
+
+        match target {
+            Node::MatchBindingPattern(_) | Node::Identifier(_) => {
+                let value = self.match_object_rest_expression(ctx, subject, keys, target);
+                self.compile_match_binding(ctx, target, &value)
+            }
+            _ => None,
+        }
+    }
+
+    fn match_object_rest_expression<'gc>(
+        &mut self,
+        ctx: &'gc GCLock,
+        subject: &str,
+        keys: &[String],
+        target: &'gc Node<'gc>,
+    ) -> String {
+        let rest_name = self
+            .compile_match_binding(ctx, target, "undefined")
+            .expect("rest binding should have a target")
+            .name;
+        let omit_specs = keys
+            .iter()
+            .map(|key| format!("{key}:{}", self.next_match_name("omit")))
+            .collect::<Vec<_>>();
+        let fields = if omit_specs.is_empty() {
+            format!("...{rest_name}")
+        } else {
+            format!("{}, ...{rest_name}", omit_specs.join(","))
+        };
+        format!("(()=>{{const {{{fields}}}={subject};return {rest_name};}})()")
+    }
+
+    fn compile_match_pattern<'gc>(
+        &mut self,
+        ctx: &'gc GCLock,
+        pattern: &'gc Node<'gc>,
+        subject: &str,
+    ) -> MatchPatternPlan {
+        match pattern {
+            Node::MatchWildcardPattern(_) => MatchPatternPlan {
+                condition: "true".into(),
+                bindings: Vec::new(),
+            },
+            Node::MatchBindingPattern(_) => MatchPatternPlan {
+                condition: "true".into(),
+                bindings: self
+                    .compile_match_binding(ctx, pattern, subject)
+                    .into_iter()
+                    .collect(),
+            },
+            Node::MatchAsPattern(MatchAsPattern {
+                pattern: inner,
+                target,
+                ..
+            }) => {
+                let mut plan = self.compile_match_pattern(ctx, inner, subject);
+                if let Some(binding) = self.compile_match_binding(ctx, target, subject) {
+                    plan.bindings.push(binding);
+                }
+                plan
+            }
+            Node::MatchObjectPattern(MatchObjectPattern {
+                properties, rest, ..
+            }) => self.compile_match_object_pattern(ctx, *properties, *rest, subject),
+            Node::MatchArrayPattern(MatchArrayPattern { elements, rest, .. }) => {
+                self.compile_match_array_pattern(ctx, *elements, *rest, subject)
+            }
+            Node::MatchOrPattern(MatchOrPattern { patterns, .. }) => {
+                self.compile_match_or_pattern(ctx, *patterns, subject)
+            }
+            _ => MatchPatternPlan {
+                condition: self
+                    .compile_match_value_expression(ctx, pattern)
+                    .map(|value| format!("({subject})==={value}"))
+                    .unwrap_or_else(|| "false".into()),
+                bindings: Vec::new(),
+            },
+        }
+    }
+
+    fn emit_match_bindings(&mut self, bindings: &[MatchBinding]) {
+        for binding in bindings {
+            self.write_utf8(&binding.kind);
+            out!(self, " ");
+            self.write_utf8(&binding.name);
+            self.space(ForceSpace::Yes);
+            out!(self, "=");
+            self.space(ForceSpace::Yes);
+            self.write_utf8(&binding.value);
+            out!(self, ";");
+            self.newline();
         }
     }
 

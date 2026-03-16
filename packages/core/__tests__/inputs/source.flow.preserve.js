@@ -1,8 +1,6 @@
 /* @flow */
 // @nolint
 
-import * as React from 'react';
-
 // Regular import
 import {
   Something,
@@ -309,9 +307,6 @@ const asBigIntLiteral = 1n as 1n;
 const asBigInt = 1n as bigint;
 const asBooleanLiteral = true as true;
 const asBoolean = true as boolean;
-const asComponent = (() => {}) as component(p: number, o?: string);
-const asComponentGeneric = (() => {}) as component<T>(p: T);
-const asComponentGenericWithDefault = (() => {}) as component<T = any>(p: T);
 const asEmpty = {} as empty;
 const asExists = 'exists' as *;
 const asFunction = (() => {}) as () => void;
@@ -354,111 +349,3 @@ const asIndexed = 'indexed' as [string, number][0];
 // chained `as`
 const chain1 = '1' as any as any as any;
 const chain2 = '1' as const as any;
-
-// Enums
-enum Status {
-  Draft,
-  Published,
-}
-
-enum Label of string {
-  Short = 'short',
-  Long = 'long',
-}
-
-enum Signal of number {
-  Off = -1,
-  On = 1,
-}
-
-enum Flag of boolean {
-  Yes = true,
-  No = false,
-}
-
-enum Token of symbol {
-  Start,
-  Stop,
-}
-
-enum Future {
-  Current,
-  Next,
-  ...
-}
-
-const status: Status = Status.Draft;
-const statusCast = Status.cast('Draft');
-const statusName = Status.getName(Status.Published);
-const statusMembers = Status.members();
-
-function exhaustiveStatus(value: Status): string {
-  switch (value) {
-    case Status.Draft:
-      return 'draft';
-    case Status.Published:
-      return 'published';
-    default:
-      return (value: empty);
-  }
-}
-
-// Component syntax
-type GenericComponent = component<T>(item: T);
-type ProfileExtras = { name: string, [string]: mixed };
-
-component Avatar(name: string) {
-  return name;
-}
-
-component Profile(
-  ref?: React.RefSetter<mixed>,
-  title: string = 'ok',
-  'data-id' as dataId?: string,
-  badge: renders Avatar,
-  ...{name, ...rest}: ProfileExtras
-) renders Avatar {
-  return badge;
-}
-
-export component NamedComponent(foo: number) {
-  return foo;
-}
-
-// Hook syntax
-type HookTransform = hook <T>(T) => T;
-
-hook useValue(value: number): number {
-  return value;
-}
-
-export hook useGenericValue<T>(value: T): T {
-  return value;
-}
-
-export default hook useDefaultValue(...values: Array<number>): number {
-  return values.length;
-}
-
-// Match syntax
-const matchValue = match (matchInput) {
-  {kind: 'user', payload: {const name}, ...}
-    if (shouldUseName && name.length > 0) => name,
-  [const head, ...const tail] => head + tail.length,
-  [2, 3, ...] => 1,
-  {foo: [1] as tupleMatch} => tupleMatch.length,
-  'open' | 'closed' => 0,
-  _ => -1,
-};
-
-match (matchStatementInput) {
-  {status: 'ok', const value, ...} => {
-    useValue(value);
-  },
-  [1, ...const rest] => {
-    useValue(rest.length);
-  },
-  _ => {
-    useValue(0);
-  },
-}

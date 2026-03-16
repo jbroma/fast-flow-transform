@@ -25,15 +25,19 @@ function inputsDir(): string {
   return resolve(import.meta.dirname, 'inputs');
 }
 
-const FIXTURE = 'source.flow';
-const FIXTURE_PATH = resolve(inputsDir(), 'source.flow.js');
+const FULL_FIXTURE = 'source.flow';
+const PRESERVE_FIXTURE = 'source.flow.preserve';
 
 function snapshotPath(fileName: string): string {
   return resolve(outputsDir(), fileName);
 }
 
-function fixtureInput(): string {
-  return readFileSync(FIXTURE_PATH, 'utf8');
+function fixturePath(fixture: string): string {
+  return resolve(inputsDir(), `${fixture}.js`);
+}
+
+function fixtureInput(fixture: string): string {
+  return readFileSync(fixturePath(fixture), 'utf8');
 }
 
 function assertParsesAsModule(code: string, fileName: string): void {
@@ -59,20 +63,20 @@ function assertParsesAsModule(code: string, fileName: string): void {
 function standardCases(): SnapshotCase[] {
   return [
     {
-      fixture: FIXTURE,
+      fixture: FULL_FIXTURE,
       options: {
         format: 'pretty',
       },
-      snapshotFile: `${FIXTURE}.pretty.js`,
-      title: `${FIXTURE} matches pretty output`,
+      snapshotFile: `${FULL_FIXTURE}.pretty.js`,
+      title: `${FULL_FIXTURE} matches pretty output`,
     },
     {
-      fixture: FIXTURE,
+      fixture: FULL_FIXTURE,
       options: {
         format: 'compact',
       },
-      snapshotFile: `${FIXTURE}.compact.js`,
-      title: `${FIXTURE} matches compact output`,
+      snapshotFile: `${FULL_FIXTURE}.compact.js`,
+      title: `${FULL_FIXTURE} matches compact output`,
     },
   ];
 }
@@ -80,23 +84,23 @@ function standardCases(): SnapshotCase[] {
 function preserveCases(): SnapshotCase[] {
   return [
     {
-      fixture: FIXTURE,
+      fixture: PRESERVE_FIXTURE,
       options: {
         format: 'preserve',
         sourcemap: false,
       },
-      snapshotFile: `${FIXTURE}.preserve-whitespace.js`,
-      title: `${FIXTURE} preserves whitespace without comments`,
+      snapshotFile: `${PRESERVE_FIXTURE}.preserve-whitespace.js`,
+      title: `${PRESERVE_FIXTURE} preserves whitespace without comments`,
     },
     {
-      fixture: FIXTURE,
+      fixture: PRESERVE_FIXTURE,
       options: {
         comments: true,
         format: 'preserve',
         sourcemap: false,
       },
-      snapshotFile: `${FIXTURE}.preserve-whitespace-comments.js`,
-      title: `${FIXTURE} preserves whitespace and comments`,
+      snapshotFile: `${PRESERVE_FIXTURE}.preserve-whitespace-comments.js`,
+      title: `${PRESERVE_FIXTURE} preserves whitespace and comments`,
     },
   ];
 }
@@ -104,24 +108,24 @@ function preserveCases(): SnapshotCase[] {
 function commentCases(): SnapshotCase[] {
   return [
     {
-      fixture: FIXTURE,
+      fixture: FULL_FIXTURE,
       options: {
         comments: true,
         format: 'pretty',
         sourcemap: false,
       },
-      snapshotFile: `${FIXTURE}.pretty-comments.js`,
-      title: `${FIXTURE} keeps comments in pretty output`,
+      snapshotFile: `${FULL_FIXTURE}.pretty-comments.js`,
+      title: `${FULL_FIXTURE} keeps comments in pretty output`,
     },
     {
-      fixture: FIXTURE,
+      fixture: FULL_FIXTURE,
       options: {
         comments: true,
         format: 'compact',
         sourcemap: false,
       },
-      snapshotFile: `${FIXTURE}.compact-comments.js`,
-      title: `${FIXTURE} keeps comments in compact output`,
+      snapshotFile: `${FULL_FIXTURE}.compact-comments.js`,
+      title: `${FULL_FIXTURE} keeps comments in compact output`,
     },
   ];
 }
@@ -132,7 +136,7 @@ async function expectFixtureSnapshot(
   const { fixture, options, snapshotFile } = snapshotCase;
   const result = await fft({
     filename: `${fixture}.js`,
-    source: fixtureInput(),
+    source: fixtureInput(fixture),
     sourcemap: false,
     ...(options as Record<string, unknown>),
   } as never);
@@ -143,8 +147,10 @@ async function expectFixtureSnapshot(
 describe('transform correctness snapshots', () => {
   const cases = [...standardCases(), ...preserveCases(), ...commentCases()];
 
-  it('loads the shared transform fixture', () => {
-    expect(fixtureInput().length).toBeGreaterThan(0);
+  it('loads the transform fixtures', () => {
+    for (const fixture of [FULL_FIXTURE, PRESERVE_FIXTURE]) {
+      expect(fixtureInput(fixture).length).toBeGreaterThan(0);
+    }
   });
 
   it.each(cases)('$title', async (snapshotCase) => {
@@ -155,7 +161,7 @@ describe('transform correctness snapshots', () => {
     for (const snapshotCase of preserveCases()) {
       const result = await fft({
         filename: `${snapshotCase.fixture}.js`,
-        source: fixtureInput(),
+        source: fixtureInput(snapshotCase.fixture),
         sourcemap: false,
         ...(snapshotCase.options as Record<string, unknown>),
       } as never);

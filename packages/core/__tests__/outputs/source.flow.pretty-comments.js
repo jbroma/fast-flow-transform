@@ -1,4 +1,5 @@
 // @nolint
+import * as React from 'react';
 // Regular import
 import {Something as Something} from 'some-module';
 // Regular import with types only
@@ -186,3 +187,105 @@ const asIndexed = 'indexed';
 // chained `as`
 const chain1 = '1';
 const chain2 = '1';
+// Enums
+const Status = require('flow-enums-runtime').Mirrored(['Draft', 'Published']);
+const Label = require('flow-enums-runtime')({Short: 'short', Long: 'long'});
+const Signal = require('flow-enums-runtime')({Off: -1, On: 1});
+const Flag = require('flow-enums-runtime')({Yes: true, No: false});
+const Token = require('flow-enums-runtime')({Start: Symbol('Start'), Stop: Symbol('Stop')});
+const Future = require('flow-enums-runtime').Mirrored(['Current', 'Next']);
+const status = Status.Draft;
+const statusCast = Status.cast('Draft');
+const statusName = Status.getName((Status.Published));
+const statusMembers = Status.members();
+function exhaustiveStatus(value) {
+  switch (value) {
+  case Status.Draft:
+    return 'draft';
+  case Status.Published:
+    return 'published';
+  default:
+    return value;
+  }
+}
+// Component syntax
+function Avatar({name}) {
+  return name;
+}
+function Profile({ref, title = 'ok', 'data-id': dataId, badge, name, ...rest}) {
+  return badge;
+}
+export function NamedComponent({foo}) {
+  return foo;
+}
+// Hook syntax
+function useValue(value) {
+  return value;
+}
+export function useGenericValue(value) {
+  return value;
+}
+export default function useDefaultValue(...values) {
+  return values.length;
+}
+// Match syntax
+const matchValue = (()=>{
+  const _fft_match_subject_0 = matchInput;
+  let _fft_match_done_1 = false;
+  let _fft_match_result_2;
+  if(!_fft_match_done_1&&(((_fft_match_subject_0)!==null&&typeof (_fft_match_subject_0)==='object')&&(Object.prototype.hasOwnProperty.call(_fft_match_subject_0, 'kind'))&&(((_fft_match_subject_0).kind)==='user')&&(Object.prototype.hasOwnProperty.call(_fft_match_subject_0, 'payload'))&&((((_fft_match_subject_0).payload)!==null&&typeof ((_fft_match_subject_0).payload)==='object')&&(Object.prototype.hasOwnProperty.call((_fft_match_subject_0).payload, 'name'))))){
+    const name = ((_fft_match_subject_0).payload).name;
+    if(shouldUseName && name.length > 0){
+      _fft_match_done_1 = true;
+      _fft_match_result_2 = name;
+    }
+  }
+  if(!_fft_match_done_1&&((Array.isArray(_fft_match_subject_0))&&((_fft_match_subject_0).length>=1))){
+    const head = (_fft_match_subject_0)[0];
+    const tail = (_fft_match_subject_0).slice(1);
+    _fft_match_done_1 = true;
+    _fft_match_result_2 = head + tail.length;
+  }
+  if(!_fft_match_done_1&&((Array.isArray(_fft_match_subject_0))&&((_fft_match_subject_0).length>=2)&&(((_fft_match_subject_0)[0])===2)&&(((_fft_match_subject_0)[1])===3))){
+    _fft_match_done_1 = true;
+    _fft_match_result_2 = 1;
+  }
+  if(!_fft_match_done_1&&(((_fft_match_subject_0)!==null&&typeof (_fft_match_subject_0)==='object')&&(Object.prototype.hasOwnProperty.call(_fft_match_subject_0, 'foo'))&&((Array.isArray((_fft_match_subject_0).foo))&&(((_fft_match_subject_0).foo).length===1)&&((((_fft_match_subject_0).foo)[0])===1)))){
+    const tupleMatch = (_fft_match_subject_0).foo;
+    _fft_match_done_1 = true;
+    _fft_match_result_2 = tupleMatch.length;
+  }
+  if(!_fft_match_done_1&&(((_fft_match_subject_0)==='open')||((_fft_match_subject_0)==='closed'))){
+    _fft_match_done_1 = true;
+    _fft_match_result_2 = 0;
+  }
+  if(!_fft_match_done_1){
+    _fft_match_done_1 = true;
+    _fft_match_result_2 = -1;
+  }
+  return _fft_match_result_2;
+})();
+{
+  const _fft_match_subject_3 = matchStatementInput;
+  let _fft_match_done_4 = false;
+  if(!_fft_match_done_4&&(((_fft_match_subject_3)!==null&&typeof (_fft_match_subject_3)==='object')&&(Object.prototype.hasOwnProperty.call(_fft_match_subject_3, 'status'))&&(((_fft_match_subject_3).status)==='ok')&&(Object.prototype.hasOwnProperty.call(_fft_match_subject_3, 'value')))){
+    const value = (_fft_match_subject_3).value;
+    _fft_match_done_4 = true;
+     {
+      useValue(value);
+    }
+  }
+  if(!_fft_match_done_4&&((Array.isArray(_fft_match_subject_3))&&((_fft_match_subject_3).length>=1)&&(((_fft_match_subject_3)[0])===1))){
+    const rest = (_fft_match_subject_3).slice(1);
+    _fft_match_done_4 = true;
+     {
+      useValue((rest.length));
+    }
+  }
+  if(!_fft_match_done_4){
+    _fft_match_done_4 = true;
+     {
+      useValue(0);
+    }
+  }
+}

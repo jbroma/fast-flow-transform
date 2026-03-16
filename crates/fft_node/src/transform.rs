@@ -819,6 +819,65 @@ mod tests {
     }
 
     #[test]
+    fn lowers_structured_flow_match_expression_patterns() {
+        let result = transform(&request(
+            r#"
+                // @flow
+                function render(matchInput: mixed, shouldUseName: boolean) {
+                    return match (matchInput) {
+                        {kind: 'user', payload: {const name}, ...}
+                          if (shouldUseName && name.length > 0) => name,
+                        [const head, ...const tail] => head + tail.length,
+                        {foo: [1] as tupleMatch} => tupleMatch.length,
+                        'open' | 'closed' => 0,
+                        _ => -1,
+                    };
+                }
+            "#,
+        ))
+        .expect("transform should succeed");
+
+        assert!(!result.code.contains("match("));
+        assert!(!result.code.contains("===void 0"));
+        assert!(result.code.contains("const name ="));
+        assert!(result.code.contains("const tupleMatch ="));
+        assert!(result.code.contains("'kind'"));
+        assert!(result.code.contains("'payload'"));
+        assert!(result.code.contains("Array.isArray"));
+        assert!(result.code.contains("Object.prototype.hasOwnProperty.call"));
+    }
+
+    #[test]
+    fn lowers_structured_flow_match_statement_patterns() {
+        let result = transform(&request(
+            r#"
+                // @flow
+                function render(matchInput: mixed) {
+                    match (matchInput) {
+                        {status: 'ok', const value, ...} => {
+                            consume(value);
+                        }
+                        [1, ...const rest] => {
+                            consume(rest.length);
+                        }
+                        _ => {
+                            consume(0);
+                        }
+                    }
+                }
+            "#,
+        ))
+        .expect("transform should succeed");
+
+        assert!(!result.code.contains("match("));
+        assert!(!result.code.contains("===void 0"));
+        assert!(result.code.contains("const value ="));
+        assert!(result.code.contains("'status'"));
+        assert!(result.code.contains(".slice(1)"));
+        assert!(result.code.contains("Object.prototype.hasOwnProperty.call"));
+    }
+
+    #[test]
     fn supports_class_static_blocks() {
         let mut input = request(
             r#"

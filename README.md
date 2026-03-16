@@ -14,7 +14,7 @@ Flow syntax before the rest of your pipeline sees it, keeps JSX in place, and
 ships adapters for webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown,
 and esbuild.
 
-In the included benchmark against Babel, `fft` delivers roughly 25x faster transforms. See [Benchmark](#benchmark).
+In the included benchmark against Babel, `fft` delivers roughly 20x faster transforms. See [Benchmark](#benchmark).
 
 ## Why `fft` Exists
 
@@ -55,9 +55,9 @@ Parcel usually wires `fft` through a tiny local wrapper that re-exports
 import transform from 'fast-flow-transform';
 
 const result = await transform({
-  filename: '/abs/path/input.js',
-  source: 'const answer: number = 42;',
-  sourcemap: true,
+	filename: '/abs/path/input.js',
+	source: 'const answer: number = 42;',
+	sourcemap: true,
 });
 
 console.log(result.code);

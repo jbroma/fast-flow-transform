@@ -750,10 +750,7 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
     }
 }
 
-fn transform_enum<'gc>(
-    gc: &'gc GCLock<'_, '_>,
-    n: &'gc EnumDeclaration<'gc>,
-) -> &'gc Node<'gc> {
+fn transform_enum<'gc>(gc: &'gc GCLock<'_, '_>, n: &'gc EnumDeclaration<'gc>) -> &'gc Node<'gc> {
     let (method, args) = match n.body {
         Node::EnumStringBody(body)
             if matches!(body.members.head(), Some(Node::EnumDefaultedMember(_))) =>
@@ -901,7 +898,8 @@ fn transform_enum<'gc>(
                     gc,
                     template::StringLiteral {
                         metadata: Default::default(),
-                        value: gc.atom_u16("flow-enums-runtime".encode_utf16().collect::<Vec<u16>>()),
+                        value: gc
+                            .atom_u16("flow-enums-runtime".encode_utf16().collect::<Vec<u16>>()),
                     },
                 )],
             ),

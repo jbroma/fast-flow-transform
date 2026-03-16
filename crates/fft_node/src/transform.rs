@@ -74,7 +74,10 @@ fn parse_format(value: &str) -> Result<OutputFormat, TransformFailure> {
         "preserve" => Ok(OutputFormat::Preserve),
         "pretty" => Ok(OutputFormat::Pretty),
         _ => Err(TransformFailure {
-            message: format!("invalid format '{}', expected compact | pretty | preserve", value),
+            message: format!(
+                "invalid format '{}', expected compact | pretty | preserve",
+                value
+            ),
             line: None,
             column: None,
         }),

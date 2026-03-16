@@ -204,11 +204,7 @@ impl<'src> PreserveCollector<'src> {
         });
     }
 
-    fn remove_predicate(
-        &mut self,
-        return_type: Option<&ast::Node>,
-        predicate: Option<&ast::Node>,
-    ) {
+    fn remove_predicate(&mut self, return_type: Option<&ast::Node>, predicate: Option<&ast::Node>) {
         let Some(predicate) = predicate else {
             return;
         };
@@ -510,9 +506,7 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
             }
             ast::Node::TypeCastExpression(n) => self.remove_node_range(n.type_annotation),
             ast::Node::AsExpression(n) => self.remove_as_expression_syntax(n.expression, node),
-            ast::Node::AsConstExpression(n) => {
-                self.remove_as_expression_syntax(n.expression, node)
-            }
+            ast::Node::AsConstExpression(n) => self.remove_as_expression_syntax(n.expression, node),
             ast::Node::TSTypeAssertion { .. }
             | ast::Node::TSAsExpression { .. }
             | ast::Node::ComponentDeclaration { .. }

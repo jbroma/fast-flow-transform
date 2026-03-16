@@ -918,11 +918,8 @@ impl GenJS<'_, '_> {
                         Node::MatchStatementCase(case_node) => case_node,
                         _ => continue,
                     };
-                    let plan = self.compile_match_pattern(
-                        ctx,
-                        case_node.pattern,
-                        tmp_name.as_str(),
-                    );
+                    let plan =
+                        self.compile_match_pattern(ctx, case_node.pattern, tmp_name.as_str());
 
                     self.newline();
                     out!(self, "if(!");
@@ -1008,11 +1005,8 @@ impl GenJS<'_, '_> {
                         Node::MatchExpressionCase(case_node) => case_node,
                         _ => continue,
                     };
-                    let plan = self.compile_match_pattern(
-                        ctx,
-                        case_node.pattern,
-                        tmp_name.as_str(),
-                    );
+                    let plan =
+                        self.compile_match_pattern(ctx, case_node.pattern, tmp_name.as_str());
 
                     self.newline();
                     out!(self, "if(!");
@@ -4015,7 +4009,10 @@ impl GenJS<'_, '_> {
 
         node.visit(ctx, &mut snippet, None);
         snippet.flush_cur_token();
-        snippet.out.flush().expect("match snippet flush should succeed");
+        snippet
+            .out
+            .flush()
+            .expect("match snippet flush should succeed");
         assert!(snippet.error.is_none(), "match snippet generation failed");
         drop(snippet);
 
@@ -4047,7 +4044,8 @@ impl GenJS<'_, '_> {
         if parts.iter().any(|part| part == "true") {
             return "true".into();
         }
-        parts.into_iter()
+        parts
+            .into_iter()
             .map(|part| format!("({part})"))
             .collect::<Vec<_>>()
             .join("||")
@@ -4091,13 +4089,11 @@ impl GenJS<'_, '_> {
                 name: self.render_match_snippet(ctx, target),
                 value: value.into(),
             }),
-            Node::MatchBindingPattern(MatchBindingPattern { id, kind, .. }) => {
-                Some(MatchBinding {
-                    kind: ctx.str(*kind).into(),
-                    name: self.render_match_snippet(ctx, id),
-                    value: value.into(),
-                })
-            }
+            Node::MatchBindingPattern(MatchBindingPattern { id, kind, .. }) => Some(MatchBinding {
+                kind: ctx.str(*kind).into(),
+                name: self.render_match_snippet(ctx, id),
+                value: value.into(),
+            }),
             _ => None,
         }
     }
@@ -4166,8 +4162,7 @@ impl GenJS<'_, '_> {
         rest: Option<&'gc Node<'gc>>,
         subject: &str,
     ) -> MatchPatternPlan {
-        let mut conditions =
-            vec![format!("({subject})!==null&&typeof ({subject})==='object'")];
+        let mut conditions = vec![format!("({subject})!==null&&typeof ({subject})==='object'")];
         let mut bindings = Vec::new();
         let mut keys = Vec::new();
 
@@ -4209,7 +4204,10 @@ impl GenJS<'_, '_> {
     ) -> MatchPatternPlan {
         let mut conditions = vec![format!("Array.isArray({subject})")];
         let length_check = if rest.is_some() { ">=" } else { "===" };
-        conditions.push(format!("({subject}).length{length_check}{}", elements.len()));
+        conditions.push(format!(
+            "({subject}).length{length_check}{}",
+            elements.len()
+        ));
         let mut bindings = Vec::new();
 
         for (index, element) in elements.iter().enumerate() {
@@ -4219,12 +4217,9 @@ impl GenJS<'_, '_> {
             bindings.extend(plan.bindings);
         }
 
-        if let Some(binding) = self.compile_match_array_rest_binding(
-            ctx,
-            rest,
-            subject,
-            elements.len(),
-        ) {
+        if let Some(binding) =
+            self.compile_match_array_rest_binding(ctx, rest, subject, elements.len())
+        {
             bindings.push(binding);
         }
 

@@ -36,7 +36,7 @@
 //! scope.
 //!
 //! If we perform the following operations:
-//! ```[rust]
+//! ```rust,ignore
 //! m.push_scope();
 //! m.insert("a", 1);
 //! m.insert("c", 3);
@@ -48,7 +48,7 @@
 //! m.insert("d", 400);
 //! ```
 //! We will get the following state in memory:
-//! ```[text]
+//! ```text
 //! Scope 1: --> "a":1 ------------------> "c": 3
 //!               ^                         ^
 //!               |                         |

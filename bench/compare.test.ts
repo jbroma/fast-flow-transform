@@ -27,11 +27,25 @@ function assertMinimalBabelOptions(
   options: ReturnType<typeof createBabelOptions>,
   expectedPlugins: unknown[]
 ): void {
-  expect(options.babelrc).toBeFalsy();
-  expect(options.configFile).toBeFalsy();
-  expect(options.sourceMaps).toBeFalsy();
-  expect(options.sourceType).toBe('module');
-  expect(options.plugins).toStrictEqual(expectedPlugins);
+  expect({
+    babelrc: options.babelrc,
+    comments: options.comments,
+    compact: options.compact,
+    configFile: options.configFile,
+    plugins: options.plugins,
+    retainLines: options.retainLines,
+    sourceMaps: options.sourceMaps,
+    sourceType: options.sourceType,
+  }).toStrictEqual({
+    babelrc: false,
+    comments: false,
+    compact: false,
+    configFile: false,
+    plugins: expectedPlugins,
+    retainLines: false,
+    sourceMaps: false,
+    sourceType: 'module',
+  });
 }
 
 function smokeInput() {
@@ -151,9 +165,24 @@ describe('benchmark candidate config', () => {
   });
 
   it('can enable sourcemaps for the babel benchmark case', () => {
-    const babelOptions = createBabelOptions('/tmp/fixture.js', true);
+    const babelOptions = createBabelOptions('/tmp/fixture.js', {
+      format: 'compact',
+      sourcemap: true,
+    });
 
+    expect(babelOptions.compact).toBeTruthy();
     expect(babelOptions.sourceMaps).toBeTruthy();
+  });
+
+  it('maps preserve-with-comments to the closest babel generator settings', () => {
+    const babelOptions = createBabelOptions('/tmp/fixture.js', {
+      comments: true,
+      format: 'preserve',
+    });
+
+    expect(babelOptions.comments).toBeTruthy();
+    expect(babelOptions.compact).toBeFalsy();
+    expect(babelOptions.retainLines).toBeTruthy();
   });
 });
 

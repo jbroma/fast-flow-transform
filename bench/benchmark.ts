@@ -139,7 +139,11 @@ export function createBenchmarkViews(
     {
       candidates: [
         createBabelCandidate((filename) =>
-          createBabelOptions(filename, sourcemap)
+          createBabelOptions(filename, {
+            comments: preserveComments,
+            format: fftFormat,
+            sourcemap,
+          })
         ),
       ],
       viewName: 'babel',

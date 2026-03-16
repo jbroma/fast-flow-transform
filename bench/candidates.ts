@@ -11,9 +11,12 @@ const SHARED_BABEL_OPTIONS = Object.freeze({
 
 interface BabelTransformOptions {
   babelrc: boolean;
+  comments: boolean;
+  compact: boolean;
   configFile: boolean;
   filename: string;
   plugins: unknown[];
+  retainLines: boolean;
   sourceMaps: boolean;
   sourceType: string;
 }
@@ -92,12 +95,19 @@ export function createBabelCandidate(
 
 export function createBabelOptions(
   filename: string,
-  sourcemap = false
+  options: CandidateOptions = {}
 ): BabelTransformOptions {
+  const comments = options.comments ?? false;
+  const format = options.format ?? 'pretty';
+  const sourcemap = options.sourcemap ?? false;
+
   return {
     ...SHARED_BABEL_OPTIONS,
+    comments,
+    compact: format === 'compact',
     filename,
     plugins: ['babel-plugin-syntax-hermes-parser', FLOW_STRIP_PLUGIN],
+    retainLines: format === 'preserve',
     sourceMaps: sourcemap,
   };
 }

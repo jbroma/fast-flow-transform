@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { basename, dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -34,6 +36,32 @@ function viewProcessPath(): string {
   return fileURLToPath(new URL('benchmarkViewProcess.ts', import.meta.url));
 }
 
+function preserveFixturePath(filename: string): string {
+  const extension = extname(filename);
+  const stem = basename(filename, extension);
+  return resolve(dirname(filename), `${stem}.preserve${extension}`);
+}
+
+function inputForCase(
+  input: BenchmarkInput,
+  preserveWhitespace: boolean
+): BenchmarkInput {
+  if (!preserveWhitespace) {
+    return input;
+  }
+
+  const filename = preserveFixturePath(input.filename);
+  if (!existsSync(filename)) {
+    return input;
+  }
+
+  return {
+    ...input,
+    code: readFileSync(filename, 'utf8'),
+    filename,
+  };
+}
+
 async function runViewInFreshProcess(
   request: IsolatedBenchmarkRequest
 ): Promise<BenchmarkViewReport> {
@@ -51,6 +79,7 @@ async function runBenchmarkCaseIsolated(
   runtime: IsolatedRuntimeOptions
 ): Promise<BenchmarkReport> {
   const runView = runtime.runView ?? runViewInFreshProcess;
+  const caseInput = inputForCase(input, benchmarkCase.preserveWhitespace);
   const views: BenchmarkViewReport[] = [];
 
   for (const view of createBenchmarkViews(
@@ -61,9 +90,9 @@ async function runBenchmarkCaseIsolated(
   )) {
     views.push(
       await runView({
-        fixturePath: input.filename,
+        fixturePath: caseInput.filename,
         format: benchmarkCase.format,
-        iterations: input.iterations,
+        iterations: caseInput.iterations,
         preserveComments: benchmarkCase.preserveComments,
         preserveWhitespace: benchmarkCase.preserveWhitespace,
         sourcemap: benchmarkCase.sourcemap,
@@ -74,10 +103,10 @@ async function runBenchmarkCaseIsolated(
 
   return {
     caseName: benchmarkCase.caseName,
-    fixturePath: input.filename,
+    fixturePath: caseInput.filename,
     format: benchmarkCase.format,
     generatedAt: new Date().toISOString(),
-    iterations: input.iterations,
+    iterations: caseInput.iterations,
     preserveComments: benchmarkCase.preserveComments,
     preserveWhitespace: benchmarkCase.preserveWhitespace,
     sourcemap: benchmarkCase.sourcemap,

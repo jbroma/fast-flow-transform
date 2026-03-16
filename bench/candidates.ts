@@ -34,10 +34,9 @@ interface BabelCore {
 
 interface TransformModule {
   transform(input: {
+    comments: boolean;
     filename: string;
-    format: 'compact' | 'pretty';
-    preserveComments: boolean;
-    preserveWhitespace: boolean;
+    format: 'compact' | 'preserve' | 'pretty';
     source: string;
     sourcemap: boolean;
   }): Promise<{
@@ -49,9 +48,8 @@ let babelCorePromise: Promise<BabelCore> | undefined;
 let transformPromise: Promise<TransformModule['transform']> | undefined;
 
 interface CandidateOptions {
-  format?: 'compact' | 'pretty';
-  preserveComments?: boolean;
-  preserveWhitespace?: boolean;
+  comments?: boolean;
+  format?: 'compact' | 'preserve' | 'pretty';
   sourcemap?: boolean;
 }
 
@@ -107,9 +105,8 @@ export function createBabelOptions(
 export function createFftCandidate(
   options: CandidateOptions = {}
 ): BenchmarkCandidate {
+  const comments = options.comments ?? false;
   const format = options.format ?? 'pretty';
-  const preserveComments = options.preserveComments ?? false;
-  const preserveWhitespace = options.preserveWhitespace ?? false;
   const sourcemap = options.sourcemap ?? false;
 
   return {
@@ -117,10 +114,9 @@ export function createFftCandidate(
     async run({ code, filename }) {
       const transform = await loadTransform();
       const result = await transform({
+        comments,
         filename,
         format,
-        preserveComments,
-        preserveWhitespace,
         source: code,
         sourcemap,
       });

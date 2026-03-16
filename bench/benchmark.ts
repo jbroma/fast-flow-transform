@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, extname, basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -49,13 +49,39 @@ function defaultFixturePath(): string {
   return resolve(benchDirectory(), 'fixtures', 'source.flow.js');
 }
 
+function preserveFixturePath(filename: string): string {
+  const extension = extname(filename);
+  const stem = basename(filename, extension);
+  return resolve(dirname(filename), `${stem}.preserve${extension}`);
+}
+
+function inputForCase(
+  input: BenchmarkInput,
+  preserveWhitespace: boolean
+): BenchmarkInput {
+  if (!preserveWhitespace) {
+    return input;
+  }
+
+  const filename = preserveFixturePath(input.filename);
+  if (!existsSync(filename)) {
+    return input;
+  }
+
+  return {
+    ...input,
+    code: readFileSync(filename, 'utf8'),
+    filename,
+  };
+}
+
 function durationMs(startNs: bigint, endNs: bigint): number {
   return Number(endNs - startNs) / 1e6;
 }
 
 function parseIterations(rawValue: string | undefined): number {
   if (rawValue === undefined) {
-    return 300;
+    return 1000;
   }
 
   const iterations = Number(rawValue);
@@ -97,13 +123,14 @@ export function createBenchmarkViews(
   preserveWhitespace = false,
   preserveComments = false
 ): BenchmarkViewDefinition[] {
+  const fftFormat = preserveWhitespace ? 'preserve' : format;
+
   return [
     {
       candidates: [
         createFftCandidate({
-          format,
-          preserveComments,
-          preserveWhitespace,
+          comments: preserveComments,
+          format: fftFormat,
           sourcemap,
         }),
       ],
@@ -245,8 +272,9 @@ export async function runBenchmarkCases(
   const reports: BenchmarkReport[] = [];
 
   for (const benchmarkCase of cases) {
+    const caseInput = inputForCase(input, benchmarkCase.preserveWhitespace);
     reports.push(
-      await runBenchmarks(input, {
+      await runBenchmarks(caseInput, {
         caseName: benchmarkCase.caseName,
         format: benchmarkCase.format,
         now: options.now,

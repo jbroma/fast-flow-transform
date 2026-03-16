@@ -8,16 +8,19 @@
 
 # fast-flow-transform
 
-Fast Flow-to-JavaScript transforms for bundlers, build pipelines, and one-shot
-source conversion.
+`fast-flow-transform` (`fft`) is a native Hermes-backed
+[Flow](https://flow.org/) stripper for modern JavaScript toolchains. It removes
+Flow syntax before the rest of your pipeline sees it, keeps JSX in place, and
+ships adapters for webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown,
+and esbuild.
 
-`fast-flow-transform` (`fft`) strips Flow syntax with a native Hermes-backed
-pipeline, keeps JSX in place for your existing JSX toolchain, and ships
-adapters for webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown, and
-esbuild.
+In the included benchmark against Babel, `fft` delivers roughly 25x faster transforms. See [Benchmark](#benchmark).
 
-In the included FFT-vs-Babel benchmark, FFT delivers roughly 25x faster
-transforms. See [Benchmark](#benchmark).
+## Why `fft` Exists
+
+Many tools still expect plain JavaScript, not Flow syntax. `fft` strips Flow
+early so downstream tooling can keep working without paying a large Babel tax
+just to erase types.
 
 ## Install
 
@@ -43,7 +46,7 @@ Detailed adapter docs, option defaults, and additional config examples live in
 | Rolldown | `fast-flow-transform/rolldown` | [`examples/rolldown/README.md`](./examples/rolldown/README.md) |
 | esbuild  | `fast-flow-transform/esbuild`  | [`examples/esbuild/README.md`](./examples/esbuild/README.md)   |
 
-Parcel usually wires FFT through a tiny local wrapper that re-exports
+Parcel usually wires `fft` through a tiny local wrapper that re-exports
 `fast-flow-transform/parcel`. The runnable example shows the exact shape.
 
 ## Programmatic API
@@ -77,7 +80,7 @@ requested.
 
 ## Benchmark
 
-![FFT benchmark summary](./assets/readme-benchmark.svg)
+![fast-flow-transform benchmark summary](./assets/readme-benchmark.svg)
 
 Generated from `bench/fixtures/single-file-flow-preserve.js` with the README
 benchmark workflow. The chart uses 1000 warm iterations per case and reports
@@ -95,9 +98,9 @@ in
 
 ## Attribution And Licensing
 
-- FFT builds on top of Hermes Juno:
+- `fft` builds on top of Hermes Juno:
   <https://github.com/facebook/hermes/tree/static_h/unsupported/juno>
 - Vendored Hermes source lives in `hermes` as an upstream submodule.
-- FFT's own MIT license lives in [`LICENSE`](./LICENSE).
+- `fft`'s own MIT license lives in [`LICENSE`](./LICENSE).
 - Hermes/Juno third-party license details live in
   [`THIRD_PARTY_LICENSES`](./THIRD_PARTY_LICENSES).

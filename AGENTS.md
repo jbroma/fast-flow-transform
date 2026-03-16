@@ -5,7 +5,11 @@ This repo uses **Ultracite**, **Oxlint**, and **Oxfmt** for JS/TS work.
 ## Commands
 
 - Format: `pnpm format`
+- Format JS: `pnpm format:js`
+- Format Rust: `pnpm format:rust`
 - Check formatting: `pnpm format:check`
+- Check JS formatting: `pnpm format:check:js`
+- Check Rust formatting: `pnpm format:check:rust`
 - Lint: `pnpm lint`
 - Fix lint issues: `pnpm lint:fix`
 - Full verification: `pnpm check`

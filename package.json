@@ -1,33 +1,37 @@
 {
-  "name": "fast-flow-transform-monorepo",
-  "private": true,
-  "scripts": {
-    "bench": "turbo run benchmark --log-prefix=none --filter=@fft/bench",
-    "build": "turbo run build --log-prefix=none",
-    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm codegen:rust:check",
-    "codegen:rust": "node scripts/rust-bindings/generate.mts",
-    "codegen:rust:check": "node scripts/rust-bindings/generate.mts --check",
-    "docs:benchmark": "node scripts/release/generate-readme-benchmark.mts",
-    "format": "oxfmt -c .oxfmtrc.json .",
-    "format:check": "oxfmt --check -c .oxfmtrc.json .",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix .",
-    "sync-binding": "cargo build --release -p fft_node && node scripts/sync-binding.mts",
-    "e2e": "turbo run e2e --log-prefix=none --filter=@fft-examples/* --filter=@fft-bundler-tests",
-    "local-registry:publish": "node scripts/local-registry/publish.mts",
-    "local-registry:start": "node scripts/local-registry/start.mts",
-    "test": "turbo run test --log-prefix=none --filter=!@fft/bench",
-    "typecheck": "turbo run typecheck --log-prefix=none"
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.30.0",
-    "@types/node": "^24.0.0",
-    "oxfmt": "0.36.0",
-    "oxlint": "1.55.0",
-    "turbo": "^2.8.14",
-    "typescript": "^5.9.3",
-    "ultracite": "7.2.5",
-    "verdaccio": "6.1.6"
-  },
-  "packageManager": "pnpm@10.29.2"
+	"name": "fast-flow-transform-monorepo",
+	"private": true,
+	"scripts": {
+		"bench": "turbo run benchmark --log-prefix=none --filter=@fft/bench",
+		"build": "turbo run build --log-prefix=none",
+		"check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm codegen:rust:check",
+		"codegen:rust": "node scripts/rust-bindings/generate.mts",
+		"codegen:rust:check": "node scripts/rust-bindings/generate.mts --check",
+		"docs:benchmark": "node scripts/release/generate-readme-benchmark.mts",
+		"format": "pnpm format:js && pnpm format:rust",
+		"format:js": "oxfmt -c .oxfmtrc.json .",
+		"format:rust": "cargo fmt --all",
+		"format:check": "pnpm format:check:js && pnpm format:check:rust",
+		"format:check:js": "oxfmt --check -c .oxfmtrc.json .",
+		"format:check:rust": "cargo fmt --all --check",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix .",
+		"sync-binding": "cargo build --release -p fft_node && node scripts/sync-binding.mts",
+		"e2e": "turbo run e2e --log-prefix=none --filter=@fft-examples/* --filter=@fft-bundler-tests",
+		"local-registry:publish": "node scripts/local-registry/publish.mts",
+		"local-registry:start": "node scripts/local-registry/start.mts",
+		"test": "turbo run test --log-prefix=none --filter=!@fft/bench",
+		"typecheck": "turbo run typecheck --log-prefix=none"
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.30.0",
+		"@types/node": "^24.0.0",
+		"oxfmt": "0.36.0",
+		"oxlint": "1.55.0",
+		"turbo": "^2.8.14",
+		"typescript": "^5.9.3",
+		"ultracite": "7.2.5",
+		"verdaccio": "6.1.6"
+	},
+	"packageManager": "pnpm@10.29.2"
 }

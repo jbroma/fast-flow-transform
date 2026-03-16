@@ -1,5 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 import fft from '../src/index.js';
 
@@ -16,26 +18,43 @@ interface SnapshotCase {
   title: string;
 }
 
-function inputsDir(): string {
-  return resolve(import.meta.dirname, 'inputs');
-}
-
 function outputsDir(): string {
   return resolve(import.meta.dirname, 'outputs');
 }
 
-const FIXTURE = 'preserve-layout';
-
-function inputPath(name: string): string {
-  return resolve(inputsDir(), `${name}.js`);
+function inputsDir(): string {
+  return resolve(import.meta.dirname, 'inputs');
 }
+
+const FIXTURE = 'source.flow';
+const FIXTURE_PATH = resolve(inputsDir(), 'source.flow.js');
 
 function snapshotPath(fileName: string): string {
   return resolve(outputsDir(), fileName);
 }
 
-function fixtureInput(name: string): string {
-  return readFileSync(inputPath(name), 'utf8');
+function fixtureInput(): string {
+  return readFileSync(FIXTURE_PATH, 'utf8');
+}
+
+function assertParsesAsModule(code: string, fileName: string): void {
+  const tempDir = mkdtempSync(join(tmpdir(), 'fft-parse-'));
+  const tempFile = join(tempDir, fileName);
+  writeFileSync(tempFile, code, 'utf8');
+
+  const result = spawnSync(process.execPath, ['--check', tempFile], {
+    encoding: 'utf8',
+  });
+
+  rmSync(tempDir, { force: true, recursive: true });
+
+  expect({
+    status: result.status,
+    stderr: result.stderr,
+  }).toStrictEqual({
+    status: 0,
+    stderr: '',
+  });
 }
 
 function standardCases(): SnapshotCase[] {
@@ -62,25 +81,25 @@ function standardCases(): SnapshotCase[] {
 function preserveCases(): SnapshotCase[] {
   return [
     {
-      fixture: 'preserve-layout',
+      fixture: FIXTURE,
       options: {
         format: 'pretty',
         preserveWhitespace: true,
         sourcemap: false,
       },
-      snapshotFile: 'preserve-layout.preserve-whitespace.js',
-      title: 'preserve-layout preserves whitespace without comments',
+      snapshotFile: `${FIXTURE}.preserve-whitespace.js`,
+      title: `${FIXTURE} preserves whitespace without comments`,
     },
     {
-      fixture: 'preserve-layout',
+      fixture: FIXTURE,
       options: {
         format: 'pretty',
         preserveComments: true,
         preserveWhitespace: true,
         sourcemap: false,
       },
-      snapshotFile: 'preserve-layout.preserve-whitespace-comments.js',
-      title: 'preserve-layout preserves whitespace and comments',
+      snapshotFile: `${FIXTURE}.preserve-whitespace-comments.js`,
+      title: `${FIXTURE} preserves whitespace and comments`,
     },
   ];
 }
@@ -116,7 +135,7 @@ async function expectFixtureSnapshot(
   const { fixture, options, snapshotFile } = snapshotCase;
   const result = await fft({
     filename: `${fixture}.js`,
-    source: fixtureInput(fixture),
+    source: fixtureInput(),
     sourcemap: false,
     ...(options as Record<string, unknown>),
   } as never);
@@ -128,10 +147,23 @@ describe('transform correctness snapshots', () => {
   const cases = [...standardCases(), ...preserveCases(), ...commentCases()];
 
   it('loads the shared transform fixture', () => {
-    expect(fixtureInput(FIXTURE).length).toBeGreaterThan(0);
+    expect(fixtureInput().length).toBeGreaterThan(0);
   });
 
   it.each(cases)('$title', async (snapshotCase) => {
     await expectFixtureSnapshot(snapshotCase);
+  });
+
+  it('preserve-whitespace outputs for the shared fixture parse as valid modules', async () => {
+    for (const snapshotCase of preserveCases()) {
+      const result = await fft({
+        filename: `${snapshotCase.fixture}.js`,
+        source: fixtureInput(),
+        sourcemap: false,
+        ...(snapshotCase.options as Record<string, unknown>),
+      } as never);
+
+      assertParsesAsModule(result.code, `${snapshotCase.snapshotFile}.mjs`);
+    }
   });
 });

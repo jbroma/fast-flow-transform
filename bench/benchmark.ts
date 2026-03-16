@@ -46,7 +46,7 @@ function benchDirectory(): string {
 }
 
 function defaultFixturePath(): string {
-  return resolve(benchDirectory(), 'fixtures', 'single-file-flow-preserve.js');
+  return resolve(benchDirectory(), 'fixtures', 'source.flow.js');
 }
 
 function durationMs(startNs: bigint, endNs: bigint): number {

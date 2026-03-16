@@ -80,14 +80,14 @@ requested.
 
 ## Benchmark
 
-![fast-flow-transform benchmark summary](./assets/readme-benchmark.svg?v=76d469faf946)
+![fast-flow-transform benchmark summary](./assets/bench-20260316T182013Z.svg)
 
 Generated from `bench/fixtures/single-file-flow-preserve.js` with the README
 benchmark workflow. The chart uses 1000 warm iterations per case and reports
 warm `meanMs` only. The SVG footer and JSON record the exact platform, Node
 version, and generation timestamp. Raw timings and cold-start measurements live
 in
-[`assets/readme-benchmark.json`](./assets/readme-benchmark.json).
+[`assets/bench-20260316T182013Z.json`](./assets/bench-20260316T182013Z.json).
 
 ## Examples And Docs
 

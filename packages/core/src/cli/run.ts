@@ -101,11 +101,27 @@ function transformOptionsInput(
   return options as TransformOptionsInput;
 }
 
+function defaultCliSourceMap(command: CliCommand): boolean {
+  return Boolean(command.sourceMapFile);
+}
+
+function resolvedRawOptions(command: CliCommand): UnparsedCliOptions {
+  if (command.rawOptions.sourcemap !== undefined) {
+    return command.rawOptions;
+  }
+
+  return {
+    ...command.rawOptions,
+    sourcemap: defaultCliSourceMap(command),
+  };
+}
+
 async function prepareCommand(
   command: CliCommand,
   runtime: CliRuntime
 ): Promise<PreparedCommand> {
-  const options = parseOptions(transformOptionsInput(command.rawOptions));
+  const rawOptions = resolvedRawOptions(command);
+  const options = parseOptions(transformOptionsInput(rawOptions));
   const sourceMapFile = resolvedSourceMapFile(
     command.outputFile,
     command.sourceMapFile,
@@ -124,7 +140,7 @@ async function prepareCommand(
   return {
     outputFile: command.outputFile,
     request: {
-      ...transformOptionsInput(command.rawOptions),
+      ...transformOptionsInput(rawOptions),
       filename: command.inputFile,
       ...(inputSourceMap ? { inputSourceMap } : {}),
       source,

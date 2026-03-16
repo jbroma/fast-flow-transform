@@ -47,7 +47,39 @@ function createDeps() {
 }
 
 describe('CLI runner', () => {
-  it('transforms a file and writes code plus sourcemap files', async () => {
+  it('transforms a file without source maps by default', async () => {
+    const { deps, readFile, transform, writeFile } = createDeps();
+    readFile.mockImplementation(async (path) => {
+      if (path === '/repo/src/input.js') {
+        return 'const answer: number = 42;';
+      }
+
+      throw new Error(`Unexpected read: ${path}`);
+    });
+    transform.mockResolvedValue({
+      code: 'const answer = 42;\n',
+      map: createMap('/repo/dist/output.js'),
+    });
+
+    const exitCode = await runCli(
+      ['src/input.js', '--out-file', 'dist/output.js'],
+      deps
+    );
+
+    expect(exitCode).toBe(0);
+    expect(transform).toHaveBeenCalledWith({
+      filename: '/repo/src/input.js',
+      source: 'const answer: number = 42;',
+      sourcemap: false,
+    });
+    expect(writeFile).toHaveBeenCalledTimes(1);
+    expect(writeFile).toHaveBeenCalledWith(
+      '/repo/dist/output.js',
+      'const answer = 42;\n'
+    );
+  });
+
+  it('writes code plus sourcemap files when --source-map is enabled', async () => {
     const { deps, readFile, transform, writeFile } = createDeps();
     readFile.mockImplementation(async (path) => {
       if (path === '/repo/src/input.js') {
@@ -70,6 +102,7 @@ describe('CLI runner', () => {
         'flow',
         '--format',
         'pretty',
+        '--source-map',
       ],
       deps
     );
@@ -94,14 +127,14 @@ describe('CLI runner', () => {
     );
   });
 
-  it('prints transformed code to stdout when no output file is provided', async () => {
+  it('prints transformed code to stdout by default when no output file is provided', async () => {
     const { deps, readFile, stdout, transform, writeFile } = createDeps();
     readFile.mockResolvedValue('const answer: number = 42;');
     transform.mockResolvedValue({
       code: 'const answer = 42;\n',
     });
 
-    const exitCode = await runCli(['src/input.js', '--no-source-map'], deps);
+    const exitCode = await runCli(['src/input.js'], deps);
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
@@ -113,7 +146,7 @@ describe('CLI runner', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('forwards preserve flags with explicit no-source-map', async () => {
+  it('forwards preserve flags to stdout without requiring --no-source-map', async () => {
     const { deps, readFile, stdout, transform, writeFile } = createDeps();
     readFile.mockResolvedValue('const answer: number = 42;');
     transform.mockResolvedValue({
@@ -121,7 +154,7 @@ describe('CLI runner', () => {
     });
 
     const exitCode = await runCli(
-      ['src/input.js', '--format', 'preserve', '--comments', '--no-source-map'],
+      ['src/input.js', '--format', 'preserve', '--comments'],
       deps
     );
 
@@ -137,17 +170,14 @@ describe('CLI runner', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('forwards comments without preserve formatting', async () => {
+  it('forwards comments to stdout without preserve formatting', async () => {
     const { deps, readFile, stdout, transform, writeFile } = createDeps();
     readFile.mockResolvedValue('/* keep */\nconst answer: number = 42;');
     transform.mockResolvedValue({
       code: '/* keep */\nconst answer = 42;\n',
     });
 
-    const exitCode = await runCli(
-      ['src/input.js', '--comments', '--no-source-map'],
-      deps
-    );
+    const exitCode = await runCli(['src/input.js', '--comments'], deps);
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
@@ -186,6 +216,7 @@ describe('CLI runner', () => {
         'maps/input.js.map',
         '--out-file',
         'dist/output.js',
+        '--source-map',
       ],
       deps
     );
@@ -200,11 +231,11 @@ describe('CLI runner', () => {
     expect(writeFile).toHaveBeenCalledTimes(2);
   });
 
-  it('reports an error when sourcemaps are enabled without a file destination', async () => {
+  it('reports an error when --source-map is enabled without a file destination', async () => {
     const { deps, readFile, stderr, transform } = createDeps();
     readFile.mockResolvedValue('const answer: number = 42;');
 
-    const exitCode = await runCli(['src/input.js'], deps);
+    const exitCode = await runCli(['src/input.js', '--source-map'], deps);
 
     expect(exitCode).toBe(1);
     expect(transform).not.toHaveBeenCalled();

@@ -51,25 +51,27 @@ fast-flow-transform src/input.js --out-file dist/output.js
 ```
 
 The CLI reads the input file, calls the same `transform(...)` API exposed by the
-package, and writes:
+package, and:
 
-- transformed code to `--out-file`
-- a source map to `--source-map-file` or `--out-file.map`
+- writes transformed code to `--out-file`, or prints it to stdout when
+  `--out-file` is absent
+- writes a source map to `--source-map-file` or `--out-file.map` when source
+  map output is enabled
 
 CLI arguments:
 
-| Argument                           | Required | Value                                     | Default          | Description                                                                      |
-| ---------------------------------- | -------- | ----------------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
-| `<input-file>`                     | Yes      | `path`                                    | n/a              | Source file to transform                                                         |
-| `--format <value>`                 | No       | `compact`, `pretty`, `preserve`           | `compact`        | Output mode. `preserve` is experimental; see [Preserve Format](#preserve-format) |
-| `--dialect <value>`                | No       | `flow`, `flow-detect`, `flow-unambiguous` | `flow-detect`    | Flow parsing mode                                                                |
-| `--comments`                       | No       | flag                                      | `false`          | Preserve ordinary comments in the output                                         |
-| `--source-map` / `--no-source-map` | No       | flag                                      | `--source-map`   | Enable or disable FFT's emitted output source map                                |
-| `--out-file <path>`                | No       | `path`                                    | none             | Write transformed code to a file                                                 |
-| `--source-map-file <path>`         | No       | `path`                                    | `<out-file>.map` | Write the emitted output source map to a specific file                           |
-| `--input-source-map <path>`        | No       | `path`                                    | none             | Load an upstream source map JSON file to merge into FFT's emitted output map     |
-| `--react-runtime-target <n>`       | No       | `18`, `19`                                | `19`             | Only affects Flow `component` lowering                                           |
-| `-h`, `--help`                     | No       | flag                                      | n/a              | Show help                                                                        |
+| Argument                           | Required | Value                                     | Default          | Description                                                                         |
+| ---------------------------------- | -------- | ----------------------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| `<input-file>`                     | Yes      | `path`                                    | n/a              | Source file to transform                                                            |
+| `--format <value>`                 | No       | `compact`, `pretty`, `preserve`           | `compact`        | Output mode. `preserve` is experimental; see [Preserve Format](#preserve-format)    |
+| `--dialect <value>`                | No       | `flow`, `flow-detect`, `flow-unambiguous` | `flow-detect`    | Flow parsing mode                                                                   |
+| `--comments`                       | No       | flag                                      | `false`          | Preserve ordinary comments in the output                                            |
+| `--source-map` / `--no-source-map` | No       | flag                                      | `false`          | Enable or disable FFT's emitted output source map                                   |
+| `--out-file <path>`                | No       | `path`                                    | none             | Write transformed code to a file                                                    |
+| `--source-map-file <path>`         | No       | `path`                                    | `<out-file>.map` | Write the emitted output source map to a specific file and enable source map output |
+| `--input-source-map <path>`        | No       | `path`                                    | none             | Load an upstream source map JSON file to merge into FFT's emitted output map        |
+| `--react-runtime-target <n>`       | No       | `18`, `19`                                | `19`             | Only affects Flow `component` lowering                                              |
+| `-h`, `--help`                     | No       | flag                                      | n/a              | Show help                                                                           |
 
 ```bash
 fast-flow-transform src/input.js \
@@ -79,14 +81,8 @@ fast-flow-transform src/input.js \
   --comments
 ```
 
-If you want code on stdout instead of a file, disable source maps:
-
-```bash
-fast-flow-transform src/input.js --no-source-map
-```
-
-The CLI enables source maps by default, so when maps stay on you need
-`--out-file` or `--source-map-file`.
+Without `--out-file`, transformed code goes to stdout. Source maps are off by
+default unless you pass `--source-map` or `--source-map-file`.
 
 ## Preserve Format
 

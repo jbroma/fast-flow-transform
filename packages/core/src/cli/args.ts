@@ -40,7 +40,7 @@ Options:
   --format <value>            compact | pretty | preserve (default: compact)
   --comments                  Preserve comments during transform output
   --react-runtime-target <n>  18 | 19
-  --source-map                Enable source map output
+  --source-map                Enable source map output (default: off)
   --no-source-map             Disable source map output
   -h, --help                  Show this help
 `;

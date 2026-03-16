@@ -232,6 +232,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
       - name: Create tag and GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

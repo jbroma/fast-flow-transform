@@ -1,5 +1,9 @@
 import { spawnSync } from 'node:child_process';
 
+const RELEASE_BOT_EMAIL =
+  '41898282+github-actions[bot]@users.noreply.github.com';
+const RELEASE_BOT_NAME = 'github-actions[bot]';
+
 function commandName(name: 'git' | 'gh'): string {
   return process.platform === 'win32' ? `${name}.cmd` : name;
 }
@@ -100,19 +104,19 @@ function existingTagSha(tag: string): string | null {
 function createReleaseTag(tag: string): void {
   run(
     commandName('git'),
-    ['config', 'user.name', 'github-actions[bot]'],
-    'inherit'
-  );
-  run(
-    commandName('git'),
     [
-      'config',
-      'user.email',
-      '41898282+github-actions[bot]@users.noreply.github.com',
+      '-c',
+      `user.name=${RELEASE_BOT_NAME}`,
+      '-c',
+      `user.email=${RELEASE_BOT_EMAIL}`,
+      'tag',
+      '-a',
+      tag,
+      '-m',
+      tag,
     ],
     'inherit'
   );
-  run(commandName('git'), ['tag', '-a', tag, '-m', tag], 'inherit');
   run(commandName('git'), ['push', 'origin', tag], 'inherit');
 }
 

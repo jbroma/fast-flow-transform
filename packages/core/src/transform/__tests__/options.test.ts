@@ -6,11 +6,9 @@ describe('parseOptions', () => {
   it('normalizes default values for a minimal options object', () => {
     expect(parseOptions({})).toEqual({
       dialect: 'flow-detect',
-      enumRuntimeModule: 'flow-enums-runtime',
-      format: 'pretty',
-      preserveComments: false,
-      preserveWhitespace: false,
-      reactRuntimeTarget: '18',
+      comments: false,
+      format: 'compact',
+      reactRuntimeTarget: '19',
       sourcemap: true,
     });
   });
@@ -22,43 +20,24 @@ describe('parseOptions', () => {
       })
     ).toEqual({
       dialect: 'flow-detect',
-      enumRuntimeModule: 'flow-enums-runtime',
-      format: 'pretty',
-      preserveComments: false,
-      preserveWhitespace: false,
-      reactRuntimeTarget: '18',
+      comments: false,
+      format: 'compact',
+      reactRuntimeTarget: '19',
       sourcemap: false,
     });
   });
 
-  it('keeps sourcemaps enabled by default when preserveWhitespace is enabled', () => {
+  it('accepts preserve as a format and keeps sourcemaps enabled by default', () => {
     expect(
       parseOptions({
-        preserveWhitespace: true,
+        comments: true,
+        format: 'preserve',
       } as never)
     ).toEqual({
       dialect: 'flow-detect',
-      enumRuntimeModule: 'flow-enums-runtime',
-      format: 'pretty',
-      preserveComments: false,
-      preserveWhitespace: true,
-      reactRuntimeTarget: '18',
-      sourcemap: true,
-    });
-  });
-
-  it('accepts preserveComments without preserveWhitespace', () => {
-    expect(
-      parseOptions({
-        preserveComments: true,
-      } as never)
-    ).toEqual({
-      dialect: 'flow-detect',
-      enumRuntimeModule: 'flow-enums-runtime',
-      format: 'pretty',
-      preserveComments: true,
-      preserveWhitespace: false,
-      reactRuntimeTarget: '18',
+      comments: true,
+      format: 'preserve',
+      reactRuntimeTarget: '19',
       sourcemap: true,
     });
   });

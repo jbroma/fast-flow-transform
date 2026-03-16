@@ -121,20 +121,15 @@ describe('CLI runner', () => {
     });
 
     const exitCode = await runCli(
-      [
-        'src/input.js',
-        '--preserve-whitespace',
-        '--preserve-comments',
-        '--no-source-map',
-      ],
+      ['src/input.js', '--format', 'preserve', '--comments', '--no-source-map'],
       deps
     );
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
+      comments: true,
       filename: '/repo/src/input.js',
-      preserveComments: true,
-      preserveWhitespace: true,
+      format: 'preserve',
       source: 'const answer: number = 42;',
       sourcemap: false,
     });
@@ -142,7 +137,7 @@ describe('CLI runner', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('forwards preserveComments without preserveWhitespace', async () => {
+  it('forwards comments without preserve formatting', async () => {
     const { deps, readFile, stdout, transform, writeFile } = createDeps();
     readFile.mockResolvedValue('/* keep */\nconst answer: number = 42;');
     transform.mockResolvedValue({
@@ -150,14 +145,14 @@ describe('CLI runner', () => {
     });
 
     const exitCode = await runCli(
-      ['src/input.js', '--preserve-comments', '--no-source-map'],
+      ['src/input.js', '--comments', '--no-source-map'],
       deps
     );
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
+      comments: true,
       filename: '/repo/src/input.js',
-      preserveComments: true,
       source: '/* keep */\nconst answer: number = 42;',
       sourcemap: false,
     });

@@ -18,13 +18,11 @@ export interface NativeBinding {
 let cachedBinding: NativeBinding | null | undefined;
 
 interface RawNativeBindingRequest {
+  comments: boolean;
   code: string;
   dialect: string;
-  enumRuntimeModule: string;
   filename: string;
   format: string;
-  preserveComments: boolean;
-  preserveWhitespace: boolean;
   reactRuntimeTarget: string;
   sourcemap: boolean;
 }
@@ -59,13 +57,11 @@ function normalizeRequest(
   input: NativeTransformRequest
 ): RawNativeBindingRequest {
   return {
+    comments: input.comments,
     code: input.code,
     dialect: input.dialect,
-    enumRuntimeModule: input.enumRuntimeModule,
     filename: input.filename,
     format: input.format,
-    preserveComments: input.preserveComments,
-    preserveWhitespace: input.preserveWhitespace,
     reactRuntimeTarget: input.reactRuntimeTarget,
     sourcemap: input.sourcemap,
   };

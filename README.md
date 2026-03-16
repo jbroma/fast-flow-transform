@@ -55,9 +55,9 @@ Parcel usually wires `fft` through a tiny local wrapper that re-exports
 import transform from 'fast-flow-transform';
 
 const result = await transform({
-	filename: '/abs/path/input.js',
-	source: 'const answer: number = 42;',
-	sourcemap: true,
+  filename: '/abs/path/input.js',
+  source: 'const answer: number = 42;',
+  sourcemap: true,
 });
 
 console.log(result.code);

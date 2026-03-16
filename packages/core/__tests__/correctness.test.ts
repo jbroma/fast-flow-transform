@@ -5,13 +5,12 @@ import { join, resolve } from 'node:path';
 
 import fft from '../src/index.js';
 
-type Format = 'compact' | 'pretty';
+type Format = 'compact' | 'pretty' | 'preserve';
 interface SnapshotCase {
   fixture: string;
   options: {
+    comments?: boolean;
     format: Format;
-    preserveComments?: boolean;
-    preserveWhitespace?: boolean;
     sourcemap?: boolean;
   };
   snapshotFile: string;
@@ -83,8 +82,7 @@ function preserveCases(): SnapshotCase[] {
     {
       fixture: FIXTURE,
       options: {
-        format: 'pretty',
-        preserveWhitespace: true,
+        format: 'preserve',
         sourcemap: false,
       },
       snapshotFile: `${FIXTURE}.preserve-whitespace.js`,
@@ -93,9 +91,8 @@ function preserveCases(): SnapshotCase[] {
     {
       fixture: FIXTURE,
       options: {
-        format: 'pretty',
-        preserveComments: true,
-        preserveWhitespace: true,
+        comments: true,
+        format: 'preserve',
         sourcemap: false,
       },
       snapshotFile: `${FIXTURE}.preserve-whitespace-comments.js`,
@@ -109,8 +106,8 @@ function commentCases(): SnapshotCase[] {
     {
       fixture: FIXTURE,
       options: {
+        comments: true,
         format: 'pretty',
-        preserveComments: true,
         sourcemap: false,
       },
       snapshotFile: `${FIXTURE}.pretty-comments.js`,
@@ -119,8 +116,8 @@ function commentCases(): SnapshotCase[] {
     {
       fixture: FIXTURE,
       options: {
+        comments: true,
         format: 'compact',
-        preserveComments: true,
         sourcemap: false,
       },
       snapshotFile: `${FIXTURE}.compact-comments.js`,

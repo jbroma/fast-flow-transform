@@ -23,7 +23,6 @@ export default {
     fastFlowTransformRollup({
       dialect: 'flow-detect',
       format: 'compact',
-      reactRuntimeTarget: '18',
     }),
     babel({
       babelHelpers: 'bundled',

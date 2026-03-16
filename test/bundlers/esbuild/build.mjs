@@ -28,7 +28,6 @@ await build({
     fastFlowTransformEsbuild({
       dialect: 'flow-detect',
       format: 'compact',
-      reactRuntimeTarget: '18',
     }),
   ],
   resolveExtensions: ['.ios.js', '.android.js', '.native.js', '.js', '.json'],

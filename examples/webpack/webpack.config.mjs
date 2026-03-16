@@ -36,7 +36,6 @@ export default {
             options: {
               dialect: 'flow-detect',
               format: 'compact',
-              reactRuntimeTarget: '18',
               sourcemap: true,
             },
           },

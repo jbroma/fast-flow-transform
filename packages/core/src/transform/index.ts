@@ -11,8 +11,14 @@ import type {
   TransformResult,
 } from './types.js';
 
+const UNKNOWN_FILENAME = '<unknown>';
+
 function sourceText(source: string | Buffer): string {
   return Buffer.isBuffer(source) ? source.toString('utf8') : String(source);
+}
+
+function resolvedFilename(filename: string | undefined): string {
+  return filename ?? UNKNOWN_FILENAME;
 }
 
 function transformErrorMessage(
@@ -58,13 +64,11 @@ function transformRequest(
   options: TransformOptions
 ): NativeTransformRequest {
   return {
+    comments: options.comments,
     code: sourceText(input.source),
     dialect: options.dialect,
-    enumRuntimeModule: options.enumRuntimeModule,
-    filename: input.filename,
+    filename: resolvedFilename(input.filename),
     format: options.format,
-    preserveComments: options.preserveComments,
-    preserveWhitespace: options.preserveWhitespace,
     reactRuntimeTarget: options.reactRuntimeTarget,
     sourcemap: options.sourcemap,
   };
@@ -93,6 +97,7 @@ export async function transform(
   input: TransformInput
 ): Promise<TransformResult> {
   const options = parseOptions(input as TransformOptionsInput);
+  const filename = resolvedFilename(input.filename);
   const request = transformRequest(input, options);
   const nativeBinding = loadNativeBinding();
 
@@ -102,12 +107,12 @@ export async function transform(
       options,
       input.inputSourceMap,
       result.map,
-      input.filename
+      filename
     );
 
     return map ? { code: result.code, map } : { code: result.code };
   } catch (error) {
-    throw toTransformError(error, input.filename);
+    throw toTransformError(error, filename);
   }
 }
 

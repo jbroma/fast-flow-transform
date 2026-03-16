@@ -522,7 +522,7 @@ impl<'gc> ast::Visitor<'gc> for PreserveCollector<'_> {
             | ast::Node::MatchExpression { .. } => {
                 self.unsupported(
                     node,
-                    "preserveWhitespace does not yet support this Flow transform",
+                    "format=preserve does not yet support this Flow transform",
                 );
                 return;
             }
@@ -596,7 +596,7 @@ pub fn transform_preserving_layout(
     })?;
 
     let mut collector = PreserveCollector::new(request.code.as_bytes(), input.as_bytes().as_ptr());
-    if !request.preserve_comments {
+    if !request.comments {
         for comment in parsed.comments() {
             collector.remove_comment_range(comment);
         }

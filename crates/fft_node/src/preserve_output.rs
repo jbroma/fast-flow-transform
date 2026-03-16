@@ -93,7 +93,7 @@ fn advance_char(position: &mut Position, ch: char) {
 
 fn slice<'a>(source: &'a str, start: usize, end: usize) -> Result<&'a str, TransformFailure> {
     source.get(start..end).ok_or_else(|| TransformFailure {
-        message: "preserveWhitespace produced a non-character-aligned edit".to_string(),
+        message: "format=preserve produced a non-character-aligned edit".to_string(),
         line: None,
         column: None,
     })

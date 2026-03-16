@@ -19,21 +19,19 @@ pub enum ReactRuntimeTarget {
 
 impl Default for ReactRuntimeTarget {
     fn default() -> Self {
-        Self::V18
+        Self::V19
     }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StripFlowOptions {
     pub react_runtime_target: ReactRuntimeTarget,
-    pub enum_runtime_module: String,
 }
 
 impl Default for StripFlowOptions {
     fn default() -> Self {
         Self {
             react_runtime_target: Default::default(),
-            enum_runtime_module: "flow-enums-runtime".to_string(),
         }
     }
 }
@@ -721,11 +719,7 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
             }
 
             Node::EnumDeclaration(n) => {
-                return node.replace_with_existing(
-                    transform_enum(gc, n, self.options.enum_runtime_module.as_str()),
-                    gc,
-                    self,
-                );
+                return node.replace_with_existing(transform_enum(gc, n), gc, self);
             }
             Node::ExportDefaultDeclaration(ExportDefaultDeclaration {
                 metadata,
@@ -733,11 +727,7 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
             }) => {
                 return node.replace_with_multiple(
                     vec![
-                        builder::Builder::from_node(transform_enum(
-                            gc,
-                            e,
-                            self.options.enum_runtime_module.as_str(),
-                        )),
+                        builder::Builder::from_node(transform_enum(gc, e)),
                         builder::Builder::ExportDefaultDeclaration(
                             builder::ExportDefaultDeclaration::from_template(
                                 template::ExportDefaultDeclaration {
@@ -763,7 +753,6 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
 fn transform_enum<'gc>(
     gc: &'gc GCLock<'_, '_>,
     n: &'gc EnumDeclaration<'gc>,
-    enum_runtime_module: &str,
 ) -> &'gc Node<'gc> {
     let (method, args) = match n.body {
         Node::EnumStringBody(body)
@@ -912,8 +901,7 @@ fn transform_enum<'gc>(
                     gc,
                     template::StringLiteral {
                         metadata: Default::default(),
-                        value: gc
-                            .atom_u16(enum_runtime_module.encode_utf16().collect::<Vec<u16>>()),
+                        value: gc.atom_u16("flow-enums-runtime".encode_utf16().collect::<Vec<u16>>()),
                     },
                 )],
             ),

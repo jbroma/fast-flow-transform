@@ -47,7 +47,6 @@ export default defineConfig({
     fastFlowTransformRolldown({
       dialect: 'flow-detect',
       format: 'compact',
-      reactRuntimeTarget: '18',
     }),
     pngStubPlugin(),
   ],

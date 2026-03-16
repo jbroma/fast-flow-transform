@@ -412,18 +412,6 @@ fn enums() {
 }
 
 #[test]
-fn enum_runtime_module_option() {
-    assert_strip_with_options(
-        r#"enum E {A, B}"#,
-        r#"const E = require("@acme/enum-runtime").Mirrored(["A", "B"]);"#,
-        StripFlowOptions {
-            enum_runtime_module: "@acme/enum-runtime".to_string(),
-            ..Default::default()
-        },
-    );
-}
-
-#[test]
 fn export_all_type_only() {
     assert_strip(
         r#"
@@ -524,8 +512,7 @@ fn as_expressions_and_components() {
             }
         "#,
         r#"
-            const View = React.forwardRef(View_withRef);
-            function View_withRef(props, ref) {
+            function View({ref, ...props}) {
                 const processed = props;
                 const frozen = {
                     state: "ok"
@@ -563,8 +550,8 @@ fn never_types() {
 }
 
 #[test]
-fn components_react_runtime_19() {
-    assert_strip_with_options(
+fn components_default_to_react_runtime_19() {
+    assert_strip(
         r#"
             component View(ref?: React.RefSetter<mixed>, foo: number, ...props: ViewProps) {
                 return [ref, foo, props];
@@ -575,8 +562,25 @@ fn components_react_runtime_19() {
                 return [ref, foo, props];
             }
         "#,
+    );
+}
+
+#[test]
+fn components_react_runtime_18_extract_ref() {
+    assert_strip_with_options(
+        r#"
+            component View(ref?: React.RefSetter<mixed>, foo: number, ...props: ViewProps) {
+                return [ref, foo, props];
+            }
+        "#,
+        r#"
+            const View = React.forwardRef(View_withRef);
+            function View_withRef({foo, ...props}, ref) {
+                return [ref, foo, props];
+            }
+        "#,
         StripFlowOptions {
-            react_runtime_target: ReactRuntimeTarget::V19,
+            react_runtime_target: ReactRuntimeTarget::V18,
             ..Default::default()
         },
     );
@@ -605,8 +609,7 @@ fn components_ref_and_rest_lower_to_valid_js() {
                 }
             }
 
-            const Foo = React.forwardRef(Foo_withRef);
-            function Foo_withRef(props, ref) {
+            function Foo({ref, ...props}) {
                 return props.x;
             }
         "#,

@@ -56,7 +56,6 @@ export default defineConfig({
     fastFlowTransformVite({
       dialect: 'flow-detect',
       format: 'compact',
-      reactRuntimeTarget: '18',
     }),
     reactNativeJsxPlugin(),
   ],

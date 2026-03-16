@@ -37,11 +37,9 @@ Options:
   --input-source-map <path>   Load an incoming source map JSON file
   --source-map-file <path>    Write the emitted source map to a file
   --dialect <value>           flow | flow-detect | flow-unambiguous
-  --format <value>            compact | pretty (default: pretty)
-  --preserve-whitespace       Preserve original whitespace where possible
-  --preserve-comments         Preserve comments during transform output
+  --format <value>            compact | pretty | preserve (default: compact)
+  --comments                  Preserve comments during transform output
   --react-runtime-target <n>  18 | 19
-  --enum-runtime-module <id>  Override enum runtime module
   --source-map                Enable source map output
   --no-source-map             Disable source map output
   -h, --help                  Show this help
@@ -51,11 +49,8 @@ const BOOLEAN_FLAG_HANDLERS: Record<string, BooleanFlagHandler> = {
   '--no-source-map': (state) => {
     state.rawOptions.sourcemap = false;
   },
-  '--preserve-comments': (state) => {
-    state.rawOptions.preserveComments = true;
-  },
-  '--preserve-whitespace': (state) => {
-    state.rawOptions.preserveWhitespace = true;
+  '--comments': (state) => {
+    state.rawOptions.comments = true;
   },
   '--source-map': (state) => {
     state.rawOptions.sourcemap = true;
@@ -65,9 +60,6 @@ const BOOLEAN_FLAG_HANDLERS: Record<string, BooleanFlagHandler> = {
 const VALUE_FLAG_HANDLERS: Record<string, ValueFlagHandler> = {
   '--dialect': (state, value) => {
     state.rawOptions.dialect = value;
-  },
-  '--enum-runtime-module': (state, value) => {
-    state.rawOptions.enumRuntimeModule = value;
   },
   '--format': (state, value) => {
     state.rawOptions.format = value;

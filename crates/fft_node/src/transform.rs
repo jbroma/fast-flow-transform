@@ -11,16 +11,21 @@ use fft_support::NullTerminatedBuf;
 use crate::preserve;
 use crate::printer_comments;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OutputFormat {
+    Compact,
+    Preserve,
+    Pretty,
+}
+
 #[derive(Debug, Clone)]
 pub struct TransformRequest {
     pub filename: String,
     pub code: String,
     pub dialect: String,
     pub format: String,
-    pub preserve_comments: bool,
-    pub preserve_whitespace: bool,
+    pub comments: bool,
     pub react_runtime_target: String,
-    pub enum_runtime_module: String,
     pub sourcemap: bool,
 }
 
@@ -63,12 +68,13 @@ fn parse_dialect(value: &str) -> Result<ParserDialect, TransformFailure> {
     }
 }
 
-fn parse_format(value: &str) -> Result<gen_js::Pretty, TransformFailure> {
+fn parse_format(value: &str) -> Result<OutputFormat, TransformFailure> {
     match value {
-        "compact" => Ok(gen_js::Pretty::No),
-        "pretty" => Ok(gen_js::Pretty::Yes),
+        "compact" => Ok(OutputFormat::Compact),
+        "preserve" => Ok(OutputFormat::Preserve),
+        "pretty" => Ok(OutputFormat::Pretty),
         _ => Err(TransformFailure {
-            message: format!("invalid format '{}', expected compact | pretty", value),
+            message: format!("invalid format '{}', expected compact | pretty | preserve", value),
             line: None,
             column: None,
         }),
@@ -96,6 +102,14 @@ fn parser_flags(dialect: ParserDialect) -> hparser::ParserFlags {
     );
     flags.dialect = dialect;
     flags
+}
+
+fn pretty_format(output_format: OutputFormat) -> gen_js::Pretty {
+    match output_format {
+        OutputFormat::Compact => gen_js::Pretty::No,
+        OutputFormat::Pretty => gen_js::Pretty::Yes,
+        OutputFormat::Preserve => unreachable!("preserve format uses the layout-preserving path"),
+    }
 }
 
 fn generate_output(
@@ -158,7 +172,7 @@ fn transform_once(
     let input = ctx.sm().source_buffer_rc(file_id);
     let source_text = &input.as_bytes()[..input.len().saturating_sub(1)];
     let mut flags = parser_flags(dialect);
-    flags.store_comments = request.preserve_comments;
+    flags.store_comments = request.comments;
     let parsed = hparser::ParsedJS::parse(flags, &input);
 
     if let Some((loc, message)) = parsed.first_error() {
@@ -183,11 +197,10 @@ fn transform_once(
 
     let transformed = PassManager::strip_flow_with_options(StripFlowOptions {
         react_runtime_target,
-        enum_runtime_module: request.enum_runtime_module.clone(),
     })
     .run(&mut ctx, original.clone());
 
-    let comments = if request.preserve_comments {
+    let comments = if request.comments {
         let gc = ast::GCLock::new(&mut ctx);
         Some(printer_comments::build_comment_table(
             &gc,
@@ -205,9 +218,10 @@ fn transform_once(
 
 pub fn transform(request: &TransformRequest) -> Result<TransformOutput, TransformFailure> {
     let requested_dialect = parse_dialect(request.dialect.as_str())?;
+    let requested_format = parse_format(request.format.as_str())?;
     let react_runtime_target = parse_react_runtime_target(request.react_runtime_target.as_str())?;
 
-    if request.preserve_whitespace {
+    if requested_format == OutputFormat::Preserve {
         return if requested_dialect == ParserDialect::FlowDetect {
             match preserve::transform_preserving_layout(request, ParserDialect::FlowDetect) {
                 Ok(result) => Ok(result),
@@ -223,7 +237,7 @@ pub fn transform(request: &TransformRequest) -> Result<TransformOutput, Transfor
         };
     }
 
-    let pretty = parse_format(request.format.as_str())?;
+    let pretty = pretty_format(requested_format);
 
     if requested_dialect == ParserDialect::FlowDetect {
         match transform_once(
@@ -258,10 +272,8 @@ mod tests {
             code: code.to_string(),
             dialect: "flow".to_string(),
             format: "compact".to_string(),
-            preserve_comments: false,
-            preserve_whitespace: false,
-            react_runtime_target: "18".to_string(),
-            enum_runtime_module: "flow-enums-runtime".to_string(),
+            comments: false,
+            react_runtime_target: "19".to_string(),
             sourcemap: true,
         }
     }
@@ -273,15 +285,15 @@ mod tests {
     }
 
     fn preserve_request(code: &str) -> TransformRequest {
-        let mut input = pretty_request(code);
-        input.preserve_whitespace = true;
+        let mut input = request(code);
+        input.format = "preserve".to_string();
         input.sourcemap = false;
         input
     }
 
     fn comment_request(code: &str) -> TransformRequest {
         let mut input = pretty_request(code);
-        input.preserve_comments = true;
+        input.comments = true;
         input
     }
 
@@ -358,10 +370,10 @@ mod tests {
 
     #[test]
     fn preserves_whitespace_for_simple_flow_stripping() {
-        let result = transform(&preserve_request(
+        let input = preserve_request(
             "import type { Node } from \"./types.js\";\n\nconst value: number = 1;\n\nexport function read(\n  node: Node,\n): number {\n  return value + node.id;\n}\n",
-        ))
-        .expect("transform should succeed");
+        );
+        let result = transform(&input).expect("transform should succeed");
 
         assert_eq!(
             result.code,
@@ -491,11 +503,11 @@ mod tests {
     }
 
     #[test]
-    fn preserves_comments_when_requested_on_preserve_whitespace_path() {
+    fn preserves_comments_when_requested_on_preserve_format_path() {
         let mut input = preserve_request(
             "const value: number = 1;\n\n// keep me\nexport function read(node: number): number {\n  return node + value;\n}\n",
         );
-        input.preserve_comments = true;
+        input.comments = true;
 
         let result = transform(&input).expect("transform should succeed");
 
@@ -506,7 +518,7 @@ mod tests {
     }
 
     #[test]
-    fn preserves_whitespace_with_sourcemaps() {
+    fn preserves_preserve_format_with_sourcemaps() {
         let mut input = preserve_request("const value: number = 1;\nexport default value;\n");
         input.sourcemap = true;
 
@@ -526,10 +538,10 @@ mod tests {
     }
 
     #[test]
-    fn preserves_whitespace_and_comments_with_sourcemaps() {
+    fn preserves_preserve_format_and_comments_with_sourcemaps() {
         let mut input =
             preserve_request("const value: number = 1;\n// keep me\nexport default value;\n");
-        input.preserve_comments = true;
+        input.comments = true;
         input.sourcemap = true;
 
         let result = transform(&input).expect("transform should succeed");
@@ -551,7 +563,7 @@ mod tests {
     }
 
     #[test]
-    fn preserves_comments_in_pretty_output_without_preserve_whitespace() {
+    fn preserves_comments_in_pretty_output() {
         let result = transform(&comment_request(
             "// @flow\n/* eslint-disable no-console */\nconst value: number = 1; // trailing keep\nexport default value;\n",
         ))
@@ -565,7 +577,7 @@ mod tests {
     }
 
     #[test]
-    fn preserves_comments_in_compact_output_without_preserve_whitespace() {
+    fn preserves_comments_in_compact_output() {
         let mut input =
             comment_request("const value: number = 1; // trailing keep\nexport default value;\n");
         input.format = "compact".to_string();

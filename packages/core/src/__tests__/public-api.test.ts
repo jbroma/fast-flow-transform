@@ -55,7 +55,7 @@ describe('programmatic transform', () => {
     vi.clearAllMocks();
   });
 
-  it('defaults format to pretty when omitted', async () => {
+  it('defaults format to compact and filename to <unknown> when omitted', async () => {
     const { bindingTransform } = mockNativeBinding(() => ({
       code: 'const bound = true;\n',
       map: createSingleMappingMap({
@@ -64,26 +64,23 @@ describe('programmatic transform', () => {
         generatedLine: 1,
         originalColumn: 0,
         originalLine: 1,
-        source: '/tmp/input.js',
+        source: '<unknown>',
       }),
     }));
 
     const { default: transform } = await importTransform();
     await transform({
-      filename: '/tmp/input.js',
       source: 'const bound: boolean = true;',
       sourcemap: false,
-    });
+    } as never);
 
     expect(bindingTransform).toHaveBeenCalledWith({
       code: 'const bound: boolean = true;',
       dialect: 'flow-detect',
-      enumRuntimeModule: 'flow-enums-runtime',
-      filename: '/tmp/input.js',
-      format: 'pretty',
-      preserveComments: false,
-      preserveWhitespace: false,
-      reactRuntimeTarget: '18',
+      comments: false,
+      filename: '<unknown>',
+      format: 'compact',
+      reactRuntimeTarget: '19',
       sourcemap: false,
     });
   });
@@ -196,17 +193,17 @@ describe('programmatic transform', () => {
     });
   });
 
-  it('forwards explicit compact format to the native binding', async () => {
+  it('forwards explicit pretty format to the native binding', async () => {
     const { bindingTransform } = mockNativeBinding(() =>
       Promise.resolve({
-        code: 'const value=1;\n',
+        code: 'const value = 1;\n',
       })
     );
 
     const { default: transform } = await importTransform();
     await transform({
       filename: '/tmp/input.js',
-      format: 'compact',
+      format: 'pretty',
       source: 'const value: number = 1;',
       sourcemap: false,
     });
@@ -214,17 +211,15 @@ describe('programmatic transform', () => {
     expect(bindingTransform).toHaveBeenCalledWith({
       code: 'const value: number = 1;',
       dialect: 'flow-detect',
-      enumRuntimeModule: 'flow-enums-runtime',
+      comments: false,
       filename: '/tmp/input.js',
-      format: 'compact',
-      preserveComments: false,
-      preserveWhitespace: false,
-      reactRuntimeTarget: '18',
+      format: 'pretty',
+      reactRuntimeTarget: '19',
       sourcemap: false,
     });
   });
 
-  it('forwards preserve flags to the native binding with sourcemaps enabled', async () => {
+  it('forwards preserve format and comments to the native binding with sourcemaps enabled', async () => {
     const { bindingTransform } = mockNativeBinding(() =>
       Promise.resolve({
         code: '\nconst value = 1;\n',
@@ -242,25 +237,23 @@ describe('programmatic transform', () => {
     const { default: transform } = await importTransform();
     await transform({
       filename: '/tmp/input.js',
-      preserveComments: true,
-      preserveWhitespace: true,
+      comments: true,
+      format: 'preserve',
       source: 'const value: number = 1;',
     } as never);
 
     expect(bindingTransform).toHaveBeenCalledWith({
       code: 'const value: number = 1;',
       dialect: 'flow-detect',
-      enumRuntimeModule: 'flow-enums-runtime',
+      comments: true,
       filename: '/tmp/input.js',
-      format: 'pretty',
-      preserveComments: true,
-      preserveWhitespace: true,
-      reactRuntimeTarget: '18',
+      format: 'preserve',
+      reactRuntimeTarget: '19',
       sourcemap: true,
     });
   });
 
-  it('forwards preserveComments without preserveWhitespace', async () => {
+  it('forwards comments without preserve formatting', async () => {
     const { bindingTransform } = mockNativeBinding(() =>
       Promise.resolve({
         code: '/* keep */\nconst value = 1;\n',
@@ -270,7 +263,7 @@ describe('programmatic transform', () => {
     const { default: transform } = await importTransform();
     await transform({
       filename: '/tmp/input.js',
-      preserveComments: true,
+      comments: true,
       source: '/* keep */\nconst value: number = 1;',
       sourcemap: false,
     } as never);
@@ -278,12 +271,10 @@ describe('programmatic transform', () => {
     expect(bindingTransform).toHaveBeenCalledWith({
       code: '/* keep */\nconst value: number = 1;',
       dialect: 'flow-detect',
-      enumRuntimeModule: 'flow-enums-runtime',
+      comments: true,
       filename: '/tmp/input.js',
-      format: 'pretty',
-      preserveComments: true,
-      preserveWhitespace: false,
-      reactRuntimeTarget: '18',
+      format: 'compact',
+      reactRuntimeTarget: '19',
       sourcemap: false,
     });
   });
@@ -301,11 +292,10 @@ describe('programmatic transform', () => {
 
     await expect(
       transform({
-        filename: '/tmp/bad.js',
         source: 'const value = ;',
       })
     ).rejects.toThrow(
-      'fast-flow-transform native transform failed (/tmp/bad.js:2:10): Unexpected token'
+      'fast-flow-transform native transform failed (<unknown>:2:10): Unexpected token'
     );
   });
 });

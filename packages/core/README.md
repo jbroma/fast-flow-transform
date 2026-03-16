@@ -31,24 +31,24 @@ present when source maps are enabled.
 
 Programmatic input shape:
 
-| Field                | Type                                            | Default                | Notes                                                                      |
-| -------------------- | ----------------------------------------------- | ---------------------- | -------------------------------------------------------------------------- |
-| `filename`           | `string`                                        | required               | Used in diagnostics and source maps                                        |
-| `source`             | `string \| Buffer`                              | required               | Source text to transform                                                   |
-| `inputSourceMap`     | `SourceMapLike \| null`                         | omitted                | Merged into FFT's emitted map when present                                 |
-| `dialect`            | `'flow' \| 'flow-detect' \| 'flow-unambiguous'` | `'flow-detect'`        | Flow parsing mode                                                          |
-| `enumRuntimeModule`  | `string`                                        | `'flow-enums-runtime'` | Must be a non-empty string                                                 |
-| `format`             | `'pretty' \| 'compact'`                         | `'pretty'`             | Output formatting mode                                                     |
-| `preserveComments`   | `boolean`                                       | `false`                | Keeps ordinary comments in `pretty` or `compact` output                    |
-| `preserveWhitespace` | `boolean`                                       | `false`                | Preserves original layout where possible during subtractive Flow stripping |
-| `reactRuntimeTarget` | `'18' \| '19' \| 18 \| 19`                      | `'18'`                 | Normalized to `'18'` or `'19'` internally                                  |
-| `sourcemap`          | `boolean`                                       | `true`                 | Controls emitted source maps for the programmatic API and CLI              |
+| Field                | Type                                            | Default         | Notes                                                                  |
+| -------------------- | ----------------------------------------------- | --------------- | ---------------------------------------------------------------------- |
+| `filename`           | `string`                                        | omitted         | Used in diagnostics and source maps; falls back to `'<unknown>'`       |
+| `source`             | `string \| Buffer`                              | required        | Source text to transform                                               |
+| `inputSourceMap`     | `SourceMapLike \| null`                         | omitted         | Merged into FFT's emitted map when present                             |
+| `dialect`            | `'flow' \| 'flow-detect' \| 'flow-unambiguous'` | `'flow-detect'` | Flow parsing mode                                                      |
+| `format`             | `'compact' \| 'pretty' \| 'preserve'`           | `'compact'`     | Output mode; `preserve` uses the layout-preserving subtractive path    |
+| `comments`           | `boolean`                                       | `false`         | Keeps ordinary comments in any output mode                             |
+| `reactRuntimeTarget` | `'18' \| '19' \| 18 \| 19`                      | `'19'`          | Only affects Flow `component` lowering; normalized to `'18'` or `'19'` |
+| `sourcemap`          | `boolean`                                       | `true`          | Controls emitted source maps for the programmatic API and CLI          |
 
 Adapter note: bundler integrations do not all treat `sourcemap` the same way.
 webpack and rspack default to the loader context unless you override them,
 Parcel follows the asset's source-map setting, Rollup/Vite/Rolldown always ask
 FFT for maps so the bundler can compose them, and the esbuild adapter leaves
 final map emission to esbuild itself.
+
+Flow enums always lower to `flow-enums-runtime`.
 
 ## CLI Usage
 
@@ -68,20 +68,20 @@ Useful flags:
 fast-flow-transform src/input.js \
   --out-file dist/output.js \
   --dialect flow-detect \
-  --react-runtime-target 19 \
-  --enum-runtime-module flow-enums-runtime
+  --format preserve \
+  --comments
 ```
 
-Output defaults to readable `pretty` formatting. Pass `--format compact`, or
-set `format: 'compact'` in adapter options, when you want denser output.
+Output defaults to dense `compact` formatting. Pass `--format pretty`, or set
+`format: 'pretty'` in adapter options, when you want readable reprinted output.
 
-Enable `preserveComments: true` or pass `--preserve-comments` when you want
-ordinary comments preserved on normal `pretty` or `compact` output.
+Enable `comments: true` or pass `--comments` when you want ordinary comments
+preserved.
 
-For source-preserving output, enable `preserveWhitespace: true` or pass
-`--preserve-whitespace`. That path preserves original layout where possible,
-can optionally keep comments too, currently supports subtractive Flow stripping
-only, and now supports source maps as well.
+For source-preserving output, set `format: 'preserve'` or pass
+`--format preserve`. That path preserves original layout where possible,
+supports comments too, currently supports subtractive Flow stripping only, and
+supports source maps as well.
 
 If you want code on stdout instead of a file, disable source maps:
 
@@ -119,8 +119,6 @@ module.exports = {
             loader: 'fast-flow-transform/webpack',
             options: {
               dialect: 'flow-detect',
-              reactRuntimeTarget: '18',
-              enumRuntimeModule: 'flow-enums-runtime',
             },
           },
         ],
@@ -167,7 +165,6 @@ module.exports = {
             loader: 'fast-flow-transform/rspack',
             options: {
               dialect: 'flow-detect',
-              reactRuntimeTarget: '18',
             },
           },
         ],
@@ -202,7 +199,6 @@ export default defineConfig({
     pluginFastFlowTransformRsbuild({
       dialect: 'flow-detect',
       format: 'compact',
-      reactRuntimeTarget: '18',
       sourcemap: true,
     }),
   ],
@@ -241,7 +237,6 @@ import { createFastFlowTransformParcel } from 'fast-flow-transform/parcel';
 
 export default createFastFlowTransformParcel({
   dialect: 'flow-detect',
-  reactRuntimeTarget: '18',
   sourcemap: true,
 });
 ```
@@ -287,7 +282,6 @@ export default defineConfig({
   plugins: [
     fastFlowTransformVite({
       dialect: 'flow-detect',
-      reactRuntimeTarget: '18',
     }),
     jsxAfterFftPlugin(),
   ],

@@ -7,18 +7,21 @@ import type {
 } from './types.js';
 
 const DEFAULT_OPTIONS: TransformOptions = Object.freeze({
+  comments: false,
   dialect: 'flow-detect',
-  enumRuntimeModule: 'flow-enums-runtime',
-  format: 'pretty',
-  preserveComments: false,
-  preserveWhitespace: false,
-  reactRuntimeTarget: '18',
+  format: 'compact',
+  reactRuntimeTarget: '19',
   sourcemap: true,
 });
 
 const DIALECTS = new Set<Dialect>(['flow', 'flow-detect', 'flow-unambiguous']);
-const FORMATS = new Set<Format>(['compact', 'pretty']);
+const FORMATS = new Set<Format>(['compact', 'preserve', 'pretty']);
 const REACT_TARGETS = new Set<ReactRuntimeTarget>(['18', '19']);
+const REMOVED_OPTIONS = new Set([
+  'enumRuntimeModule',
+  'preserveComments',
+  'preserveWhitespace',
+]);
 
 function invalidOption(optionName: string, value: unknown): Error {
   return new Error(
@@ -38,16 +41,6 @@ function validateStringOption<T extends string>(
   throw invalidOption(optionName, value);
 }
 
-function validateEnumRuntimeModule(enumRuntimeModule: unknown): string {
-  if (typeof enumRuntimeModule === 'string' && enumRuntimeModule.length > 0) {
-    return enumRuntimeModule;
-  }
-
-  throw new Error(
-    'Invalid fast-flow-transform option `enumRuntimeModule`: expected non-empty string'
-  );
-}
-
 function validateSourceMapOption(sourcemap: unknown): boolean {
   if (typeof sourcemap === 'boolean') {
     return sourcemap;
@@ -64,38 +57,42 @@ function validateBooleanOption(optionName: string, value: unknown): boolean {
   throw invalidOption(optionName, value);
 }
 
+function rejectRemovedOptions(rawOptions: object): void {
+  for (const optionName of REMOVED_OPTIONS) {
+    if (Object.hasOwn(rawOptions, optionName)) {
+      throw invalidOption(
+        optionName,
+        (rawOptions as Record<string, unknown>)[optionName]
+      );
+    }
+  }
+}
+
 export function parseOptions(
   rawOptions: TransformOptionsInput | null | undefined
 ): TransformOptions {
   const options = rawOptions ?? {};
-  const preserveWhitespace = validateBooleanOption(
-    'preserveWhitespace',
-    options.preserveWhitespace ?? DEFAULT_OPTIONS.preserveWhitespace
-  );
-  const preserveComments = validateBooleanOption(
-    'preserveComments',
-    options.preserveComments ?? DEFAULT_OPTIONS.preserveComments
+  rejectRemovedOptions(options);
+  const comments = validateBooleanOption(
+    'comments',
+    options.comments ?? DEFAULT_OPTIONS.comments
   );
   const sourcemap = validateSourceMapOption(
     options.sourcemap ?? DEFAULT_OPTIONS.sourcemap
   );
 
   return {
+    comments,
     dialect: validateStringOption(
       DIALECTS,
       'dialect',
       options.dialect ?? DEFAULT_OPTIONS.dialect
-    ),
-    enumRuntimeModule: validateEnumRuntimeModule(
-      options.enumRuntimeModule ?? DEFAULT_OPTIONS.enumRuntimeModule
     ),
     format: validateStringOption(
       FORMATS,
       'format',
       options.format ?? DEFAULT_OPTIONS.format
     ),
-    preserveComments,
-    preserveWhitespace,
     reactRuntimeTarget: validateStringOption(
       REACT_TARGETS,
       'reactRuntimeTarget',

@@ -1,16 +1,14 @@
 import type { RawSourceMap } from 'source-map';
 
 export type Dialect = 'flow' | 'flow-detect' | 'flow-unambiguous';
-export type Format = 'compact' | 'pretty';
+export type Format = 'compact' | 'preserve' | 'pretty';
 export type ReactRuntimeTarget = '18' | '19';
 export type SourceMapLike = RawSourceMap;
 
 export interface TransformOptions {
+  comments: boolean;
   dialect: Dialect;
-  enumRuntimeModule: string;
   format: Format;
-  preserveComments: boolean;
-  preserveWhitespace: boolean;
   reactRuntimeTarget: ReactRuntimeTarget;
   sourcemap: boolean;
 }
@@ -20,7 +18,7 @@ export type TransformOptionsInput = Partial<TransformOptions> & {
 };
 
 export interface TransformInput extends TransformOptionsInput {
-  filename: string;
+  filename?: string;
   inputSourceMap?: SourceMapLike | null;
   source: string | Buffer;
 }
@@ -31,13 +29,11 @@ export interface TransformResult {
 }
 
 export interface NativeTransformRequest {
+  comments: boolean;
   code: string;
   dialect: Dialect;
-  enumRuntimeModule: string;
   filename: string;
   format: Format;
-  preserveComments: boolean;
-  preserveWhitespace: boolean;
   reactRuntimeTarget: ReactRuntimeTarget;
   sourcemap: boolean;
 }

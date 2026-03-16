@@ -14,10 +14,8 @@ pub struct BindingTransformRequest {
     pub code: String,
     pub dialect: String,
     pub format: String,
-    pub preserve_comments: bool,
-    pub preserve_whitespace: bool,
+    pub comments: bool,
     pub react_runtime_target: String,
-    pub enum_runtime_module: String,
     pub sourcemap: bool,
 }
 
@@ -37,10 +35,8 @@ fn transform_request(input: BindingTransformRequest) -> TransformRequest {
         code: input.code,
         dialect: input.dialect,
         format: input.format,
-        preserve_comments: input.preserve_comments,
-        preserve_whitespace: input.preserve_whitespace,
+        comments: input.comments,
         react_runtime_target: input.react_runtime_target,
-        enum_runtime_module: input.enum_runtime_module,
         sourcemap: input.sourcemap,
     }
 }

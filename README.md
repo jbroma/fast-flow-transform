@@ -80,7 +80,7 @@ requested.
 
 ## Benchmark
 
-![fast-flow-transform benchmark summary](./assets/readme-benchmark.svg)
+![fast-flow-transform benchmark summary](./assets/readme-benchmark.svg?v=76d469faf946)
 
 Generated from `bench/fixtures/single-file-flow-preserve.js` with the README
 benchmark workflow. The chart uses 1000 warm iterations per case and reports

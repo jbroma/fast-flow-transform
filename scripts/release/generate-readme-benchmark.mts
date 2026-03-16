@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +10,28 @@ function repoRoot(): string {
 
 function benchmarkAsset(path: string): string {
   return resolve(repoRoot(), path);
+}
+
+function svgVersion(svgPath: string): string {
+  return createHash('sha256')
+    .update(readFileSync(svgPath))
+    .digest('hex')
+    .slice(0, 12);
+}
+
+function updateReadmeBenchmarkImage(svgPath: string): void {
+  const readmePath = benchmarkAsset('README.md');
+  const readme = readFileSync(readmePath, 'utf8');
+  const next = readme.replace(
+    /!\[fast-flow-transform benchmark summary]\(\.\/assets\/readme-benchmark\.svg(?:\?v=[^)]+)?\)/,
+    `![fast-flow-transform benchmark summary](./assets/readme-benchmark.svg?v=${svgVersion(svgPath)})`
+  );
+
+  if (next === readme) {
+    throw new Error('Could not update README benchmark image URL');
+  }
+
+  writeFileSync(readmePath, next);
 }
 
 function run(
@@ -45,6 +69,7 @@ function main(): void {
     BENCH_JSON_PATH: jsonPath,
     BENCH_SVG_PATH: svgPath,
   });
+  updateReadmeBenchmarkImage(svgPath);
 }
 
 main();

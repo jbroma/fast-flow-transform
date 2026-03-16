@@ -29,24 +29,18 @@ const result = await transform({
 The programmatic API returns `{ code: string, map?: SourceMapLike }`. `map` is
 present when source maps are enabled.
 
-Programmatic input shape:
+Programmatic options:
 
-| Field                | Type                                            | Default         | Notes                                                                  |
-| -------------------- | ----------------------------------------------- | --------------- | ---------------------------------------------------------------------- |
-| `filename`           | `string`                                        | omitted         | Used in diagnostics and source maps; falls back to `'<unknown>'`       |
-| `source`             | `string \| Buffer`                              | required        | Source text to transform                                               |
-| `inputSourceMap`     | `SourceMapLike \| null`                         | omitted         | Merged into FFT's emitted map when present                             |
-| `dialect`            | `'flow' \| 'flow-detect' \| 'flow-unambiguous'` | `'flow-detect'` | Flow parsing mode                                                      |
-| `format`             | `'compact' \| 'pretty' \| 'preserve'`           | `'compact'`     | Output mode; `preserve` uses the layout-preserving subtractive path    |
-| `comments`           | `boolean`                                       | `false`         | Keeps ordinary comments in any output mode                             |
-| `reactRuntimeTarget` | `'18' \| '19' \| 18 \| 19`                      | `'19'`          | Only affects Flow `component` lowering; normalized to `'18'` or `'19'` |
-| `sourcemap`          | `boolean`                                       | `true`          | Controls emitted source maps for the programmatic API and CLI          |
-
-Adapter note: bundler integrations do not all treat `sourcemap` the same way.
-webpack and rspack default to the loader context unless you override them,
-Parcel follows the asset's source-map setting, Rollup/Vite/Rolldown always ask
-FFT for maps so the bundler can compose them, and the esbuild adapter leaves
-final map emission to esbuild itself.
+| Property             | Required | Type                                            | Default         | Description                                                                       |
+| -------------------- | -------- | ----------------------------------------------- | --------------- | --------------------------------------------------------------------------------- |
+| `source`             | Yes      | `string \| Buffer`                              | n/a             | Source text to transform                                                          |
+| `format`             | No       | `'compact' \| 'pretty' \| 'preserve'`           | `'compact'`     | Output mode. `preserve` is experimental; see [Preserve Format](#preserve-format)  |
+| `dialect`            | No       | `'flow' \| 'flow-detect' \| 'flow-unambiguous'` | `'flow-detect'` | Flow parsing mode                                                                 |
+| `comments`           | No       | `boolean`                                       | `false`         | Preserves ordinary comments in any output mode                                    |
+| `sourcemap`          | No       | `boolean`                                       | `true`          | Enables or disables FFT's emitted output source map                               |
+| `filename`           | No       | `string`                                        | `'<unknown>'`   | Used in diagnostics and in the emitted source map when you pass a path            |
+| `inputSourceMap`     | No       | `SourceMapLike \| null`                         | none            | Incoming source map from an earlier transform step to merge into FFT's output map |
+| `reactRuntimeTarget` | No       | `'18' \| '19' \| 18 \| 19`                      | `'19'`          | Only affects Flow `component` lowering; normalized to `'18'` or `'19'`            |
 
 Flow enums always lower to `flow-enums-runtime`.
 
@@ -62,7 +56,20 @@ package, and writes:
 - transformed code to `--out-file`
 - a source map to `--source-map-file` or `--out-file.map`
 
-Useful flags:
+CLI arguments:
+
+| Argument                           | Required | Value                                     | Default          | Description                                                                      |
+| ---------------------------------- | -------- | ----------------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
+| `<input-file>`                     | Yes      | `path`                                    | n/a              | Source file to transform                                                         |
+| `--format <value>`                 | No       | `compact`, `pretty`, `preserve`           | `compact`        | Output mode. `preserve` is experimental; see [Preserve Format](#preserve-format) |
+| `--dialect <value>`                | No       | `flow`, `flow-detect`, `flow-unambiguous` | `flow-detect`    | Flow parsing mode                                                                |
+| `--comments`                       | No       | flag                                      | `false`          | Preserve ordinary comments in the output                                         |
+| `--source-map` / `--no-source-map` | No       | flag                                      | `--source-map`   | Enable or disable FFT's emitted output source map                                |
+| `--out-file <path>`                | No       | `path`                                    | none             | Write transformed code to a file                                                 |
+| `--source-map-file <path>`         | No       | `path`                                    | `<out-file>.map` | Write the emitted output source map to a specific file                           |
+| `--input-source-map <path>`        | No       | `path`                                    | none             | Load an upstream source map JSON file to merge into FFT's emitted output map     |
+| `--react-runtime-target <n>`       | No       | `18`, `19`                                | `19`             | Only affects Flow `component` lowering                                           |
+| `-h`, `--help`                     | No       | flag                                      | n/a              | Show help                                                                        |
 
 ```bash
 fast-flow-transform src/input.js \
@@ -72,24 +79,46 @@ fast-flow-transform src/input.js \
   --comments
 ```
 
-Output defaults to dense `compact` formatting. Pass `--format pretty`, or set
-`format: 'pretty'` in adapter options, when you want readable reprinted output.
-
-Enable `comments: true` or pass `--comments` when you want ordinary comments
-preserved.
-
-For source-preserving output, set `format: 'preserve'` or pass
-`--format preserve`. That path preserves original layout where possible,
-supports comments too, currently supports subtractive Flow stripping only, and
-supports source maps as well.
-
 If you want code on stdout instead of a file, disable source maps:
 
 ```bash
 fast-flow-transform src/input.js --no-source-map
 ```
 
-## Webpack Usage
+The CLI enables source maps by default, so when maps stay on you need
+`--out-file` or `--source-map-file`.
+
+## Preserve Format
+
+`format: 'preserve'` and `--format preserve` are experimental.
+
+This mode uses FFT's layout-preserving subtractive path instead of the normal
+reprinter. It tries to remove Flow syntax while keeping the original spacing,
+line structure, and comments as intact as possible. It supports source maps and
+works with `comments: true`.
+
+Current limitations:
+
+- It only supports subtractive Flow stripping.
+- It does not yet support Flow `component` declarations.
+- It does not yet support Flow `hook` declarations.
+- It does not yet support Flow `enum` declarations.
+- It does not yet support Flow `match` statements or expressions.
+
+## Bundler Adapters
+
+The adapter entrypoints expose the same canonical transform options where the
+host bundler makes sense of them: `dialect`, `format`, `comments`,
+`reactRuntimeTarget`, and `sourcemap`.
+
+Bundler integrations do not all treat `sourcemap` the same way. webpack and
+rspack default to the loader context unless you override them, Parcel follows
+the asset's source-map setting, Rollup/Vite/Rolldown always ask FFT for maps so
+the bundler can compose them, and the esbuild adapter leaves final map emission
+to esbuild itself.
+
+<details>
+<summary><strong>Webpack</strong></summary>
 
 ```js
 // webpack.config.js
@@ -135,7 +164,10 @@ example does.
 Runnable example:
 [`examples/webpack`](../../examples/webpack)
 
-## Rspack Usage
+</details>
+
+<details>
+<summary><strong>Rspack</strong></summary>
 
 ```js
 // rspack.config.js
@@ -181,7 +213,10 @@ example does.
 Runnable example:
 [`examples/rspack`](../../examples/rspack)
 
-## Rsbuild Usage
+</details>
+
+<details>
+<summary><strong>Rsbuild</strong></summary>
 
 ```ts
 // rsbuild.config.ts
@@ -216,7 +251,10 @@ named `applyFastFlowTransformRsbuild` helper for wiring directly inside your own
 Runnable example:
 [`examples/rsbuild`](../../examples/rsbuild)
 
-## Parcel Usage
+</details>
+
+<details>
+<summary><strong>Parcel</strong></summary>
 
 Parcel expects transformers to be referenced from `.parcelrc` using either a
 Parcel-style plugin package name or a local file path. The recommended setup is
@@ -251,7 +289,10 @@ export { default } from 'fast-flow-transform/parcel';
 Runnable example:
 [`examples/parcel`](../../examples/parcel)
 
-## Vite Usage
+</details>
+
+<details>
+<summary><strong>Vite</strong></summary>
 
 ```ts
 // vite.config.ts
@@ -295,7 +336,10 @@ files, or another Vite plugin handles it, you may not need the extra
 Runnable example:
 [`examples/vite`](../../examples/vite)
 
-## Rollup Usage
+</details>
+
+<details>
+<summary><strong>Rollup</strong></summary>
 
 ```ts
 import fastFlowTransformRollup from 'fast-flow-transform/rollup';
@@ -315,7 +359,10 @@ Rollup JSX transform separately. FFT does not lower JSX.
 Runnable example:
 [`examples/rollup`](../../examples/rollup)
 
-## Rolldown Usage
+</details>
+
+<details>
+<summary><strong>Rolldown</strong></summary>
 
 ```ts
 import fastFlowTransformRolldown from 'fast-flow-transform/rolldown';
@@ -348,7 +395,10 @@ not pair this adapter with `@rollup/plugin-commonjs`.
 Runnable example:
 [`examples/rolldown`](../../examples/rolldown)
 
-## esbuild Usage
+</details>
+
+<details>
+<summary><strong>esbuild</strong></summary>
 
 ```ts
 import { build } from 'esbuild';
@@ -368,3 +418,5 @@ await build({
 
 Runnable example:
 [`examples/esbuild`](../../examples/esbuild)
+
+</details>

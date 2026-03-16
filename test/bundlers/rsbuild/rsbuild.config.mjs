@@ -53,6 +53,9 @@ export default defineConfig({
     include: [FIXTURE_ROOT, { not: /[\\/]core-js[\\/]/ }],
   },
   output: {
+    distPath: {
+      root: resolve(PACKAGE_ROOT, 'dist'),
+    },
     module: false,
     target: 'node',
   },

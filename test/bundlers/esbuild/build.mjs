@@ -9,7 +9,7 @@ const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_ROOT = resolve(PACKAGE_ROOT, '../../fixtures/project');
 const OUTFILE = resolve(PACKAGE_ROOT, 'dist/bundle.cjs');
 
-await mkdir(dirname(OUTFILE), { recursive: true });
+await mkdir(resolve(PACKAGE_ROOT, 'dist'), { recursive: true });
 
 await build({
   bundle: true,

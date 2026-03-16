@@ -344,6 +344,9 @@ importers:
 
   test/fixtures/project:
     dependencies:
+      flow-enums-runtime:
+        specifier: 0.0.6
+        version: 0.0.6
       react:
         specifier: 19.2.3
         version: 19.2.3

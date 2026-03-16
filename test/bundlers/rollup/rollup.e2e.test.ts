@@ -11,4 +11,12 @@ describe('rollup react-native fixture e2e', () => {
     expect(bundleText).toContain('react-native');
     expect(bundleText).toContain('packageSummaries');
   });
+
+  it('lowers flow enums inside the main fixture bundle', () => {
+    const bundleText = readFileSync(BUNDLE_PATH, 'utf8');
+
+    expect(bundleText).not.toContain('enum ');
+    expect(bundleText).toContain('enumSummary');
+    expect(bundleText).toContain('Mirrored');
+  });
 });

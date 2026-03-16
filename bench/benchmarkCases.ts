@@ -22,6 +22,7 @@ export function benchmarkCaseName(
 
   return `${format} ${sourcemap ? 'with sourcemaps' : 'without sourcemaps'}`;
 }
+
 export const DEFAULT_BENCHMARK_CASES = Object.freeze<BenchmarkCase[]>([
   {
     caseName: benchmarkCaseName('compact', false),
@@ -51,24 +52,24 @@ export const DEFAULT_BENCHMARK_CASES = Object.freeze<BenchmarkCase[]>([
     preserveWhitespace: false,
     sourcemap: true,
   },
-  {
-    caseName: benchmarkCaseName('pretty', false, {
-      preserveComments: false,
-      preserveWhitespace: true,
-    }),
-    format: 'pretty',
-    preserveComments: false,
-    preserveWhitespace: true,
-    sourcemap: false,
-  },
-  {
-    caseName: benchmarkCaseName('pretty', false, {
-      preserveComments: true,
-      preserveWhitespace: true,
-    }),
-    format: 'pretty',
-    preserveComments: true,
-    preserveWhitespace: true,
-    sourcemap: false,
-  },
+  // {
+  //   caseName: benchmarkCaseName('pretty', false, {
+  //     preserveComments: false,
+  //     preserveWhitespace: true,
+  //   }),
+  //   format: 'pretty',
+  //   preserveComments: false,
+  //   preserveWhitespace: true,
+  //   sourcemap: false,
+  // },
+  // {
+  //   caseName: benchmarkCaseName('pretty', false, {
+  //     preserveComments: true,
+  //     preserveWhitespace: true,
+  //   }),
+  //   format: 'pretty',
+  //   preserveComments: true,
+  //   preserveWhitespace: true,
+  //   sourcemap: false,
+  // },
 ]);

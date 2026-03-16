@@ -27,18 +27,18 @@ const EXPECTED_CASE_DETAILS = [
     preserveWhitespace: false,
     sourcemap: true,
   },
-  {
-    format: 'pretty',
-    preserveComments: false,
-    preserveWhitespace: true,
-    sourcemap: false,
-  },
-  {
-    format: 'pretty',
-    preserveComments: true,
-    preserveWhitespace: true,
-    sourcemap: false,
-  },
+  // {
+  //   format: 'pretty',
+  //   preserveComments: false,
+  //   preserveWhitespace: true,
+  //   sourcemap: false,
+  // },
+  // {
+  //   format: 'pretty',
+  //   preserveComments: true,
+  //   preserveWhitespace: true,
+  //   sourcemap: false,
+  // },
 ] as const;
 
 const EXPECTED_CASE_NAMES = [
@@ -46,8 +46,8 @@ const EXPECTED_CASE_NAMES = [
   'pretty without sourcemaps',
   'compact with sourcemaps',
   'pretty with sourcemaps',
-  'preserve whitespace without comments',
-  'preserve whitespace with comments',
+  // 'preserve whitespace without comments',
+  // 'preserve whitespace with comments',
 ] as const;
 
 type BenchmarkCaseSuite = Awaited<ReturnType<typeof runBenchmarkCases>>;

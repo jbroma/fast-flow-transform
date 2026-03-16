@@ -55,9 +55,9 @@ Parcel usually wires `fft` through a tiny local wrapper that re-exports
 import transform from 'fast-flow-transform';
 
 const result = await transform({
-	filename: '/abs/path/input.js',
-	source: 'const answer: number = 42;',
-	sourcemap: true,
+  filename: '/abs/path/input.js',
+  source: 'const answer: number = 42;',
+  sourcemap: true,
 });
 
 console.log(result.code);
@@ -80,14 +80,14 @@ requested.
 
 ## Benchmark
 
-![fast-flow-transform benchmark summary](./assets/bench-20260316T182013Z.svg)
+![fast-flow-transform benchmark summary](./assets/bench-20260316T183236Z.svg)
 
 Generated from `bench/fixtures/single-file-flow-preserve.js` with the README
 benchmark workflow. The chart uses 1000 warm iterations per case and reports
 warm `meanMs` only. The SVG footer and JSON record the exact platform, Node
 version, and generation timestamp. Raw timings and cold-start measurements live
 in
-[`assets/bench-20260316T182013Z.json`](./assets/bench-20260316T182013Z.json).
+[`assets/bench-20260316T183236Z.json`](./assets/bench-20260316T183236Z.json).
 
 ## Examples And Docs
 

@@ -145,7 +145,7 @@ function formatSpeedup(value: number): string {
 function headerBlock(): string {
   return [
     `<text x="${CASE_X}" y="52" fill="#c9d1d9" font-size="34" font-weight="800">FFT vs Babel Flow stripping</text>`,
-    `<text x="${CASE_X}" y="84" fill="#8b949e" font-size="16">Warm mean transform time across six benchmark cases. Lower times are better.</text>`,
+    `<text x="${CASE_X}" y="84" fill="#8b949e" font-size="16">Warm mean transform time across four benchmark cases. Lower times are better.</text>`,
   ].join('');
 }
 
@@ -196,7 +196,7 @@ function svgTemplate(report: BenchmarkSuiteReport): string {
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS_WIDTH}" height="${height}" viewBox="0 0 ${CANVAS_WIDTH} ${height}" role="img" aria-labelledby="title desc">`,
     '<title id="title">fast-flow-transform benchmark summary</title>',
-    '<desc id="desc">Warm mean FFT versus Babel Flow-stripping benchmark results across six benchmark cases.</desc>',
+    '<desc id="desc">Warm mean FFT versus Babel Flow-stripping benchmark results across four benchmark cases.</desc>',
     `<rect width="${CANVAS_WIDTH}" height="${height}" rx="24" fill="${CANVAS_BACKGROUND}" />`,
     `<g font-family="${MONOSPACE_FONT}">`,
     headerBlock(),

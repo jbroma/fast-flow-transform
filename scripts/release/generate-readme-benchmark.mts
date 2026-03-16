@@ -37,9 +37,10 @@ function main(): void {
   run('pnpm', ['sync-binding']);
   run('pnpm', ['--filter', 'fast-flow-transform', 'build']);
   run('pnpm', ['--filter', '@fft/bench', 'benchmark'], {
-    BENCH_ITERATIONS: '300',
+    BENCH_ITERATIONS: '1000',
     BENCH_JSON_PATH: jsonPath,
   });
+  run('pnpm', ['exec', 'oxfmt', '-c', '.oxfmtrc.json', jsonPath]);
   run('pnpm', ['--filter', '@fft/bench', 'render:readme'], {
     BENCH_JSON_PATH: jsonPath,
     BENCH_SVG_PATH: svgPath,

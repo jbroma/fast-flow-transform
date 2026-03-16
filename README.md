@@ -25,9 +25,11 @@ transforms. See [Benchmark](#benchmark).
 npm install --save-dev fast-flow-transform
 ```
 
+Requires Node `>=18`.
+
 ## Pick Your Integration
 
-Detailed adapter docs and additional config examples live in
+Detailed adapter docs, option defaults, and additional config examples live in
 [`packages/core/README.md`](./packages/core/README.md).
 
 | Bundler  | Entry Point                    | Start Here                                                     |
@@ -50,9 +52,9 @@ Parcel usually wires FFT through a tiny local wrapper that re-exports
 import transform from 'fast-flow-transform';
 
 const result = await transform({
-  filename: '/abs/path/input.js',
-  source: 'const answer: number = 42;',
-  sourcemap: true,
+	filename: '/abs/path/input.js',
+	source: 'const answer: number = 42;',
+	sourcemap: true,
 });
 
 console.log(result.code);
@@ -78,7 +80,7 @@ requested.
 ![FFT benchmark summary](./assets/readme-benchmark.svg)
 
 Generated from `bench/fixtures/single-file-flow-preserve.js` with the README
-benchmark workflow. The chart uses 300 warm iterations per case and reports
+benchmark workflow. The chart uses 1000 warm iterations per case and reports
 warm `meanMs` only. The SVG footer and JSON record the exact platform, Node
 version, and generation timestamp. Raw timings and cold-start measurements live
 in

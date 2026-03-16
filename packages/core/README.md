@@ -26,6 +26,30 @@ const result = await transform({
 });
 ```
 
+The programmatic API returns `{ code: string, map?: SourceMapLike }`. `map` is
+present when source maps are enabled.
+
+Programmatic input shape:
+
+| Field                | Type                                            | Default                | Notes                                                                      |
+| -------------------- | ----------------------------------------------- | ---------------------- | -------------------------------------------------------------------------- |
+| `filename`           | `string`                                        | required               | Used in diagnostics and source maps                                        |
+| `source`             | `string \| Buffer`                              | required               | Source text to transform                                                   |
+| `inputSourceMap`     | `SourceMapLike \| null`                         | omitted                | Merged into FFT's emitted map when present                                 |
+| `dialect`            | `'flow' \| 'flow-detect' \| 'flow-unambiguous'` | `'flow-detect'`        | Flow parsing mode                                                          |
+| `enumRuntimeModule`  | `string`                                        | `'flow-enums-runtime'` | Must be a non-empty string                                                 |
+| `format`             | `'pretty' \| 'compact'`                         | `'pretty'`             | Output formatting mode                                                     |
+| `preserveComments`   | `boolean`                                       | `false`                | Keeps ordinary comments in `pretty` or `compact` output                    |
+| `preserveWhitespace` | `boolean`                                       | `false`                | Preserves original layout where possible during subtractive Flow stripping |
+| `reactRuntimeTarget` | `'18' \| '19' \| 18 \| 19`                      | `'18'`                 | Normalized to `'18'` or `'19'` internally                                  |
+| `sourcemap`          | `boolean`                                       | `true`                 | Controls emitted source maps for the programmatic API and CLI              |
+
+Adapter note: bundler integrations do not all treat `sourcemap` the same way.
+webpack and rspack default to the loader context unless you override them,
+Parcel follows the asset's source-map setting, Rollup/Vite/Rolldown always ask
+FFT for maps so the bundler can compose them, and the esbuild adapter leaves
+final map emission to esbuild itself.
+
 ## CLI Usage
 
 ```bash
@@ -49,7 +73,7 @@ fast-flow-transform src/input.js \
 ```
 
 Output defaults to readable `pretty` formatting. Pass `--format compact`, or
-set `format: 'compact'` in adapter options, when you want minified output.
+set `format: 'compact'` in adapter options, when you want denser output.
 
 Enable `preserveComments: true` or pass `--preserve-comments` when you want
 ordinary comments preserved on normal `pretty` or `compact` output.
@@ -73,8 +97,24 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\\.[jt]sx?$/,
+        test: /\.[jt]sx?$/,
         use: [
+          {
+            loader: 'swc-loader',
+            options: {
+              jsc: {
+                parser: {
+                  jsx: true,
+                  syntax: 'ecmascript',
+                },
+                transform: {
+                  react: {
+                    runtime: 'classic',
+                  },
+                },
+              },
+            },
+          },
           {
             loader: 'fast-flow-transform/webpack',
             options: {
@@ -90,6 +130,10 @@ module.exports = {
 };
 ```
 
+If your config file is ESM, resolve the loader with
+`createRequire(import.meta.url)` and `require.resolve(...)` like the runnable
+example does.
+
 Runnable example:
 [`examples/webpack`](../../examples/webpack)
 
@@ -101,10 +145,30 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\\.[jt]sx?$/,
+        test: /\.[jt]sx?$/,
         use: [
           {
+            loader: 'builtin:swc-loader',
+            options: {
+              jsc: {
+                parser: {
+                  jsx: true,
+                  syntax: 'ecmascript',
+                },
+                transform: {
+                  react: {
+                    runtime: 'classic',
+                  },
+                },
+              },
+            },
+          },
+          {
             loader: 'fast-flow-transform/rspack',
+            options: {
+              dialect: 'flow-detect',
+              reactRuntimeTarget: '18',
+            },
           },
         ],
       },
@@ -112,6 +176,10 @@ module.exports = {
   },
 };
 ```
+
+If your config file is ESM, resolve the loader with
+`createRequire(import.meta.url)` and `require.resolve(...)` like the runnable
+example does.
 
 Runnable example:
 [`examples/rspack`](../../examples/rspack)
@@ -121,44 +189,26 @@ Runnable example:
 ```ts
 // rsbuild.config.ts
 import { defineConfig } from '@rsbuild/core';
+import { pluginReact } from '@rsbuild/plugin-react';
 import pluginFastFlowTransformRsbuild from 'fast-flow-transform/rsbuild';
 
 export default defineConfig({
   plugins: [
+    pluginReact({
+      swcReactOptions: {
+        runtime: 'classic',
+      },
+    }),
     pluginFastFlowTransformRsbuild({
       dialect: 'flow-detect',
+      format: 'compact',
       reactRuntimeTarget: '18',
+      sourcemap: true,
     }),
   ],
   source: {
-    // Rsbuild skips most node_modules by default. Include any Flow-heavy
-    // dependencies you need compiled.
-    include: [{ not: /[\\/]core-js[\\/]/ }],
-  },
-  tools: {
-    bundlerChain: (chain, { CHAIN_ID }) => {
-      // If your JS sources or dependencies contain JSX, align SWC's parser.
-      chain.module
-        .rule(CHAIN_ID.RULE.JS)
-        .use(CHAIN_ID.USE.SWC)
-        .tap((options) => ({
-          ...options,
-          jsc: {
-            ...options.jsc,
-            parser: {
-              decorators: true,
-              jsx: true,
-              syntax: 'ecmascript',
-            },
-            transform: {
-              ...options.jsc?.transform,
-              react: {
-                runtime: 'classic',
-              },
-            },
-          },
-        }));
-    },
+    // Rsbuild skips most node_modules by default.
+    // include: [{ not: /[\\/]core-js[\\/]/ }],
   },
 });
 ```
@@ -176,13 +226,12 @@ Parcel expects transformers to be referenced from `.parcelrc` using either a
 Parcel-style plugin package name or a local file path. The recommended setup is
 to add a tiny local wrapper that imports `fast-flow-transform/parcel`.
 
-```json
-// .parcelrc
+```jsonc
 {
   "extends": "@parcel/config-default",
   "transformers": {
-    "*.{js,mjs,cjs,jsx}": ["./parcel-transformer.mjs", "..."]
-  }
+    "*.{js,mjs,cjs,jsx}": ["./parcel-transformer.mjs", "..."],
+  },
 }
 ```
 
@@ -211,8 +260,28 @@ Runnable example:
 
 ```ts
 // vite.config.ts
-import { defineConfig } from 'vite';
+import { defineConfig, transformWithEsbuild } from 'vite';
 import fastFlowTransformVite from 'fast-flow-transform/vite';
+
+const JS_WITH_JSX = /\.[cm]?jsx?(?:[?#].*)?$/;
+
+function jsxAfterFftPlugin() {
+  return {
+    enforce: 'pre',
+    name: 'jsx-after-fft',
+    async transform(code, id) {
+      if (id.startsWith('\0') || !JS_WITH_JSX.test(id)) {
+        return null;
+      }
+
+      return await transformWithEsbuild(code, id, {
+        jsx: 'transform',
+        loader: 'jsx',
+        sourcemap: true,
+      });
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
@@ -220,12 +289,14 @@ export default defineConfig({
       dialect: 'flow-detect',
       reactRuntimeTarget: '18',
     }),
+    jsxAfterFftPlugin(),
   ],
 });
 ```
 
-It does not lower JSX itself. Vite's normal JSX handling remains responsible
-for that phase.
+FFT does not lower JSX itself. If your JSX already lives in `.jsx` or `.tsx`
+files, or another Vite plugin handles it, you may not need the extra
+`transformWithEsbuild(...)` pass shown above.
 
 Runnable example:
 [`examples/vite`](../../examples/vite)
@@ -254,14 +325,26 @@ Runnable example:
 
 ```ts
 import fastFlowTransformRolldown from 'fast-flow-transform/rolldown';
+import { defineConfig } from 'rolldown';
 
-await build({
+export default defineConfig({
   input: 'src/index.js',
+  moduleTypes: {
+    '.js': 'jsx',
+  },
+  output: {
+    file: 'dist/out.js',
+    format: 'cjs',
+    sourcemap: true,
+  },
   plugins: [
     fastFlowTransformRolldown({
       dialect: 'flow-detect',
     }),
   ],
+  transform: {
+    jsx: 'react',
+  },
 });
 ```
 

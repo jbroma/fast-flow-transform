@@ -11,6 +11,11 @@ interface State {
   files: ManagedFile[];
 }
 
+interface PackageManifest {
+  version: string;
+}
+
+const BINDING_ENTRY_PATH = 'binding/bindings.cjs';
 const SHARED_FILE_NAMES = ['LICENSE', 'THIRD_PARTY_LICENSES'] as const;
 const STATE_FILE_NAME = '.publish-assets-state.json';
 
@@ -43,6 +48,10 @@ function writeState(root: string, state: State): void {
   writeFileSync(statePath(root), `${JSON.stringify(state, null, 2)}\n`);
 }
 
+function readPackageManifest(path: string): PackageManifest {
+  return JSON.parse(readText(path)) as PackageManifest;
+}
+
 function rootFileSource(fileName: (typeof SHARED_FILE_NAMES)[number]): string {
   return readText(join(workspaceRoot(), fileName));
 }
@@ -69,6 +78,34 @@ function restoreManagedFile(root: string, file: ManagedFile): void {
   }
 
   writeFileSync(path, file.originalSource);
+}
+
+function packageVersion(root: string): string {
+  return readPackageManifest(join(root, 'package.json')).version;
+}
+
+function rewriteBindingWrapperVersion(source: string, version: string): string {
+  return source
+    .replaceAll(/(bindingPackageVersion !== )'[^']+'/g, `$1'${version}'`)
+    .replaceAll(
+      /(expected )[^ ]+( but got \$\{bindingPackageVersion\})/g,
+      `$1${version}$2`
+    );
+}
+
+function syncBindingWrapperVersion(root: string, state: State): void {
+  const path = join(root, BINDING_ENTRY_PATH);
+
+  if (!existsSync(path)) {
+    return;
+  }
+
+  manageFile(
+    root,
+    state,
+    BINDING_ENTRY_PATH,
+    rewriteBindingWrapperVersion(readText(path), packageVersion(root))
+  );
 }
 
 function cleanup(root: string): void {
@@ -99,6 +136,8 @@ function main(): void {
   for (const fileName of SHARED_FILE_NAMES) {
     manageFile(root, state, fileName, rootFileSource(fileName));
   }
+
+  syncBindingWrapperVersion(root, state);
 
   writeState(root, state);
 }

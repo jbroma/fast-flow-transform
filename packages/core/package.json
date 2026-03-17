@@ -94,10 +94,11 @@
   },
   "scripts": {
     "artifacts": "node ./scripts/package-lifecycle.mts ensure-artifacts-dir && napi artifacts --package-json-path package.json --npm-dir ../../bindings --output-dir ../../artifacts",
-    "build": "pnpm run build:bindings && node ./scripts/package-lifecycle.mts clean-dist && tsc -p tsconfig.build.json",
+    "build": "pnpm run build:bindings && pnpm run build:js",
     "build:bindings": "napi build --platform --release --manifest-path ../../crates/fft_node/Cargo.toml --package-json-path package.json --output-dir binding --js bindings.cjs --dts bindings.d.cts",
+    "build:js": "node ./scripts/package-lifecycle.mts clean-dist && tsc -p tsconfig.build.json",
     "postpack": "node ../../scripts/release/cleanup-package-assets.mts",
-    "prepack": "pnpm run build && node ../../scripts/release/stage-package-assets.mts",
+    "prepack": "pnpm run build:js && node ../../scripts/release/stage-package-assets.mts",
     "publish:bindings": "napi pre-publish -t npm --no-gh-release --package-json-path package.json --npm-dir ../../bindings",
     "prepublishOnly": "pnpm run publish:bindings",
     "test": "vitest run",

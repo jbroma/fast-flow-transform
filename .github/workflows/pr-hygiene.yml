@@ -34,7 +34,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          requireScope: true
+          requireScope: false
+          disallowScopes: |
+            .*
           types: |
             feat
             fix
@@ -85,7 +87,14 @@ jobs:
 
       - name: Fail on invalid PR title
         if: ${{ steps.semantic.outcome != 'success' }}
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          SEMANTIC_ERROR: ${{ steps.semantic.outputs.error_message }}
         run: |
-          echo "PR titles must match type(scope)!: description." >&2
+          echo "Invalid PR title: $PR_TITLE" >&2
+          if [ -n "$SEMANTIC_ERROR" ]; then
+            echo "$SEMANTIC_ERROR" >&2
+          fi
+          echo "PR titles must match type[!]: description." >&2
           echo "Allowed types: feat, fix, chore, refactor, docs, test, perf, build, ci, revert." >&2
           exit 1

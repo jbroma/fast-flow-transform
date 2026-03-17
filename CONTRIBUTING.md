@@ -19,7 +19,14 @@ cargo test --workspace
 PR titles must use this format:
 
 ```text
-type(scope)!: description
+type[!]: description
+```
+
+Scopes are not allowed. For example, these are valid:
+
+```text
+type: description
+type!: description
 ```
 
 Allowed types:
@@ -60,11 +67,11 @@ aggressive or not aggressive enough.
 
 Valid examples:
 
-- `feat(core): add parser flag`
-- `fix(core)!: change parser default`
-- `ci(actions): add PR build workflow`
-- `docs(contributing): document PR title rules`
-- `refactor(bindings): simplify native sync step`
+- `feat: add parser flag`
+- `fix!: change parser default`
+- `ci: add PR build workflow`
+- `docs: document PR title rules`
+- `refactor: simplify native sync step`
 
 ## Releases
 

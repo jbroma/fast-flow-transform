@@ -65,6 +65,9 @@ const LABEL_DEFS = Object.freeze({
   },
 });
 
+const LABEL_READY_RETRY_DELAY_MS = 2000;
+const LABEL_READY_RETRY_LIMIT = 10;
+
 interface RepoContext {
   apiUrl: string;
   owner: string;
@@ -75,6 +78,12 @@ interface RepoContext {
 interface LabelDef {
   color: string;
   description: string;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function requiredEnv(name: string): string {
@@ -158,6 +167,17 @@ async function createLabel(
     }
   );
 
+  if (response.status === 422) {
+    const body = await response.text();
+    if (body.includes('already_exists') || body.includes('already exists')) {
+      return;
+    }
+
+    throw new Error(
+      `Unable to create label "${name}": ${response.status}${body ? ` ${body}` : ''}`
+    );
+  }
+
   if (!response.ok) {
     throw new Error(`Unable to create label "${name}": ${response.status}`);
   }
@@ -167,19 +187,43 @@ async function ensureLabel(
   context: RepoContext,
   name: string,
   details: LabelDef
-): Promise<void> {
+): Promise<boolean> {
   if (await labelExists(context, name)) {
-    return;
+    return false;
   }
 
   await createLabel(context, name, details);
+  return true;
+}
+
+async function waitForLabel(context: RepoContext, name: string): Promise<void> {
+  for (let attempt = 1; attempt <= LABEL_READY_RETRY_LIMIT; attempt += 1) {
+    if (await labelExists(context, name)) {
+      return;
+    }
+
+    await sleep(LABEL_READY_RETRY_DELAY_MS);
+  }
+
+  throw new Error(
+    `Label "${name}" was created but never became readable within ${
+      LABEL_READY_RETRY_DELAY_MS * LABEL_READY_RETRY_LIMIT
+    }ms`
+  );
 }
 
 async function main(): Promise<void> {
   const context = repoContext();
+  const createdLabels: string[] = [];
 
   for (const [name, details] of Object.entries(LABEL_DEFS)) {
-    await ensureLabel(context, name, details);
+    if (await ensureLabel(context, name, details)) {
+      createdLabels.push(name);
+    }
+  }
+
+  for (const name of createdLabels) {
+    await waitForLabel(context, name);
   }
 }
 

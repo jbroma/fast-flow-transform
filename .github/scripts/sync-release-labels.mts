@@ -5,12 +5,21 @@ const RELEASE_LABELS = new Set([
   'release: major',
 ]);
 
+const ADD_RELEASE_LABEL_RETRY_DELAY_MS = 2000;
+const ADD_RELEASE_LABEL_RETRY_LIMIT = 10;
+
 interface RepoContext {
   apiUrl: string;
   issueNumber: number;
   owner: string;
   repo: string;
   token: string;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function requiredEnv(name: string): string {
@@ -125,24 +134,42 @@ async function addReleaseLabel(
   context: RepoContext,
   name: string
 ): Promise<void> {
-  const response = await githubRequest(
-    context,
-    `/repos/${context.owner}/${context.repo}/issues/${String(
-      context.issueNumber
-    )}/labels`,
-    {
-      body: JSON.stringify({ labels: [name] }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    }
-  );
+  for (
+    let attempt = 1;
+    attempt <= ADD_RELEASE_LABEL_RETRY_LIMIT;
+    attempt += 1
+  ) {
+    const response = await githubRequest(
+      context,
+      `/repos/${context.owner}/${context.repo}/issues/${String(
+        context.issueNumber
+      )}/labels`,
+      {
+        body: JSON.stringify({ labels: [name] }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      }
+    );
 
-  if (!response.ok) {
+    if (response.ok) {
+      return;
+    }
+
     const body = await response.text();
+    const isTransientBootstrapError =
+      response.status === 404 || response.status === 422;
+
+    if (isTransientBootstrapError && attempt < ADD_RELEASE_LABEL_RETRY_LIMIT) {
+      await sleep(ADD_RELEASE_LABEL_RETRY_DELAY_MS);
+      continue;
+    }
+
     throw new Error(
-      `Unable to add "${name}" label: ${response.status}${body ? ` ${body}` : ''}`
+      `Unable to add "${name}" label after ${String(attempt)} attempt(s): ${
+        response.status
+      }${body ? ` ${body}` : ''}`
     );
   }
 }

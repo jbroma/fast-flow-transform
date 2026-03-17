@@ -133,7 +133,6 @@
   },
   "napi": {
     "binaryName": "fast-flow-transform",
-    "npmClient": "pnpm",
     "packageName": "fast-flow-transform",
     "targets": [
       "aarch64-apple-darwin",

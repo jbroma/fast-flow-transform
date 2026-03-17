@@ -14,6 +14,7 @@ export default {
       {
         include: resolve(PACKAGE_ROOT, 'src'),
         test: /\.js$/,
+        type: 'javascript/auto',
         use: [
           {
             loader: 'builtin:swc-loader',

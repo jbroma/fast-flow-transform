@@ -1,0 +1,44 @@
+{
+  "name": "fast-flow-transform-darwin-x64",
+  "version": "0.0.1",
+  "cpu": [
+    "x64"
+  ],
+  "main": "fast-flow-transform.darwin-x64.node",
+  "files": [
+    "fast-flow-transform.darwin-x64.node"
+  ],
+  "description": "Native Hermes/FFT Flow stripping transform with webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown, and esbuild adapters",
+  "keywords": [
+    "esbuild",
+    "flowtype",
+    "parcel",
+    "rolldown",
+    "rollup",
+    "rsbuild",
+    "rspack",
+    "strip-flow",
+    "vite",
+    "webpack"
+  ],
+  "author": "Jakub Romanczyk <j.romanczyk@gmail.com>",
+  "homepage": "https://github.com/jbroma/fast-flow-transform#readme",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbroma/fast-flow-transform.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jbroma/fast-flow-transform/issues"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "os": [
+    "darwin"
+  ]
+}

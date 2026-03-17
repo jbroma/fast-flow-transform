@@ -1,0 +1,61 @@
+name: Build Darwin Native Artifact
+description: Build and upload one macOS native artifact for the release flow.
+
+inputs:
+  artifact-name:
+    description: Uploaded artifact name.
+    required: true
+  target:
+    description: Rust target triple to build.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Rust artifacts
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: publish-bindings-${{ runner.os }}-${{ inputs.target }}
+
+    - name: Install Rust target
+      run: rustup target add "${{ inputs.target }}"
+      shell: bash
+
+    - name: Build darwin-arm64 artifact
+      if: ${{ inputs.target == 'aarch64-apple-darwin' }}
+      env:
+        CFLAGS_aarch64_apple_darwin: -arch arm64
+        CMAKE_OSX_ARCHITECTURES: arm64
+        CXXFLAGS_aarch64_apple_darwin: -arch arm64
+      run: |
+        pnpm --dir packages/core exec napi build \
+          --platform \
+          --release \
+          --manifest-path ../../crates/fft_node/Cargo.toml \
+          --package-json-path package.json \
+          --target "${{ inputs.target }}" \
+          --output-dir ../../artifacts
+      shell: bash
+
+    - name: Build darwin-x64 artifact
+      if: ${{ inputs.target == 'x86_64-apple-darwin' }}
+      env:
+        CFLAGS_x86_64_apple_darwin: -arch x86_64
+        CMAKE_OSX_ARCHITECTURES: x86_64
+        CXXFLAGS_x86_64_apple_darwin: -arch x86_64
+      run: |
+        pnpm --dir packages/core exec napi build \
+          --platform \
+          --release \
+          --manifest-path ../../crates/fft_node/Cargo.toml \
+          --package-json-path package.json \
+          --target "${{ inputs.target }}" \
+          --output-dir ../../artifacts
+      shell: bash
+
+    - name: Upload ${{ inputs.artifact-name }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: artifacts/*.node
+        if-no-files-found: error

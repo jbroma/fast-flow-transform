@@ -11,6 +11,7 @@ packages/**/node_modules/
 **/.publish-assets-state.json
 
 # Loader packaging outputs
+/artifacts/
 packages/**/dist/
 packages/**/artifacts/
 packages/**/bin/
@@ -21,9 +22,8 @@ test/bundlers/**/dist/
 bench/report.json
 
 # Locally packed native binaries
-packages/core/bin/fft-strip*
-bindings/**/bin/fft-strip*
-packages/core/native/*.node
+packages/core/*.node
+packages/core/binding/*.node
 bindings/**/*.node
 
 # macOS

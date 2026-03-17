@@ -422,3 +422,14 @@ Runnable example:
 [`examples/esbuild`](../../examples/esbuild)
 
 </details>
+
+## Native Binding Notes
+
+FFT installs its native addon through platform-specific optional dependencies.
+If a package manager lockfile was created on a different platform, or install
+flags such as `--ignore-optional` / `--no-optional` were used, the matching
+binding package may be skipped.
+
+If FFT reports that its native binding is missing, reinstall dependencies on
+the target machine without disabling optional dependencies. The supported manual
+override is `NAPI_RS_NATIVE_LIBRARY_PATH`.

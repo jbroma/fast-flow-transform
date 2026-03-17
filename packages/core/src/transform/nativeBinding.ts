@@ -1,6 +1,8 @@
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { resolveBindingPath } from './resolveBinding.js';
 import type {
   NativeTransformRequest,
   NativeTransformResult,
@@ -8,6 +10,7 @@ import type {
 } from './types.js';
 
 const require = createRequire(import.meta.url);
+const moduleDirectory = fileURLToPath(new URL('.', import.meta.url));
 
 export interface NativeBinding {
   transform(
@@ -116,12 +119,24 @@ function toNativeBinding(value: unknown): NativeBinding {
   };
 }
 
+function bindingRuntimePath(): string {
+  const packageRoot = resolve(moduleDirectory, '..', '..');
+  const runtimePath = join(packageRoot, 'binding', 'bindings.cjs');
+
+  if (!existsSync(runtimePath)) {
+    throw new Error(
+      `Unable to resolve generated FFT binding loader at ${runtimePath}`
+    );
+  }
+
+  return runtimePath;
+}
+
 export function loadNativeBinding(): NativeBinding {
   if (cachedBinding) {
     return cachedBinding;
   }
 
-  const bindingPath = resolveBindingPath();
-  cachedBinding = toNativeBinding(require(bindingPath));
+  cachedBinding = toNativeBinding(require(bindingRuntimePath()));
   return cachedBinding;
 }

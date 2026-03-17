@@ -146,7 +146,25 @@ function main(): void {
   const jsonPath = benchmarkAsset('assets/readme-benchmark.json');
   const svgPath = benchmarkAsset('assets/readme-benchmark.svg');
 
-  run('pnpm', ['sync-binding']);
+  run('pnpm', [
+    '--dir',
+    'packages/core',
+    'exec',
+    'napi',
+    'build',
+    '--platform',
+    '--release',
+    '--manifest-path',
+    '../../crates/fft_node/Cargo.toml',
+    '--package-json-path',
+    'package.json',
+    '--output-dir',
+    'binding',
+    '--js',
+    'bindings.cjs',
+    '--dts',
+    'bindings.d.cts',
+  ]);
   run('pnpm', ['--filter', 'fast-flow-transform', 'build']);
   run('pnpm', ['--filter', '@fft/bench', 'benchmark'], {
     BENCH_ITERATIONS: '1000',

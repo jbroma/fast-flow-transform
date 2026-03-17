@@ -72,11 +72,23 @@ jobs:
           echo "checkout_ref=${{ github.event.inputs.target_ref }}" >> "$GITHUB_OUTPUT"
           echo "publish_mode=${{ github.event.inputs.release_mode }}" >> "$GITHUB_OUTPUT"
 
-  publish-linux-x64-binding:
-    name: publish-linux-x64-binding
+  build-linux-artifacts:
+    name: build-${{ matrix.name }}
     needs: prepare-publish
     if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64-gnu
+            target: x86_64-unknown-linux-gnu
+          - name: linux-arm64-gnu
+            target: aarch64-unknown-linux-gnu
+          - name: linux-x64-musl
+            target: x86_64-unknown-linux-musl
+          - name: linux-arm64-musl
+            target: aarch64-unknown-linux-musl
 
     steps:
       - name: Check out repository
@@ -85,74 +97,28 @@ jobs:
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Publish Linux x64 binding
-        uses: ./.github/actions/publish-linux-bindings
+      - name: Set up workspace
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Build ${{ matrix.name }} artifact
+        uses: ./.github/actions/build-linux-native-artifact
         with:
-          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
-          target: x86_64-unknown-linux-gnu
+          artifact-name: ${{ matrix.name }}
+          target: ${{ matrix.target }}
 
-  publish-linux-arm64-binding:
-    name: publish-linux-arm64-binding
-    needs: prepare-publish
-    if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-          submodules: recursive
-
-      - name: Publish Linux ARM64 binding
-        uses: ./.github/actions/publish-linux-bindings
-        with:
-          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
-          target: aarch64-unknown-linux-gnu
-
-  publish-windows-x64-binding:
-    name: publish-windows-x64-binding
-    needs: prepare-publish
-    if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: windows-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-          submodules: recursive
-
-      - name: Publish Windows x64 binding
-        uses: ./.github/actions/publish-windows-bindings
-        with:
-          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
-          target: x86_64-pc-windows-msvc
-
-  publish-windows-arm64-binding:
-    name: publish-windows-arm64-binding
-    needs: prepare-publish
-    if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: windows-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-          submodules: recursive
-
-      - name: Publish Windows ARM64 binding
-        uses: ./.github/actions/publish-windows-bindings
-        with:
-          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
-          target: aarch64-pc-windows-msvc
-
-  publish-macos-x64-binding:
-    name: publish-macos-x64-binding
+  build-darwin-artifacts:
+    name: build-${{ matrix.name }}
     needs: prepare-publish
     if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: darwin-x64
+            target: x86_64-apple-darwin
+          - name: darwin-arm64
+            target: aarch64-apple-darwin
 
     steps:
       - name: Check out repository
@@ -161,17 +127,30 @@ jobs:
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Publish macOS x64 binding
-        uses: ./.github/actions/publish-macos-bindings
-        with:
-          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
-          target: x86_64-apple-darwin
+      - name: Set up workspace
+        uses: ./.github/actions/setup-pr-ci
 
-  publish-macos-arm64-binding:
-    name: publish-macos-arm64-binding
+      - name: Build ${{ matrix.name }} artifact
+        uses: ./.github/actions/build-darwin-native-artifact
+        with:
+          artifact-name: ${{ matrix.name }}
+          target: ${{ matrix.target }}
+
+  build-windows-artifacts:
+    name: build-${{ matrix.name }}
     needs: prepare-publish
     if: ${{ needs.prepare-publish.result == 'success' }}
-    runs-on: macos-latest
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: win32-x64-msvc
+            target: x86_64-pc-windows-msvc
+            generator_platform: x64
+          - name: win32-arm64-msvc
+            target: aarch64-pc-windows-msvc
+            generator_platform: ARM64
 
     steps:
       - name: Check out repository
@@ -180,22 +159,23 @@ jobs:
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Publish macOS ARM64 binding
-        uses: ./.github/actions/publish-macos-bindings
-        with:
-          publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
-          target: aarch64-apple-darwin
+      - name: Set up workspace
+        uses: ./.github/actions/setup-pr-ci
 
-  publish-package:
-    name: publish-package
+      - name: Build ${{ matrix.name }} artifact
+        uses: ./.github/actions/build-windows-native-artifact
+        with:
+          artifact-name: ${{ matrix.name }}
+          generator-platform: ${{ matrix.generator_platform }}
+          target: ${{ matrix.target }}
+
+  publish-release-packages:
+    name: publish-release-packages
     needs:
       - prepare-publish
-      - publish-linux-x64-binding
-      - publish-linux-arm64-binding
-      - publish-windows-x64-binding
-      - publish-windows-arm64-binding
-      - publish-macos-x64-binding
-      - publish-macos-arm64-binding
+      - build-linux-artifacts
+      - build-darwin-artifacts
+      - build-windows-artifacts
     if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: ubuntu-24.04
     outputs:
@@ -209,9 +189,15 @@ jobs:
           ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
           submodules: recursive
 
-      - name: Publish main package
+      - name: Download all native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish release packages
         id: publish
-        uses: ./.github/actions/publish-main-package
+        uses: ./.github/actions/publish-release-packages
         with:
           publish-mode: ${{ needs.prepare-publish.outputs.publish_mode }}
 
@@ -219,7 +205,7 @@ jobs:
     name: finalize-release
     needs:
       - prepare-publish
-      - publish-package
+      - publish-release-packages
     if: ${{ needs.prepare-publish.result == 'success' && needs.prepare-publish.outputs.publish_mode == 'stable' }}
     runs-on: ubuntu-24.04
     permissions:
@@ -240,4 +226,4 @@ jobs:
       - name: Create tag and GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/release/finalize-release.mts --version "${{ needs.publish-package.outputs.release_version }}"
+        run: node scripts/release/finalize-release.mts --version "${{ needs.publish-release-packages.outputs.release_version }}"

@@ -82,9 +82,9 @@ That workflow:
 3. Avoids requiring contributors to author `.changeset/*.md` files manually.
 
 Merging the release PR triggers the `publish-release` workflow automatically.
-That workflow publishes the binding packages first, then publishes
-`fast-flow-transform`, creates the git tag, and creates the GitHub Release
-with generated release notes.
+That workflow assembles the generated native packages, publishes
+`fast-flow-transform`, creates the git tag, and creates the GitHub Release with
+generated release notes.
 
 ### Canary Releases
 
@@ -120,25 +120,61 @@ Published packages:
 - `fast-flow-transform`
 - `fast-flow-transform-darwin-arm64`
 - `fast-flow-transform-darwin-x64`
-- `fast-flow-transform-linux-arm64`
-- `fast-flow-transform-linux-x64`
-- `fast-flow-transform-win32-arm64`
-- `fast-flow-transform-win32-x64`
+- `fast-flow-transform-linux-arm64-gnu`
+- `fast-flow-transform-linux-arm64-musl`
+- `fast-flow-transform-linux-x64-gnu`
+- `fast-flow-transform-linux-x64-musl`
+- `fast-flow-transform-win32-arm64-msvc`
+- `fast-flow-transform-win32-x64-msvc`
 
 Maintenance note:
 
 - If the trusted publish workflow file is ever renamed, update the trusted
-  publisher settings for all seven npm packages before the next release.
+  publisher settings for all nine npm packages before the next release.
+
+## Native Packaging
+
+`napi-rs/cli` is the source of truth for FFT's native package layout. Treat the
+checked-in files under `bindings/**` and `packages/core/binding/**` as generated
+artifacts.
+
+### Regenerate `bindings/`
+
+When you change `packages/core/package.json` `napi.targets` or other native
+package metadata, refresh the platform package directories with:
+
+```bash
+pnpm --dir packages/core exec napi create-npm-dirs --package-json-path package.json --npm-dir ../../bindings
+```
+
+Do not hand-edit the generated binding package manifests or READMEs. Re-run
+`create-npm-dirs` instead.
+
+### Build The Current-Platform Native Binding
+
+To regenerate the current machine's loader and native addon directly through the
+official CLI:
+
+```bash
+pnpm --dir packages/core exec napi build --platform --release --manifest-path ../../crates/fft_node/Cargo.toml --package-json-path package.json --output-dir binding --js bindings.cjs --dts bindings.d.cts
+```
+
+`packages/core/build` already runs this before `tsc`, so `pnpm build` gives you
+a runnable package on the current machine.
+
+### Install Troubleshooting
+
+- FFT relies on platform-specific optional dependencies. If the native package
+  is missing, reinstall on the target machine without disabling optional
+  dependencies.
+- The supported manual override is `NAPI_RS_NATIVE_LIBRARY_PATH`.
 
 ## Local Registry Testing
 
-Use the local Verdaccio workflow when you want to publish a canary build of
-`fast-flow-transform` and install that exact version into another project on
-this machine.
+Use the local Verdaccio flow when you want to publish a current-machine canary
+build to a local registry and install that exact version into another project.
 
 ### Start Verdaccio
-
-Start Verdaccio in one terminal:
 
 ```bash
 pnpm run local-registry:start
@@ -146,48 +182,15 @@ pnpm run local-registry:start
 
 ### Publish A Local Canary
 
-Publish a fresh local canary build from another terminal:
-
 ```bash
 pnpm run local-registry:publish
 ```
 
-That publish flow will:
-
-1. Verify that Verdaccio is already running.
-2. Bootstrap a local throwaway Verdaccio user automatically if the npm client
-   needs one for publish.
-3. Build and sync the native binding for the current machine.
-4. Build `packages/core`.
-5. Publish the current platform binding package first.
-6. Publish `fast-flow-transform` with a unique canary version such as
-   `0.0.1-local.20260309t123456789z.abc1234`.
-
-### Install The Published Local Version
-
-The publish command prints the exact consumer install command to use in another
-repo. With `pnpm` it looks like:
-
-```bash
-npm_config_registry=http://127.0.0.1:4873 pnpm add fast-flow-transform@0.0.1-local.20260309t123456789z.abc1234
-```
-
-With `npm`:
-
-```bash
-npm_config_registry=http://127.0.0.1:4873 npm install fast-flow-transform@0.0.1-local.20260309t123456789z.abc1234
-```
+The publish command prints the exact install command to run in another repo.
 
 ### Notes
 
-- This workflow is current-machine only. It publishes the binding for the
-  platform and architecture you built on.
-- Public npm packages still resolve through Verdaccio because
-  [`config/verdaccio.yaml`](./config/verdaccio.yaml) proxies
-  `https://registry.npmjs.org/`.
-- `pnpm run local-registry:start` keeps Verdaccio attached to that terminal
-  until you stop it with `Ctrl+C`.
-- Consumer installs do not need local Verdaccio credentials. The repo only
-  creates a throwaway local user because your npm client requires auth for
-  publish in practice.
-- To reset the local registry state, stop Verdaccio and remove `.local/verdaccio/`.
+- This local flow is current-machine only.
+- Consumer installs only need `npm_config_registry=<verdaccio-url>`.
+- Stop Verdaccio with `Ctrl+C`. To reset the local registry state, remove
+  `.local/verdaccio/`.

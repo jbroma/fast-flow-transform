@@ -16,6 +16,7 @@ export default {
     rules: [
       {
         test: /\.js$/,
+        type: 'javascript/auto',
         use: [
           {
             loader: require.resolve('swc-loader'),

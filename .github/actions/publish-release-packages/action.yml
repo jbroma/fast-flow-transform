@@ -1,0 +1,81 @@
+name: Publish Release Packages
+description: Build and publish the release package set for a release.
+
+inputs:
+  npm-token:
+    description: Optional npm token for bootstrapping first-time package publishes.
+    required: false
+  publish-mode:
+    description: Release mode, either stable or canary.
+    required: true
+
+outputs:
+  release_version:
+    description: Published stable version, if this was a stable release.
+    value: ${{ steps.version.outputs.release_version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up workspace
+      uses: ./.github/actions/setup-pr-ci
+
+    - name: Configure npm registry auth
+      if: ${{ inputs.npm-token != '' }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        registry-url: https://registry.npmjs.org
+
+    - name: Apply canary version
+      if: ${{ inputs.publish-mode == 'canary' }}
+      run: node scripts/release/apply-release-version.mts --canary
+      shell: bash
+
+    - name: Read release version
+      id: version
+      run: |
+        echo "release_version=$(node -p 'require(\"./packages/core/package.json\").version')" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Regenerate binding package directories
+      run: pnpm --dir packages/core exec napi create-npm-dirs --package-json-path package.json --npm-dir ../../bindings
+      shell: bash
+
+    - name: Attach downloaded artifacts to binding packages
+      run: pnpm --dir packages/core exec napi artifacts --package-json-path package.json --npm-dir ../../bindings --output-dir ../../artifacts
+      shell: bash
+
+    - name: Publish release packages for stable release
+      if: ${{ inputs.publish-mode == 'stable' && inputs.npm-token == '' }}
+      run: |
+        cd packages/core
+        pnpm publish --no-git-checks --tag latest
+      shell: bash
+
+    - name: Publish release packages for stable bootstrap
+      if: ${{ inputs.publish-mode == 'stable' && inputs.npm-token != '' }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+        npm_config_provenance: 'false'
+      run: |
+        cd packages/core
+        pnpm publish --no-git-checks --tag latest
+      shell: bash
+
+    - name: Publish release packages for canary release
+      if: ${{ inputs.publish-mode == 'canary' && inputs.npm-token == '' }}
+      run: |
+        cd packages/core
+        pnpm publish --no-git-checks --tag canary
+      shell: bash
+
+    - name: Publish release packages for canary bootstrap
+      if: ${{ inputs.publish-mode == 'canary' && inputs.npm-token != '' }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+        npm_config_provenance: 'false'
+      run: |
+        cd packages/core
+        pnpm publish --no-git-checks --tag canary
+      shell: bash

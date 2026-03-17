@@ -6,11 +6,28 @@
       "cache": false
     },
     "build": {
-      "dependsOn": ["//#sync-binding", "^build"],
+      "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "test": {
+    "fast-flow-transform#build": {
       "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/Cargo.toml",
+        "$TURBO_ROOT$/Cargo.lock",
+        "$TURBO_ROOT$/.cargo/**",
+        "$TURBO_ROOT$/crates/**",
+        "$TURBO_ROOT$/hermes/**"
+      ],
+      "outputs": [
+        "dist/**",
+        "binding/*.node",
+        "binding/bindings.cjs",
+        "binding/bindings.d.cts"
+      ]
+    },
+    "test": {
+      "dependsOn": ["build", "^build"],
       "outputs": []
     },
     "e2e": {
@@ -19,19 +36,6 @@
     },
     "typecheck": {
       "outputs": []
-    },
-    "//#sync-binding": {
-      "inputs": [
-        "Cargo.lock",
-        "Cargo.toml",
-        "crates/**",
-        "scripts/sync-binding.mts"
-      ],
-      "outputs": [
-        "bindings/*/*.node",
-        "packages/core/native/**",
-        "target/release/fast-flow-transform.*.node"
-      ]
     }
   }
 }

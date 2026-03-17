@@ -1,0 +1,46 @@
+name: Build Windows Native Artifact
+description: Build and upload one Windows native artifact for the release flow.
+
+inputs:
+  artifact-name:
+    description: Uploaded artifact name.
+    required: true
+  generator-platform:
+    description: CMake generator platform.
+    required: true
+  target:
+    description: Rust target triple to build.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Rust artifacts
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: publish-bindings-${{ runner.os }}-${{ inputs.target }}
+
+    - name: Install Rust target
+      run: rustup target add "${{ inputs.target }}"
+      shell: pwsh
+
+    - name: Build ${{ inputs.artifact-name }} artifact
+      env:
+        CMAKE_GENERATOR: Visual Studio 17 2022
+        CMAKE_GENERATOR_PLATFORM: ${{ inputs.generator-platform }}
+      run: |
+        pnpm --dir packages/core exec napi build `
+          --platform `
+          --release `
+          --manifest-path ../../crates/fft_node/Cargo.toml `
+          --package-json-path package.json `
+          --target "${{ inputs.target }}" `
+          --output-dir ../../artifacts
+      shell: pwsh
+
+    - name: Upload ${{ inputs.artifact-name }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: artifacts/*.node
+        if-no-files-found: error

@@ -12,6 +12,7 @@
     "packages/**/dist/**",
     "packages/**/artifacts/**",
     "packages/**/bin/**",
+    "packages/core/binding/**",
     "packages/fft-loader/bench/fixtures/**",
     "bench/fixtures/**/*.js",
     "packages/core/__tests__/inputs/**/*.js",

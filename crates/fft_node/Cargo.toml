@@ -16,7 +16,9 @@ fft = { path = "../fft" }
 fft_pass = { path = "../fft_pass" }
 fft_support = { path = "../fft_support" }
 napi = { version = "3.1.6", default-features = false }
-napi-derive = { version = "3.1.2", default-features = false }
+napi-derive = { version = "3.1.2", default-features = false, features = [
+  "type-def",
+] }
 sourcemap = "6.0"
 
 [build-dependencies]

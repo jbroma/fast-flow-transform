@@ -9,6 +9,7 @@
     "packages/**/__tests__/**",
     "packages/**/bench/**",
     "packages/fft-loader/bench/fixtures/**",
+    "packages/core/binding/**",
     "packages/core/__tests__/inputs/**/*.js",
     "packages/core/__tests__/outputs/**/*.js"
   ],

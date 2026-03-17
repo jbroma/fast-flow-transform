@@ -25,9 +25,11 @@
     "url": "git+https://github.com/jbroma/fast-flow-transform.git"
   },
   "bin": {
-    "fast-flow-transform": "./dist/cli/index.js"
+    "fast-flow-transform": "dist/cli/index.js"
   },
   "files": [
+    "binding/bindings.cjs",
+    "binding/bindings.d.cts",
     "dist",
     "LICENSE",
     "README.md",
@@ -91,16 +93,21 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\" && tsc -p tsconfig.build.json",
+    "artifacts": "node ./scripts/package-lifecycle.mts ensure-artifacts-dir && napi artifacts --package-json-path package.json --npm-dir ../../bindings --output-dir ../../artifacts",
+    "build": "pnpm run build:bindings && node ./scripts/package-lifecycle.mts clean-dist && tsc -p tsconfig.build.json",
+    "build:bindings": "napi build --platform --release --manifest-path ../../crates/fft_node/Cargo.toml --package-json-path package.json --output-dir binding --js bindings.cjs --dts bindings.d.cts",
     "postpack": "node ../../scripts/release/cleanup-package-assets.mts",
     "prepack": "pnpm run build && node ../../scripts/release/stage-package-assets.mts",
+    "prepublishOnly": "napi pre-publish -t npm --package-json-path package.json --npm-dir ../../bindings",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "version:napi": "napi version --package-json-path package.json --npm-dir ../../bindings"
   },
   "dependencies": {
     "source-map": "^0.7.6"
   },
   "devDependencies": {
+    "@napi-rs/cli": "3.5.1",
     "@parcel/plugin": "^2.16.1",
     "@parcel/source-map": "^2.1.1",
     "rollup": "^4.59.0",
@@ -123,13 +130,20 @@
       "optional": true
     }
   },
-  "optionalDependencies": {
-    "fast-flow-transform-darwin-arm64": "workspace:*",
-    "fast-flow-transform-darwin-x64": "workspace:*",
-    "fast-flow-transform-linux-arm64": "workspace:*",
-    "fast-flow-transform-linux-x64": "workspace:*",
-    "fast-flow-transform-win32-arm64": "workspace:*",
-    "fast-flow-transform-win32-x64": "workspace:*"
+  "napi": {
+    "binaryName": "fast-flow-transform",
+    "npmClient": "pnpm",
+    "packageName": "fast-flow-transform",
+    "targets": [
+      "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-musl",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-pc-windows-msvc",
+      "x86_64-pc-windows-msvc"
+    ]
   },
   "engines": {
     "node": ">=18"

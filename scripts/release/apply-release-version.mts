@@ -1,24 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 
-const BINDING_MANIFEST_PATHS = [
-  'bindings/fast-flow-transform-darwin-arm64/package.json',
-  'bindings/fast-flow-transform-darwin-x64/package.json',
-  'bindings/fast-flow-transform-linux-arm64/package.json',
-  'bindings/fast-flow-transform-linux-x64/package.json',
-  'bindings/fast-flow-transform-win32-arm64/package.json',
-  'bindings/fast-flow-transform-win32-x64/package.json',
-];
-
-const BINDING_PACKAGES = [
-  'fast-flow-transform-darwin-arm64',
-  'fast-flow-transform-darwin-x64',
-  'fast-flow-transform-linux-arm64',
-  'fast-flow-transform-linux-x64',
-  'fast-flow-transform-win32-arm64',
-  'fast-flow-transform-win32-x64',
-];
-
 const CARGO_MANIFEST_PATHS = [
   'crates/fft/Cargo.toml',
   'crates/fft_ast/Cargo.toml',
@@ -29,7 +11,6 @@ const CARGO_MANIFEST_PATHS = [
 ];
 
 interface PackageManifest {
-  optionalDependencies?: Record<string, string>;
   version: string;
 }
 
@@ -101,17 +82,35 @@ function releaseVersion(): string {
 
 function updateCoreManifest(version: string): void {
   const manifest = readPackageManifest('packages/core/package.json');
-  manifest.optionalDependencies = Object.fromEntries(
-    BINDING_PACKAGES.map((packageName) => [packageName, version])
-  );
   manifest.version = version;
   writePackageManifest('packages/core/package.json', manifest);
 }
 
-function updateBindingManifest(path: string, version: string): void {
-  const manifest = readPackageManifest(path);
-  manifest.version = version;
-  writePackageManifest(path, manifest);
+function runNapiVersion(): void {
+  const result = spawnSync(
+    'pnpm',
+    [
+      '--dir',
+      'packages/core',
+      'exec',
+      'napi',
+      'version',
+      '--package-json-path',
+      'package.json',
+      '--npm-dir',
+      '../../bindings',
+    ],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      shell: process.platform === 'win32',
+      stdio: 'inherit',
+    }
+  );
+
+  if (result.status !== 0) {
+    throw new Error(`pnpm napi version failed with ${String(result.status)}`);
+  }
 }
 
 function updateCargoManifest(path: string, version: string): void {
@@ -132,10 +131,7 @@ function main(): void {
   const version = releaseVersion();
 
   updateCoreManifest(version);
-
-  for (const path of BINDING_MANIFEST_PATHS) {
-    updateBindingManifest(path, version);
-  }
+  runNapiVersion();
 
   for (const path of CARGO_MANIFEST_PATHS) {
     updateCargoManifest(path, version);

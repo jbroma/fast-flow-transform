@@ -1,0 +1,119 @@
+name: Build Linux Native Artifact
+description: Build and upload one Linux native artifact for the release flow.
+
+inputs:
+  artifact-name:
+    description: Uploaded artifact name.
+    required: true
+  target:
+    description: Rust target triple to build.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Rust artifacts
+      uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: publish-bindings-${{ runner.os }}-${{ inputs.target }}
+
+    - name: Install Linux cross-compilers
+      if: ${{ inputs.target == 'aarch64-unknown-linux-gnu' }}
+      run: |
+        source /etc/os-release
+        sudo tee /etc/apt/sources.list.d/ubuntu.sources > /dev/null <<EOF
+        Types: deb
+        URIs: http://azure.archive.ubuntu.com/ubuntu/
+        Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates ${VERSION_CODENAME}-backports
+        Components: main restricted universe multiverse
+        Architectures: amd64
+        Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+        Types: deb
+        URIs: http://security.ubuntu.com/ubuntu/
+        Suites: ${VERSION_CODENAME}-security
+        Components: main restricted universe multiverse
+        Architectures: amd64
+        Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+        Types: deb
+        URIs: http://ports.ubuntu.com/ubuntu-ports/
+        Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates ${VERSION_CODENAME}-backports
+        Components: main restricted universe multiverse
+        Architectures: arm64
+        Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+        Types: deb
+        URIs: http://ports.ubuntu.com/ubuntu-ports/
+        Suites: ${VERSION_CODENAME}-security
+        Components: main restricted universe multiverse
+        Architectures: arm64
+        Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+        EOF
+        sudo dpkg --add-architecture arm64
+        sudo apt-get update
+        sudo apt-get install --yes \
+          gcc-aarch64-linux-gnu \
+          g++-aarch64-linux-gnu \
+          libicu-dev:arm64
+      shell: bash
+
+    - name: Set up Zig for musl targets
+      if: ${{ endsWith(inputs.target, '-musl') }}
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.13.0
+
+    - name: Install cargo-zigbuild for musl targets
+      if: ${{ endsWith(inputs.target, '-musl') }}
+      run: cargo install cargo-zigbuild --locked
+      shell: bash
+
+    - name: Install Rust target
+      run: rustup target add "${{ inputs.target }}"
+      shell: bash
+
+    - name: Build linux-arm64-gnu artifact
+      if: ${{ inputs.target == 'aarch64-unknown-linux-gnu' }}
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+        CMAKE_CXX_COMPILER: aarch64-linux-gnu-g++
+        CMAKE_C_COMPILER: aarch64-linux-gnu-gcc
+        CMAKE_LIBRARY_PATH: /usr/lib/aarch64-linux-gnu
+        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+        PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig
+      run: |
+        pnpm --dir packages/core exec napi build \
+          --platform \
+          --release \
+          --manifest-path ../../crates/fft_node/Cargo.toml \
+          --package-json-path package.json \
+          --target "${{ inputs.target }}" \
+          --output-dir ../../artifacts
+      shell: bash
+
+    - name: Build other Linux artifact
+      if: ${{ inputs.target != 'aarch64-unknown-linux-gnu' }}
+      run: |
+        args=(
+          --dir packages/core exec napi build
+          --platform
+          --release
+          --manifest-path ../../crates/fft_node/Cargo.toml
+          --package-json-path package.json
+          --target "${{ inputs.target }}"
+          --output-dir ../../artifacts
+        )
+        if [[ "${{ inputs.target }}" == *"-musl" ]]; then
+          args+=(--cross-compile)
+        fi
+        pnpm "${args[@]}"
+      shell: bash
+
+    - name: Upload ${{ inputs.artifact-name }} artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: artifacts/*.node
+        if-no-files-found: error

@@ -5,36 +5,64 @@ import { dirname, join, resolve as pathResolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const DEFAULT_REGISTRY_URL = 'http://127.0.0.1:4873';
+
 const LOCAL_REGISTRY_USERNAME = 'fft-local-publisher';
 const LOCAL_REGISTRY_PASSWORD = 'fft-local-password';
 const LOCAL_REGISTRY_EMAIL = 'fft-local@example.test';
 
 const require = createRequire(import.meta.url);
 
-export function workspaceRootDir(): string {
-  return pathResolve(fileURLToPath(new URL('../..', import.meta.url)));
+function localRegistryDirectory(root: string): string {
+  return join(root, '.local', 'verdaccio');
 }
 
-export function registryUrlFromEnv(): string {
-  return process.env.FFT_LOCAL_REGISTRY_URL ?? DEFAULT_REGISTRY_URL;
+function registryAuthPrefix(registryUrl: string): string {
+  const url = new URL(registryUrl);
+  const path = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
+
+  return `//${url.host}${path}`;
 }
 
-export function localRegistryUserConfigPath(root: string): string {
-  return join(root, '.local', 'verdaccio', 'npmrc');
+function registryListenAddress(registryUrl: string): string {
+  const url = new URL(registryUrl);
+  const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+
+  return `${url.hostname}:${port}`;
+}
+
+function localRegistryCommandEnv(
+  overrides: NodeJS.ProcessEnv = {}
+): NodeJS.ProcessEnv {
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => {
+      const lower = key.toLowerCase();
+
+      return (
+        !lower.startsWith('npm_config_') && !lower.startsWith('pnpm_config_')
+      );
+    })
+  );
+
+  return { ...env, ...overrides };
 }
 
 function configPath(root: string): string {
   return join(root, 'config', 'verdaccio.yaml');
 }
 
-function localRegistryDirectory(root: string): string {
-  return join(root, '.local', 'verdaccio');
-}
+function localRegistryUserConfigSource(registryUrl: string): string {
+  const authPrefix = registryAuthPrefix(registryUrl);
+  const password = Buffer.from(LOCAL_REGISTRY_PASSWORD, 'utf8').toString(
+    'base64'
+  );
 
-function registryListenAddress(registryUrl: string): string {
-  const url = new URL(registryUrl);
-  const port = url.port || (url.protocol === 'https:' ? '443' : '80');
-  return `${url.hostname}:${port}`;
+  return [
+    `registry=${registryUrl}`,
+    `${authPrefix}:username=${LOCAL_REGISTRY_USERNAME}`,
+    `${authPrefix}:_password=${password}`,
+    `${authPrefix}:email=${LOCAL_REGISTRY_EMAIL}`,
+    '',
+  ].join('\n');
 }
 
 function verdaccioBinPath(): string {
@@ -54,39 +82,6 @@ function verdaccioBinPath(): string {
   return pathResolve(dirname(packageJsonPath), bin);
 }
 
-export async function checkRegistryHealth(registryUrl: string): Promise<void> {
-  const response = await fetch(new URL('/-/ping', registryUrl), {
-    headers: {
-      accept: 'application/json',
-    },
-    signal: AbortSignal.timeout(1000),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Registry health check failed with status ${String(response.status)}.`
-    );
-  }
-}
-
-function localRegistryCommandEnv(
-  overrides: NodeJS.ProcessEnv = {}
-): NodeJS.ProcessEnv {
-  const env = Object.fromEntries(
-    Object.entries(process.env).filter(([key]) => {
-      const lower = key.toLowerCase();
-      return (
-        !lower.startsWith('npm_config_') && !lower.startsWith('pnpm_config_')
-      );
-    })
-  );
-
-  return {
-    ...env,
-    ...overrides,
-  };
-}
-
 function verdaccioSpawnArgs(root: string, registryUrl: string): string[] {
   const verdaccioConfigPath = configPath(root);
   if (!existsSync(verdaccioConfigPath)) {
@@ -102,6 +97,61 @@ function verdaccioSpawnArgs(root: string, registryUrl: string): string[] {
     '--listen',
     registryListenAddress(registryUrl),
   ];
+}
+
+async function ensureRegistryUser(registryUrl: string): Promise<void> {
+  const response = await fetch(
+    new URL(`/-/user/org.couchdb.user:${LOCAL_REGISTRY_USERNAME}`, registryUrl),
+    {
+      body: JSON.stringify({
+        date: new Date().toISOString(),
+        email: LOCAL_REGISTRY_EMAIL,
+        name: LOCAL_REGISTRY_USERNAME,
+        password: LOCAL_REGISTRY_PASSWORD,
+        roles: [],
+        type: 'user',
+      }),
+      headers: {
+        'content-type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+
+  if (response.status === 201 || response.status === 409) {
+    return;
+  }
+
+  throw new Error(
+    `Verdaccio user bootstrap failed with status ${String(response.status)}.`
+  );
+}
+
+export function workspaceRootDir(): string {
+  return pathResolve(fileURLToPath(new URL('../..', import.meta.url)));
+}
+
+export function registryUrlFromEnv(): string {
+  return process.env.FFT_LOCAL_REGISTRY_URL ?? DEFAULT_REGISTRY_URL;
+}
+
+export function localRegistryUserConfigPath(root: string): string {
+  return join(root, '.local', 'verdaccio', 'npmrc');
+}
+
+export async function checkRegistryHealth(registryUrl: string): Promise<void> {
+  const response = await fetch(new URL('/-/ping', registryUrl), {
+    headers: {
+      accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(1000),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Registry health check failed with status ${String(response.status)}.`
+    );
+  }
 }
 
 export async function requireRegistryReady(
@@ -142,70 +192,22 @@ export function runVerdaccioForeground(
   });
 }
 
-function registryAuthPrefix(registryUrl: string): string {
-  const url = new URL(registryUrl);
-  const path = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
-
-  return `//${url.host}${path}`;
-}
-
-function localRegistryUserConfigSource(registryUrl: string): string {
-  const authPrefix = registryAuthPrefix(registryUrl);
-  const password = Buffer.from(LOCAL_REGISTRY_PASSWORD, 'utf8').toString(
-    'base64'
-  );
-
-  return [
-    `registry=${registryUrl}`,
-    `${authPrefix}:username=${LOCAL_REGISTRY_USERNAME}`,
-    `${authPrefix}:_password=${password}`,
-    `${authPrefix}:email=${LOCAL_REGISTRY_EMAIL}`,
-    '',
-  ].join('\n');
-}
-
-async function ensureRegistryUser(registryUrl: string): Promise<void> {
-  const response = await fetch(
-    new URL(`/-/user/org.couchdb.user:${LOCAL_REGISTRY_USERNAME}`, registryUrl),
-    {
-      body: JSON.stringify({
-        date: new Date().toISOString(),
-        email: LOCAL_REGISTRY_EMAIL,
-        name: LOCAL_REGISTRY_USERNAME,
-        password: LOCAL_REGISTRY_PASSWORD,
-        roles: [],
-        type: 'user',
-      }),
-      headers: {
-        'content-type': 'application/json',
-      },
-      method: 'PUT',
-    }
-  );
-
-  if (response.status === 201 || response.status === 409) {
-    return;
-  }
-
-  throw new Error(
-    `Verdaccio user bootstrap failed with status ${String(response.status)}.`
-  );
-}
-
 export async function ensureRegistryCredentials(
   root: string,
   registryUrl: string
 ): Promise<string> {
   const userConfigPath = localRegistryUserConfigPath(root);
+  const source = localRegistryUserConfigSource(registryUrl);
+
   if (existsSync(userConfigPath)) {
-    writeFileSync(userConfigPath, localRegistryUserConfigSource(registryUrl));
+    writeFileSync(userConfigPath, source);
     return userConfigPath;
   }
 
   mkdirSync(localRegistryDirectory(root), { recursive: true });
   process.stdout.write('Bootstrapping local Verdaccio credentials\n');
   await ensureRegistryUser(registryUrl);
-  writeFileSync(userConfigPath, localRegistryUserConfigSource(registryUrl));
+  writeFileSync(userConfigPath, source);
 
   return userConfigPath;
 }
@@ -215,7 +217,9 @@ export function registryPublishEnv(
   userConfigPath: string
 ): NodeJS.ProcessEnv {
   return localRegistryCommandEnv({
+    npm_config_provenance: 'false',
     npm_config_registry: registryUrl,
+    npm_config_tag: 'local',
     npm_config_userconfig: userConfigPath,
   });
 }

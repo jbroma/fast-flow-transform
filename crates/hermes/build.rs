@@ -133,10 +133,12 @@ fn main() {
     emit_link_search(dst.join("build/external/dtoa"));
     emit_link_search(dst.join("build/external/llvh/lib/Support"));
 
+    // GNU ld resolves static libraries left-to-right, so dependencies must
+    // come after the Hermes libraries that reference them.
     println!("cargo:rustc-link-lib=hermesSourceMap");
+    println!("cargo:rustc-link-lib=hermesParser");
     println!("cargo:rustc-link-lib=hermesAST");
     println!("cargo:rustc-link-lib=hermesRegex");
-    println!("cargo:rustc-link-lib=hermesParser");
     println!("cargo:rustc-link-lib=hermesPlatformUnicode");
     println!("cargo:rustc-link-lib=hermesSupport");
     println!("cargo:rustc-link-lib=LLVHSupport");

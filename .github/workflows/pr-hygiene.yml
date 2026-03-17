@@ -61,12 +61,6 @@ jobs:
         with:
           node-version: 24
 
-      - name: Ensure managed labels exist
-        if: ${{ always() }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node .github/scripts/ensure-managed-labels.mts
-
       - name: Sync PR labels from title
         if: ${{ always() }}
         uses: github/issue-labeler@v3.4

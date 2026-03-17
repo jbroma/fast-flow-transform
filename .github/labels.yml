@@ -1,0 +1,48 @@
+- name: 'type: feat'
+  color: 0e8a16
+  description: Feature pull request
+- name: 'type: fix'
+  color: d73a4a
+  description: Bug fix pull request
+- name: 'type: chore'
+  color: 6a737d
+  description: Maintenance pull request
+- name: 'type: refactor'
+  color: 8a63d2
+  description: Refactor pull request
+- name: 'type: docs'
+  color: 0366d6
+  description: Documentation pull request
+- name: 'type: test'
+  color: fbca04
+  description: Test coverage pull request
+- name: 'type: perf'
+  color: c2e0c6
+  description: Performance pull request
+- name: 'type: build'
+  color: 1d76db
+  description: Build system pull request
+- name: 'type: ci'
+  color: 5319e7
+  description: CI workflow pull request
+- name: 'type: revert'
+  color: b60205
+  description: Revert pull request
+- name: 'release: none'
+  color: bfdadc
+  description: No release impact
+- name: 'release: patch'
+  color: fbca04
+  description: Patch release impact
+- name: 'release: minor'
+  color: 0e8a16
+  description: Minor release impact
+- name: 'release: major'
+  color: b60205
+  description: Major release impact
+- name: breaking-change
+  color: b60205
+  description: Pull request includes a breaking change
+- name: 'release: ignore'
+  color: ededed
+  description: Exclude this pull request from release note generation

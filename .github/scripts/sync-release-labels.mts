@@ -140,7 +140,10 @@ async function addReleaseLabel(
   );
 
   if (!response.ok) {
-    throw new Error(`Unable to add "${name}" label: ${response.status}`);
+    const body = await response.text();
+    throw new Error(
+      `Unable to add "${name}" label: ${response.status}${body ? ` ${body}` : ''}`
+    );
   }
 }
 

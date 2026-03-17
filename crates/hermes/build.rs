@@ -42,6 +42,10 @@ fn emit_link_search(path: PathBuf) {
     }
 }
 
+fn emit_static_link(lib: &str) {
+    println!("cargo:rustc-link-lib=static={lib}");
+}
+
 fn is_hermes_root(path: &Path) -> bool {
     path.join("CMakeLists.txt").exists()
         && path.join("include").exists()
@@ -147,12 +151,12 @@ fn main() {
 
     // GNU ld resolves static libraries left-to-right, so dependencies must
     // come after the Hermes libraries that reference them.
-    println!("cargo:rustc-link-lib=hermesSourceMap");
-    println!("cargo:rustc-link-lib=hermesParser");
-    println!("cargo:rustc-link-lib=hermesAST");
-    println!("cargo:rustc-link-lib=hermesRegex");
-    println!("cargo:rustc-link-lib=hermesPlatformUnicode");
-    println!("cargo:rustc-link-lib=hermesSupport");
-    println!("cargo:rustc-link-lib=LLVHSupport");
-    println!("cargo:rustc-link-lib=dtoa");
+    emit_static_link("hermesSourceMap");
+    emit_static_link("hermesParser");
+    emit_static_link("hermesAST");
+    emit_static_link("hermesRegex");
+    emit_static_link("hermesPlatformUnicode");
+    emit_static_link("hermesSupport");
+    emit_static_link("LLVHSupport");
+    emit_static_link("dtoa");
 }

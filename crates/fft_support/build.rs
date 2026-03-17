@@ -42,6 +42,10 @@ fn emit_link_search(path: PathBuf) {
     }
 }
 
+fn emit_static_link(lib: &str) {
+    println!("cargo:rustc-link-lib=static={lib}");
+}
+
 fn is_hermes_root(path: &Path) -> bool {
     path.join("CMakeLists.txt").exists()
         && path.join("include").exists()
@@ -134,7 +138,7 @@ fn main() {
 
     let dst = config.build_target("hermesSupport").build();
     emit_link_search(dst.join("build/lib/Support"));
-    println!("cargo:rustc-link-lib=hermesSupport");
+    emit_static_link("hermesSupport");
     emit_link_search(dst.join("build/external/dtoa"));
-    println!("cargo:rustc-link-lib=dtoa");
+    emit_static_link("dtoa");
 }

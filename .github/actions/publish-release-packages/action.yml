@@ -62,30 +62,26 @@ runs:
       if: ${{ inputs.publish-mode == 'stable' && inputs.npm-token == '' }}
       run: |
         cd packages/core
-        pnpm publish --no-git-checks --tag latest
+        npm publish --tag latest --access public
       shell: bash
 
     - name: Publish release packages for stable bootstrap
       if: ${{ inputs.publish-mode == 'stable' && inputs.npm-token != '' }}
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
         cd packages/core
-        pnpm publish --no-git-checks --tag latest
+        npm publish --tag latest --access public
       shell: bash
 
     - name: Publish release packages for canary release
       if: ${{ inputs.publish-mode == 'canary' && inputs.npm-token == '' }}
       run: |
         cd packages/core
-        pnpm publish --no-git-checks --tag canary
+        npm publish --tag canary --access public
       shell: bash
 
     - name: Publish release packages for canary bootstrap
       if: ${{ inputs.publish-mode == 'canary' && inputs.npm-token != '' }}
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
         cd packages/core
-        pnpm publish --no-git-checks --tag canary
+        npm publish --tag canary --access public
       shell: bash

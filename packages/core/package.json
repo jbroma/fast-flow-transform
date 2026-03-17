@@ -98,7 +98,8 @@
     "build:bindings": "napi build --platform --release --manifest-path ../../crates/fft_node/Cargo.toml --package-json-path package.json --output-dir binding --js bindings.cjs --dts bindings.d.cts",
     "postpack": "node ../../scripts/release/cleanup-package-assets.mts",
     "prepack": "pnpm run build && node ../../scripts/release/stage-package-assets.mts",
-    "prepublishOnly": "napi pre-publish -t npm --package-json-path package.json --npm-dir ../../bindings",
+    "publish:bindings": "napi pre-publish -t npm --no-gh-release --package-json-path package.json --npm-dir ../../bindings",
+    "prepublishOnly": "pnpm run publish:bindings",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "version:napi": "napi version --package-json-path package.json --npm-dir ../../bindings"

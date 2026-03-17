@@ -49,12 +49,6 @@ jobs:
         if: ${{ steps.plan.outputs.should_release == 'true' }}
         uses: ./.github/actions/setup-pr-ci
 
-      - name: Ensure managed labels exist
-        if: ${{ steps.plan.outputs.should_release == 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node .github/scripts/ensure-managed-labels.mts
-
       - name: Version release packages
         if: ${{ steps.plan.outputs.should_release == 'true' }}
         id: version

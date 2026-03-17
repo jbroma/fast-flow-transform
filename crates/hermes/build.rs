@@ -76,15 +76,27 @@ fn detect_hermes_root() -> PathBuf {
 }
 
 fn configure_target_specific_cmake(config: &mut cmake::Config) {
-    match env::var("TARGET").as_deref() {
+    let target = env::var("TARGET").unwrap_or_default();
+
+    if target.ends_with("-musl") {
+        // Hermes cross-compilation docs recommend the lightweight Unicode
+        // backend when ICU is unavailable in musl toolchains.
+        config.define("HERMES_UNICODE_LITE", "ON");
+        config.define("CMAKE_TRY_COMPILE_TARGET_TYPE", "STATIC_LIBRARY");
+        config.define("CMAKE_SIZEOF_VOID_P", "8");
+        config.cflag("-D_LARGEFILE64_SOURCE");
+        config.cxxflag("-D_LARGEFILE64_SOURCE");
+    }
+
+    match target.as_str() {
         // Cross builds inherit the host processor here, so pin Boost.Context
         // to the ARM64 ELF backend instead of letting it default to x86_64.
-        Ok("aarch64-unknown-linux-gnu") => {
+        "aarch64-unknown-linux-gnu" | "aarch64-unknown-linux-musl" => {
             config.define("BOOST_CONTEXT_ARCHITECTURE", "arm64");
             config.define("BOOST_CONTEXT_ABI", "aapcs");
             config.define("BOOST_CONTEXT_ASSEMBLER", "gas");
         }
-        Ok("aarch64-pc-windows-msvc") => {
+        "aarch64-pc-windows-msvc" => {
             config.define("BOOST_CONTEXT_ARCHITECTURE", "arm64");
             config.define("BOOST_CONTEXT_IMPLEMENTATION", "winfib");
         }

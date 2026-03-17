@@ -22,10 +22,22 @@ runs:
 
     - name: Configure npm registry auth
       if: ${{ inputs.npm-token != '' }}
-      uses: actions/setup-node@v6
-      with:
-        node-version: 24
-        registry-url: https://registry.npmjs.org
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+      run: |
+        cat > "$HOME/.npmrc" <<EOF
+        registry=https://registry.npmjs.org/
+        //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+        always-auth=true
+        provenance=false
+        EOF
+        chmod 0600 "$HOME/.npmrc"
+      shell: bash
+
+    - name: Verify npm registry auth
+      if: ${{ inputs.npm-token != '' }}
+      run: npm whoami
+      shell: bash
 
     - name: Apply canary version
       if: ${{ inputs.publish-mode == 'canary' }}
@@ -57,7 +69,6 @@ runs:
       if: ${{ inputs.publish-mode == 'stable' && inputs.npm-token != '' }}
       env:
         NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
-        npm_config_provenance: 'false'
       run: |
         cd packages/core
         pnpm publish --no-git-checks --tag latest
@@ -74,7 +85,6 @@ runs:
       if: ${{ inputs.publish-mode == 'canary' && inputs.npm-token != '' }}
       env:
         NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
-        npm_config_provenance: 'false'
       run: |
         cd packages/core
         pnpm publish --no-git-checks --tag canary

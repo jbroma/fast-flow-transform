@@ -1,6 +1,6 @@
 [package]
 name = "fft_ast"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Jakub Romanczyk <j.romanczyk@gmail.com>"]
 description = "AST definitions and utilities for fast-flow-transform"
 edition = "2018"

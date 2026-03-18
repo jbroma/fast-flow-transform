@@ -9,10 +9,12 @@
       "fast-flow-transform",
       "fast-flow-transform-darwin-arm64",
       "fast-flow-transform-darwin-x64",
-      "fast-flow-transform-linux-arm64",
-      "fast-flow-transform-linux-x64",
-      "fast-flow-transform-win32-arm64",
-      "fast-flow-transform-win32-x64"
+      "fast-flow-transform-linux-arm64-gnu",
+      "fast-flow-transform-linux-arm64-musl",
+      "fast-flow-transform-linux-x64-gnu",
+      "fast-flow-transform-linux-x64-musl",
+      "fast-flow-transform-win32-arm64-msvc",
+      "fast-flow-transform-win32-x64-msvc"
     ]
   ],
   "ignore": [],

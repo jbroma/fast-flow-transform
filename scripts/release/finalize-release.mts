@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 const RELEASE_BOT_EMAIL =
   '41898282+github-actions[bot]@users.noreply.github.com';
@@ -8,15 +9,39 @@ function commandName(name: 'git' | 'gh'): string {
   return process.platform === 'win32' ? `${name}.cmd` : name;
 }
 
-function requiredFlag(name: string): string {
+interface PackageManifest {
+  version: string;
+}
+
+function flagValue(name: string): string | null {
   const flagIndex = process.argv.indexOf(name);
   const value = flagIndex === -1 ? null : process.argv[flagIndex + 1];
 
-  if (!value) {
-    throw new Error(`Missing required flag: ${name}`);
+  return value || null;
+}
+
+function readPackageManifest(path: string): PackageManifest {
+  return JSON.parse(readFileSync(path, 'utf8')) as PackageManifest;
+}
+
+function releaseVersion(): string {
+  const version =
+    flagValue('--version') ??
+    readPackageManifest('packages/core/package.json').version;
+
+  if (!version) {
+    throw new Error(
+      'Unable to determine release version from --version or packages/core/package.json'
+    );
   }
 
-  return value;
+  return version;
+}
+
+function assertStableVersion(version: string): void {
+  if (version.includes('-canary')) {
+    throw new Error(`Refusing to finalize canary release: ${version}`);
+  }
 }
 
 function run(
@@ -161,7 +186,8 @@ function ensureGitHubRelease(tag: string): void {
 }
 
 function main(): void {
-  const version = requiredFlag('--version');
+  const version = releaseVersion();
+  assertStableVersion(version);
   const tag = ensureReleaseTag(version);
   ensureGitHubRelease(tag);
 }

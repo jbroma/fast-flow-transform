@@ -1,0 +1,44 @@
+name: finalize-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: Branch, tag, or exact commit SHA from this repository to finalize.
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      target_ref:
+        description: Branch, tag, or exact commit SHA from this repository to finalize.
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.target_ref || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finalize-release:
+    name: finalize-release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target_ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/release/finalize-release.mts

@@ -6,11 +6,6 @@ inputs:
     description: Release mode, either stable or canary.
     required: true
 
-outputs:
-  release_version:
-    description: Published stable version, if this was a stable release.
-    value: ${{ steps.version.outputs.release_version }}
-
 runs:
   using: composite
   steps:
@@ -26,12 +21,6 @@ runs:
     - name: Apply canary version
       if: ${{ inputs.publish-mode == 'canary' }}
       run: node scripts/release/apply-release-version.mts --canary
-      shell: bash
-
-    - name: Read release version
-      id: version
-      run: |
-        echo "release_version=$(node -p 'require(\"./packages/core/package.json\").version')" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Regenerate binding package directories

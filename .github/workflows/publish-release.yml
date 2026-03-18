@@ -178,8 +178,6 @@ jobs:
       - build-windows-artifacts
     if: ${{ needs.prepare-publish.result == 'success' }}
     runs-on: ubuntu-24.04
-    outputs:
-      release_version: ${{ steps.publish.outputs.release_version }}
 
     steps:
       - name: Check out repository
@@ -207,23 +205,9 @@ jobs:
       - prepare-publish
       - publish-release-packages
     if: ${{ needs.prepare-publish.result == 'success' && needs.prepare-publish.outputs.publish_mode == 'stable' }}
-    runs-on: ubuntu-24.04
     permissions:
       contents: write
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - name: Create tag and GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/release/finalize-release.mts --version "${{ needs.publish-release-packages.outputs.release_version }}"
+    uses: ./.github/workflows/finalize-release.yml
+    with:
+      target_ref: ${{ needs.prepare-publish.outputs.checkout_ref }}
+    secrets: inherit

@@ -41,7 +41,7 @@ jobs:
       - name: Read release version
         id: version
         run: |
-          echo "release_version=$(node -p 'require(\"./packages/core/package.json\").version')" >> "$GITHUB_OUTPUT"
+          echo "release_version=$(node -p 'require("./packages/core/package.json").version')" >> "$GITHUB_OUTPUT"
 
       - name: Create tag and GitHub Release
         env:

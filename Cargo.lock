@@ -104,7 +104,7 @@ checksum = "f678cf4a922c215c63e0de95eb1ff08a958a81d47e485cf9da1e27bf6305cfa5"
 
 [[package]]
 name = "fft"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "fft_ast",
  "fft_support",
@@ -116,7 +116,7 @@ dependencies = [
 
 [[package]]
 name = "fft_ast"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "fft_support",
  "libc",
@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "fft_node"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "fft",
@@ -140,7 +140,7 @@ dependencies = [
 
 [[package]]
 name = "fft_pass"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "fft",
  "fft_support",
@@ -148,7 +148,7 @@ dependencies = [
 
 [[package]]
 name = "fft_support"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -257,7 +257,7 @@ dependencies = [
 
 [[package]]
 name = "hermes"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "cmake",
  "fft_support",

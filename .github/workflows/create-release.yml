@@ -55,8 +55,6 @@ jobs:
         run: |
           pnpm changeset version
           node scripts/release/apply-release-version.mts
-          pnpm --dir packages/core exec napi create-npm-dirs --package-json-path package.json --npm-dir ../../bindings
-          pnpm --dir packages/core exec napi build --platform --release --manifest-path ../../crates/fft_node/Cargo.toml --package-json-path package.json --output-dir binding --js bindings.cjs --dts bindings.d.cts
           pnpm install --lockfile-only --ignore-scripts
           cargo generate-lockfile
 
@@ -69,8 +67,6 @@ jobs:
             crates/**/Cargo.toml
             bindings/**/README.md
             bindings/**/package.json
-            packages/core/binding/bindings.cjs
-            packages/core/binding/bindings.d.cts
             packages/core/package.json
             pnpm-lock.yaml
           base: main

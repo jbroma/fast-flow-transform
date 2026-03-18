@@ -38,12 +38,6 @@ function releaseVersion(): string {
   return version;
 }
 
-function assertStableVersion(version: string): void {
-  if (version.includes('-canary')) {
-    throw new Error(`Refusing to finalize canary release: ${version}`);
-  }
-}
-
 function run(
   command: string,
   args: string[],
@@ -187,7 +181,6 @@ function ensureGitHubRelease(tag: string): void {
 
 function main(): void {
   const version = releaseVersion();
-  assertStableVersion(version);
   const tag = ensureReleaseTag(version);
   ensureGitHubRelease(tag);
 }

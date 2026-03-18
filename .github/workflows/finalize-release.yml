@@ -38,7 +38,12 @@ jobs:
         with:
           node-version: 24
 
+      - name: Read release version
+        id: version
+        run: |
+          echo "release_version=$(node -p 'require(\"./packages/core/package.json\").version')" >> "$GITHUB_OUTPUT"
+
       - name: Create tag and GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/release/finalize-release.mts
+        run: node scripts/release/finalize-release.mts --version "${{ steps.version.outputs.release_version }}"

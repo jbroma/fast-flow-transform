@@ -55,7 +55,6 @@ jobs:
         run: |
           pnpm changeset version
           node scripts/release/apply-release-version.mts
-          pnpm exec oxfmt -c .oxfmtrc.json packages/core/package.json bindings/*/package.json
           pnpm install --lockfile-only --ignore-scripts
           cargo update --workspace
 

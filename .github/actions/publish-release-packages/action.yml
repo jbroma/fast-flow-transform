@@ -17,6 +17,12 @@ runs:
     - name: Set up workspace
       uses: ./.github/actions/setup-pr-ci
 
+    - name: Configure npm registry for trusted publishing
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        registry-url: https://registry.npmjs.org
+
     - name: Apply canary version
       if: ${{ inputs.publish-mode == 'canary' }}
       run: node scripts/release/apply-release-version.mts --canary

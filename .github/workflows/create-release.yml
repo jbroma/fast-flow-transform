@@ -55,8 +55,9 @@ jobs:
         run: |
           pnpm changeset version
           node scripts/release/apply-release-version.mts
+          pnpm exec oxfmt -c .oxfmtrc.json packages/core/package.json bindings/*/package.json
           pnpm install --lockfile-only --ignore-scripts
-          cargo generate-lockfile
+          cargo update --workspace
 
       - name: Create or update release PR
         if: ${{ steps.plan.outputs.should_release == 'true' }}

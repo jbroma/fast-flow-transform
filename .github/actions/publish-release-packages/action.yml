@@ -2,9 +2,6 @@ name: Publish Release Packages
 description: Build and publish the release package set for a release.
 
 inputs:
-  npm-token:
-    description: Optional npm token for bootstrapping first-time package publishes.
-    required: false
   publish-mode:
     description: Release mode, either stable or canary.
     required: true
@@ -19,25 +16,6 @@ runs:
   steps:
     - name: Set up workspace
       uses: ./.github/actions/setup-pr-ci
-
-    - name: Configure npm registry auth
-      if: ${{ inputs.npm-token != '' }}
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
-      run: |
-        cat > "$HOME/.npmrc" <<EOF
-        registry=https://registry.npmjs.org/
-        //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
-        always-auth=true
-        provenance=false
-        EOF
-        chmod 0600 "$HOME/.npmrc"
-      shell: bash
-
-    - name: Verify npm registry auth
-      if: ${{ inputs.npm-token != '' }}
-      run: npm whoami
-      shell: bash
 
     - name: Apply canary version
       if: ${{ inputs.publish-mode == 'canary' }}
@@ -58,30 +36,13 @@ runs:
       run: pnpm --dir packages/core exec napi artifacts --package-json-path package.json --npm-dir ../../bindings --output-dir ../../artifacts
       shell: bash
 
-    - name: Publish release packages for stable release
-      if: ${{ inputs.publish-mode == 'stable' && inputs.npm-token == '' }}
+    - name: Publish release packages
       run: |
         cd packages/core
-        npm publish --tag latest --access public
-      shell: bash
+        if [ "${{ inputs.publish-mode }}" = "stable" ]; then
+          npm publish --tag latest --access public
+          exit 0
+        fi
 
-    - name: Publish release packages for stable bootstrap
-      if: ${{ inputs.publish-mode == 'stable' && inputs.npm-token != '' }}
-      run: |
-        cd packages/core
-        npm publish --tag latest --access public
-      shell: bash
-
-    - name: Publish release packages for canary release
-      if: ${{ inputs.publish-mode == 'canary' && inputs.npm-token == '' }}
-      run: |
-        cd packages/core
-        npm publish --tag canary --access public
-      shell: bash
-
-    - name: Publish release packages for canary bootstrap
-      if: ${{ inputs.publish-mode == 'canary' && inputs.npm-token != '' }}
-      run: |
-        cd packages/core
         npm publish --tag canary --access public
       shell: bash

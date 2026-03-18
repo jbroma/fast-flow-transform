@@ -131,7 +131,7 @@ function changesetSummary(
     'Prepare a synchronized package release.',
     '',
     `- Release impact: \`${impact}\``,
-    `- Previous tag: ${sinceTag ? `\`${sinceTag}\`` : 'none (bootstrap release)'}`,
+    `- Previous tag: ${sinceTag ? `\`${sinceTag}\`` : 'none (first release)'}`,
     '',
     'Included pull requests:',
   ];

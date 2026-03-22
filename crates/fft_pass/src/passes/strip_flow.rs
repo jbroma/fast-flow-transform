@@ -25,12 +25,14 @@ impl Default for ReactRuntimeTarget {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StripFlowOptions {
+    pub remove_empty_imports: bool,
     pub react_runtime_target: ReactRuntimeTarget,
 }
 
 impl Default for StripFlowOptions {
     fn default() -> Self {
         Self {
+            remove_empty_imports: true,
             react_runtime_target: Default::default(),
         }
     }
@@ -59,6 +61,25 @@ impl StripFlow {
 
     pub fn with_options(options: StripFlowOptions) -> Self {
         Self { options }
+    }
+
+    fn should_remove_empty_import<'gc>(&self, decl: &'gc ImportDeclaration<'gc>) -> bool {
+        if !self.options.remove_empty_imports
+            || decl.import_kind != ImportKind::Value
+            || decl.specifiers.is_empty()
+        {
+            return false;
+        }
+
+        decl.specifiers.iter().all(|specifier| {
+            matches!(
+                specifier,
+                Node::ImportSpecifier(ImportSpecifier {
+                    import_kind,
+                    ..
+                }) if *import_kind != ImportKind::Value
+            )
+        })
     }
 
     fn lower_component_declaration<'gc>(
@@ -410,6 +431,9 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
 
             Node::ImportDeclaration(decl) => {
                 if decl.import_kind != ImportKind::Value {
+                    return TransformResult::Removed;
+                }
+                if self.should_remove_empty_import(decl) {
                     return TransformResult::Removed;
                 }
             }

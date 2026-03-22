@@ -25,6 +25,7 @@ pub struct TransformRequest {
     pub dialect: String,
     pub format: String,
     pub comments: bool,
+    pub remove_empty_imports: bool,
     pub react_runtime_target: String,
     pub sourcemap: bool,
 }
@@ -199,6 +200,7 @@ fn transform_once(
     })?;
 
     let transformed = PassManager::strip_flow_with_options(StripFlowOptions {
+        remove_empty_imports: request.remove_empty_imports,
         react_runtime_target,
     })
     .run(&mut ctx, original.clone());
@@ -276,6 +278,7 @@ mod tests {
             dialect: "flow".to_string(),
             format: "compact".to_string(),
             comments: false,
+            remove_empty_imports: true,
             react_runtime_target: "19".to_string(),
             sourcemap: true,
         }
@@ -291,6 +294,18 @@ mod tests {
         let mut input = request(code);
         input.format = "preserve".to_string();
         input.sourcemap = false;
+        input
+    }
+
+    fn request_without_empty_import_removal(code: &str) -> TransformRequest {
+        let mut input = request(code);
+        input.remove_empty_imports = false;
+        input
+    }
+
+    fn preserve_request_without_empty_import_removal(code: &str) -> TransformRequest {
+        let mut input = preserve_request(code);
+        input.remove_empty_imports = false;
         input
     }
 
@@ -363,6 +378,32 @@ mod tests {
     }
 
     #[test]
+    fn removes_empty_value_imports_by_default_in_reprinter_modes() {
+        let result = transform(&pretty_request(
+            "import { type Foo } from \"./types.js\";\nimport DefaultThing, { type Bar, typeof Baz, } from \"./mixed.js\";\nconst value: number = 1;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "import DefaultThing from './mixed.js';\nconst value = 1;\n"
+        );
+    }
+
+    #[test]
+    fn preserves_empty_value_imports_when_requested_in_reprinter_modes() {
+        let result = transform(&request_without_empty_import_removal(
+            "import { type Foo } from \"./types.js\";\nimport DefaultThing, { type Bar, typeof Baz, } from \"./mixed.js\";\nconst value: number = 1;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "import './types.js';import DefaultThing from './mixed.js';const value=1;\n"
+        );
+    }
+
+    #[test]
     fn rejects_invalid_dialect() {
         let mut input = request("const x = 1;");
         input.dialect = "javascript".to_string();
@@ -394,6 +435,19 @@ mod tests {
         assert_eq!(
             result.code,
             "import { Foo } from \"./mod.js\";\nimport DefaultThing from \"./mod.js\";\n\nexport default Foo;\n"
+        );
+    }
+
+    #[test]
+    fn preserves_empty_value_imports_when_requested_in_preserve_mode() {
+        let result = transform(&preserve_request_without_empty_import_removal(
+            "import { type OnlyType } from \"./mod.js\";\nimport DefaultThing, {\n  type Qux,\n  typeof Quux,\n} from \"./mod.js\";\nexport default DefaultThing;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "import \"./mod.js\";\nimport DefaultThing from \"./mod.js\";\nexport default DefaultThing;\n"
         );
     }
 

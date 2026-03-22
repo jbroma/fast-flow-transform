@@ -69,6 +69,7 @@ describe('CLI runner', () => {
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
       filename: '/repo/src/input.js',
+      removeEmptyImports: true,
       source: 'const answer: number = 42;',
       sourcemap: false,
     });
@@ -112,6 +113,7 @@ describe('CLI runner', () => {
       dialect: 'flow',
       filename: '/repo/src/input.js',
       format: 'pretty',
+      removeEmptyImports: true,
       source: 'const answer: number = 42;',
       sourcemap: true,
     });
@@ -139,6 +141,7 @@ describe('CLI runner', () => {
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
       filename: '/repo/src/input.js',
+      removeEmptyImports: true,
       source: 'const answer: number = 42;',
       sourcemap: false,
     });
@@ -163,6 +166,7 @@ describe('CLI runner', () => {
       comments: true,
       filename: '/repo/src/input.js',
       format: 'preserve',
+      removeEmptyImports: true,
       source: 'const answer: number = 42;',
       sourcemap: false,
     });
@@ -183,6 +187,7 @@ describe('CLI runner', () => {
     expect(transform).toHaveBeenCalledWith({
       comments: true,
       filename: '/repo/src/input.js',
+      removeEmptyImports: true,
       source: '/* keep */\nconst answer: number = 42;',
       sourcemap: false,
     });
@@ -225,10 +230,44 @@ describe('CLI runner', () => {
     expect(transform).toHaveBeenCalledWith({
       filename: '/repo/src/input.js',
       inputSourceMap: inputMap,
+      removeEmptyImports: true,
       source: 'const answer: number = 42;',
       sourcemap: true,
     });
     expect(writeFile).toHaveBeenCalledTimes(2);
+  });
+
+  it('forwards --no-remove-empty-imports to transform', async () => {
+    const { deps, readFile, stdout, transform, writeFile } = createDeps();
+    readFile.mockResolvedValue("import { type Foo } from './types.js';");
+    transform.mockResolvedValue({
+      code: "import './types.js';\n",
+    });
+
+    const exitCode = await runCli(
+      ['src/input.js', '--no-remove-empty-imports'],
+      deps
+    );
+
+    expect(exitCode).toBe(0);
+    expect(transform).toHaveBeenCalledWith({
+      filename: '/repo/src/input.js',
+      removeEmptyImports: false,
+      source: "import { type Foo } from './types.js';",
+      sourcemap: false,
+    });
+    expect(stdout).toEqual(["import './types.js';\n"]);
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('prints help text including remove-empty-imports flags', async () => {
+    const { deps, stdout } = createDeps();
+
+    const exitCode = await runCli(['--help'], deps);
+
+    expect(exitCode).toBe(0);
+    expect(stdout.join('')).toContain('--remove-empty-imports');
+    expect(stdout.join('')).toContain('--no-remove-empty-imports');
   });
 
   it('reports an error when --source-map is enabled without a file destination', async () => {

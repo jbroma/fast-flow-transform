@@ -3,7 +3,6 @@ import * as React from 'react';
 // Regular import
 import {Something as Something} from 'some-module';
 // Regular import with types only
-import 'some-module';
 // Mixed default and named type only imports
 import DefaultImport from 'some-module';
 // Import types

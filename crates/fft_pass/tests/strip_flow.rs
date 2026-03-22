@@ -44,6 +44,43 @@ fn imports_exports() {
 }
 
 #[test]
+fn removes_empty_value_imports_by_default() {
+    assert_strip(
+        r#"
+            import { type X } from "types-only";
+            import DefaultThing, { type Y, typeof Z, } from "mixed";
+            import {} from "keep-empty";
+            import type { TypeOnly } from "decl-only";
+        "#,
+        r#"
+            import DefaultThing from "mixed";
+            import {} from "keep-empty";
+        "#,
+    );
+}
+
+#[test]
+fn preserves_empty_value_imports_when_remove_empty_imports_is_false() {
+    assert_strip_with_options(
+        r#"
+            import { type X } from "types-only";
+            import DefaultThing, { type Y, typeof Z, } from "mixed";
+            import {} from "keep-empty";
+            import type { TypeOnly } from "decl-only";
+        "#,
+        r#"
+            import "types-only";
+            import DefaultThing from "mixed";
+            import {} from "keep-empty";
+        "#,
+        StripFlowOptions {
+            remove_empty_imports: false,
+            ..Default::default()
+        },
+    );
+}
+
+#[test]
 fn declare() {
     assert_strip(
         r#"

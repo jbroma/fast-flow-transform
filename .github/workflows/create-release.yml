@@ -68,6 +68,7 @@ jobs:
             crates/**/Cargo.toml
             bindings/**/README.md
             bindings/**/package.json
+            packages/core/binding/bindings.cjs
             packages/core/package.json
             pnpm-lock.yaml
           base: main

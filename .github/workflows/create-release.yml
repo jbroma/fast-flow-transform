@@ -55,6 +55,7 @@ jobs:
         run: |
           pnpm changeset version
           node scripts/release/apply-release-version.mts
+          pnpm --dir packages/core exec napi create-npm-dirs --package-json-path package.json --npm-dir ../../bindings
           pnpm install --lockfile-only --ignore-scripts
           cargo update --workspace
 

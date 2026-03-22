@@ -18,6 +18,10 @@ This repo uses **Ultracite**, **Oxlint**, and **Oxfmt** for JS/TS work.
 
 - Run `pnpm check` before completion for JS/TS changes.
 - Always request escalated sandbox permissions before running `pnpm install`.
+- PR titles must be reviewer-facing summaries, not copied commit subjects.
+  Use plain English in sentence case and describe the behavior change clearly.
+  Do not use Conventional Commit prefixes like `fix(...)` or `feat(...)` in PR
+  titles.
 - Skip TDD for repository plumbing work such as contributor scripts, local
   tooling, docs, release helpers, and other repo-only infrastructure. Use TDD
   for changes that affect FFT's shipped behavior, runtime output, APIs, parser

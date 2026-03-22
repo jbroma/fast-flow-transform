@@ -61,6 +61,22 @@ impl StripFlow {
         Self { options }
     }
 
+    fn should_remove_empty_import<'gc>(&self, decl: &'gc ImportDeclaration<'gc>) -> bool {
+        if decl.import_kind != ImportKind::Value || decl.specifiers.is_empty() {
+            return false;
+        }
+
+        decl.specifiers.iter().all(|specifier| {
+            matches!(
+                specifier,
+                Node::ImportSpecifier(ImportSpecifier {
+                    import_kind,
+                    ..
+                }) if *import_kind != ImportKind::Value
+            )
+        })
+    }
+
     fn lower_component_declaration<'gc>(
         &self,
         gc: &'gc GCLock<'_, '_>,
@@ -410,6 +426,9 @@ impl<'gc> VisitorMut<'gc> for StripFlow {
 
             Node::ImportDeclaration(decl) => {
                 if decl.import_kind != ImportKind::Value {
+                    return TransformResult::Removed;
+                }
+                if self.should_remove_empty_import(decl) {
                     return TransformResult::Removed;
                 }
             }

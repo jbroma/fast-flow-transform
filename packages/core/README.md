@@ -29,6 +29,9 @@ const result = await transform({
 The programmatic API returns `{ code: string, map?: SourceMapLike }`. `map` is
 present when source maps are enabled.
 
+FFT always removes value imports that become empty after Flow stripping. This
+avoids preserving type-only imports as runtime side-effect imports.
+
 Programmatic options:
 
 | Property             | Required | Type                                            | Default         | Description                                                                       |
@@ -89,6 +92,9 @@ fast-flow-transform src/input.js \
 
 Without `--out-file`, transformed code goes to stdout. Source maps are off by
 default unless you pass `--source-map` or `--source-map-file`.
+
+FFT always removes value imports that become empty after Flow stripping. This
+avoids preserving type-only imports as runtime side-effect imports.
 
 ## Preserve Format
 

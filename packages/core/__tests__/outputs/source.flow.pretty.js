@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {Something as Something} from 'some-module';
-import 'some-module';
 import DefaultImport from 'some-module';
 async function test(x, y, z = 123) {
   return await x;

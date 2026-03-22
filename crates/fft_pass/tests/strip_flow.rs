@@ -44,6 +44,22 @@ fn imports_exports() {
 }
 
 #[test]
+fn removes_empty_value_imports_by_default() {
+    assert_strip(
+        r#"
+            import { type X } from "types-only";
+            import DefaultThing, { type Y, typeof Z, } from "mixed";
+            import {} from "keep-empty";
+            import type { TypeOnly } from "decl-only";
+        "#,
+        r#"
+            import DefaultThing from "mixed";
+            import {} from "keep-empty";
+        "#,
+    );
+}
+
+#[test]
 fn declare() {
     assert_strip(
         r#"

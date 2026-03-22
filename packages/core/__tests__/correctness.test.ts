@@ -169,4 +169,24 @@ describe('transform correctness snapshots', () => {
       assertParsesAsModule(result.code, `${snapshotCase.snapshotFile}.mjs`);
     }
   });
+
+  it('removes type-only value imports by default to avoid circular runtime edges', async () => {
+    const result = await fft({
+      filename: 'RCTNetworking.ios.js',
+      format: 'pretty',
+      source:
+        "import RCTDeviceEventEmitter from '../EventEmitter/RCTDeviceEventEmitter';\nimport {type EventSubscription} from '../vendor/emitter/EventEmitter';\nimport convertRequestBody, {type RequestBody} from './convertRequestBody';\nimport NativeNetworkingIOS from './NativeNetworkingIOS';\nimport {type RCTNetworkingEventDefinitions} from './RCTNetworkingEventDefinitions.flow';\nimport {type NativeResponseType} from './XMLHttpRequest';\nconst value: number = 1;\n",
+      sourcemap: false,
+    } as never);
+
+    expect(result.code).toContain(
+      "import RCTDeviceEventEmitter from '../EventEmitter/RCTDeviceEventEmitter';"
+    );
+    expect(result.code).toContain(
+      "import convertRequestBody from './convertRequestBody';"
+    );
+    expect(result.code).not.toContain('../vendor/emitter/EventEmitter');
+    expect(result.code).not.toContain('./RCTNetworkingEventDefinitions.flow');
+    expect(result.code).not.toContain('./XMLHttpRequest');
+  });
 });

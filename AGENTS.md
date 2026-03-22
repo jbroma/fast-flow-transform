@@ -18,6 +18,15 @@ This repo uses **Ultracite**, **Oxlint**, and **Oxfmt** for JS/TS work.
 
 - Run `pnpm check` before completion for JS/TS changes.
 - Always request escalated sandbox permissions before running `pnpm install`.
+- For PRs, follow this quick title guide so `pr-hygiene` passes and labels sync
+  correctly:
+  - Do use `type: description` for normal changes.
+  - Do use `type!: description` when the PR includes a breaking change.
+  - Do choose one of these PR title types: `feat`, `fix`, `chore`,
+    `refactor`, `docs`, `test`, `perf`, `build`, `ci`, `revert`.
+  - Do leave scopes out of PR titles; this repo's CI accepts type-only prefixes.
+  - Do make the description reviewer-friendly and specific about the behavior
+    change after the prefix.
 - Skip TDD for repository plumbing work such as contributor scripts, local
   tooling, docs, release helpers, and other repo-only infrastructure. Use TDD
   for changes that affect FFT's shipped behavior, runtime output, APIs, parser

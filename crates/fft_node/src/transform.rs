@@ -363,6 +363,19 @@ mod tests {
     }
 
     #[test]
+    fn removes_empty_value_imports_by_default_in_reprinter_modes() {
+        let result = transform(&pretty_request(
+            "import { type Foo } from \"./types.js\";\nimport DefaultThing, { type Bar, typeof Baz, } from \"./mixed.js\";\nconst value: number = 1;\n",
+        ))
+        .expect("transform should succeed");
+
+        assert_eq!(
+            result.code,
+            "import DefaultThing from './mixed.js';\nconst value = 1;\n"
+        );
+    }
+
+    #[test]
     fn rejects_invalid_dialect() {
         let mut input = request("const x = 1;");
         input.dialect = "javascript".to_string();

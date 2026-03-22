@@ -1,6 +1,6 @@
 [package]
 name = "hermes"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Jakub Romanczyk <j.romanczyk@gmail.com>"]
 description = "Rust bindings for the Hermes parser used by fast-flow-transform"
 edition = "2018"

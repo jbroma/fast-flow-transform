@@ -1,6 +1,6 @@
 [package]
 name = "fft_pass"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Jakub Romanczyk <j.romanczyk@gmail.com>"]
 description = "Transformation passes for fast-flow-transform"
 edition = "2018"

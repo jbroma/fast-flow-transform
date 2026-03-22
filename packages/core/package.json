@@ -1,6 +1,6 @@
 {
   "name": "fast-flow-transform",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Native Hermes/FFT Flow stripping transform with webpack, rspack, rsbuild, Parcel, Vite, Rollup, Rolldown, and esbuild adapters",
   "keywords": [
     "esbuild",

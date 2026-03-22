@@ -1,6 +1,6 @@
 {
   "name": "fast-flow-transform-win32-arm64-msvc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "cpu": [
     "arm64"
   ],

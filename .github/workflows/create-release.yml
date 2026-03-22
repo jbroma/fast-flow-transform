@@ -70,6 +70,7 @@ jobs:
             bindings/**/README.md
             bindings/**/package.json
             packages/core/binding/bindings.cjs
+            packages/core/binding/bindings.d.cts
             packages/core/package.json
             pnpm-lock.yaml
           base: main

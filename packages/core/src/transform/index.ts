@@ -69,7 +69,6 @@ function transformRequest(
     dialect: options.dialect,
     filename: resolvedFilename(input.filename),
     format: options.format,
-    removeEmptyImports: options.removeEmptyImports,
     reactRuntimeTarget: options.reactRuntimeTarget,
     sourcemap: options.sourcemap,
   };

@@ -15,7 +15,6 @@ pub struct BindingTransformRequest {
     pub dialect: String,
     pub format: String,
     pub comments: bool,
-    pub remove_empty_imports: bool,
     pub react_runtime_target: String,
     pub sourcemap: bool,
 }
@@ -37,7 +36,6 @@ fn transform_request(input: BindingTransformRequest) -> TransformRequest {
         dialect: input.dialect,
         format: input.format,
         comments: input.comments,
-        remove_empty_imports: input.remove_empty_imports,
         react_runtime_target: input.react_runtime_target,
         sourcemap: input.sourcemap,
     }

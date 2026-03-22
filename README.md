@@ -64,9 +64,8 @@ console.log(result.code);
 ```
 
 Use this path when you want one-shot Flow stripping inside your own build tools,
-scripts, or codemods. FFT removes type-only value imports by default; pass
-`removeEmptyImports: false` when you want to preserve them as side-effect
-imports instead.
+scripts, or codemods. FFT removes type-only value imports by default so they do
+not survive as runtime side-effect imports.
 
 ## CLI
 
@@ -78,8 +77,8 @@ fast-flow-transform src/input.js \
 
 The CLI reads the input file, runs the same transform API exposed by the
 package, writes transformed code to `--out-file`, and writes a source map when
-requested. It also removes type-only value imports by default; pass
-`--no-remove-empty-imports` to keep the previous side-effect import behavior.
+requested. It also removes type-only value imports by default so they do not
+survive as runtime side-effect imports.
 
 ## Benchmark
 

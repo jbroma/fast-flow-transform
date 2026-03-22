@@ -39,8 +39,6 @@ Options:
   --dialect <value>           flow | flow-detect | flow-unambiguous
   --format <value>            compact | pretty | preserve (default: compact)
   --comments                  Preserve comments during transform output
-  --remove-empty-imports      Remove empty imports after Flow stripping (default: on)
-  --no-remove-empty-imports   Keep empty imports as side-effect imports
   --react-runtime-target <n>  18 | 19
   --source-map                Enable source map output (default: off)
   --no-source-map             Disable source map output
@@ -53,12 +51,6 @@ const BOOLEAN_FLAG_HANDLERS: Record<string, BooleanFlagHandler> = {
   },
   '--comments': (state) => {
     state.rawOptions.comments = true;
-  },
-  '--no-remove-empty-imports': (state) => {
-    state.rawOptions.removeEmptyImports = false;
-  },
-  '--remove-empty-imports': (state) => {
-    state.rawOptions.removeEmptyImports = true;
   },
   '--source-map': (state) => {
     state.rawOptions.sourcemap = true;

@@ -143,7 +143,6 @@ async function prepareCommand(
       ...transformOptionsInput(rawOptions),
       filename: command.inputFile,
       ...(inputSourceMap ? { inputSourceMap } : {}),
-      removeEmptyImports: options.removeEmptyImports,
       source,
       sourcemap: options.sourcemap,
     },

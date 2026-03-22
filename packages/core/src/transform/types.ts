@@ -9,7 +9,6 @@ export interface TransformOptions {
   comments: boolean;
   dialect: Dialect;
   format: Format;
-  removeEmptyImports: boolean;
   reactRuntimeTarget: ReactRuntimeTarget;
   sourcemap: boolean;
 }
@@ -35,7 +34,6 @@ export interface NativeTransformRequest {
   dialect: Dialect;
   filename: string;
   format: Format;
-  removeEmptyImports: boolean;
   reactRuntimeTarget: ReactRuntimeTarget;
   sourcemap: boolean;
 }

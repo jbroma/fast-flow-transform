@@ -6,7 +6,6 @@ export interface BindingTransformRequest {
   dialect: string
   format: string
   comments: boolean
-  removeEmptyImports: boolean
   reactRuntimeTarget: string
   sourcemap: boolean
 }

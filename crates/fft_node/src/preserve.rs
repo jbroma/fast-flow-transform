@@ -17,19 +17,17 @@ struct PreserveCollector<'src> {
     edits: Vec<ByteSpan>,
     error: Option<TransformFailure>,
     line_starts: Vec<usize>,
-    remove_empty_imports: bool,
     source_len: usize,
     source_start: *const u8,
     source_text: &'src [u8],
 }
 
 impl<'src> PreserveCollector<'src> {
-    fn new(source_text: &'src [u8], source_start: *const u8, remove_empty_imports: bool) -> Self {
+    fn new(source_text: &'src [u8], source_start: *const u8) -> Self {
         Self {
             edits: Vec::new(),
             error: None,
             line_starts: line_starts(source_text),
-            remove_empty_imports,
             source_len: source_text.len(),
             source_start,
             source_text,
@@ -361,35 +359,6 @@ impl<'src> PreserveCollector<'src> {
         });
     }
 
-    fn remove_import_clause_for_side_effect<'gc>(
-        &mut self,
-        node: &'gc ast::Node<'gc>,
-        source: &'gc ast::Node<'gc>,
-    ) {
-        let import_span = self.byte_span_for_node(node);
-        let source_span = self.byte_span_for_node(source);
-        let search = &self.source_text[import_span.start..source_span.start];
-        let Some(keyword_offset) = search
-            .windows("import".len())
-            .position(|window| window == b"import")
-        else {
-            return;
-        };
-
-        let start = import_span.start + keyword_offset + "import".len();
-        let mut end = start;
-        while end < source_span.start
-            && matches!(self.source_text.get(end), Some(byte) if byte.is_ascii_whitespace())
-        {
-            end += 1;
-        }
-
-        self.push_span(ByteSpan {
-            start: end,
-            end: source_span.start,
-        });
-    }
-
     fn remove_mixed_imports<'gc>(
         &mut self,
         node: &'gc ast::Node<'gc>,
@@ -416,11 +385,7 @@ impl<'src> PreserveCollector<'src> {
         }
 
         if surviving_named == 0 && !surviving_non_named {
-            if self.remove_empty_imports {
-                self.remove_node_range(node);
-            } else {
-                self.remove_import_clause_for_side_effect(node, decl.source);
-            }
+            self.remove_node_range(node);
             return;
         }
 
@@ -624,11 +589,7 @@ pub fn transform_preserving_layout(
         column: None,
     })?;
 
-    let mut collector = PreserveCollector::new(
-        request.code.as_bytes(),
-        input.as_bytes().as_ptr(),
-        request.remove_empty_imports,
-    );
+    let mut collector = PreserveCollector::new(request.code.as_bytes(), input.as_bytes().as_ptr());
     if !request.comments {
         for comment in parsed.comments() {
             collector.remove_comment_range(comment);

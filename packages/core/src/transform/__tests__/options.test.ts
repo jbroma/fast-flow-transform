@@ -8,7 +8,6 @@ describe('parseOptions', () => {
       dialect: 'flow-detect',
       comments: false,
       format: 'compact',
-      removeEmptyImports: true,
       reactRuntimeTarget: '19',
       sourcemap: true,
     });
@@ -23,24 +22,8 @@ describe('parseOptions', () => {
       dialect: 'flow-detect',
       comments: false,
       format: 'compact',
-      removeEmptyImports: true,
       reactRuntimeTarget: '19',
       sourcemap: false,
-    });
-  });
-
-  it('accepts removeEmptyImports false', () => {
-    expect(
-      parseOptions({
-        removeEmptyImports: false,
-      })
-    ).toEqual({
-      dialect: 'flow-detect',
-      comments: false,
-      format: 'compact',
-      removeEmptyImports: false,
-      reactRuntimeTarget: '19',
-      sourcemap: true,
     });
   });
 
@@ -54,7 +37,6 @@ describe('parseOptions', () => {
       dialect: 'flow-detect',
       comments: true,
       format: 'preserve',
-      removeEmptyImports: true,
       reactRuntimeTarget: '19',
       sourcemap: true,
     });

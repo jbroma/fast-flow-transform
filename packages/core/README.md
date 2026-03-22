@@ -29,6 +29,9 @@ const result = await transform({
 The programmatic API returns `{ code: string, map?: SourceMapLike }`. `map` is
 present when source maps are enabled.
 
+FFT always removes value imports that become empty after Flow stripping. This
+avoids preserving type-only imports as runtime side-effect imports.
+
 Programmatic options:
 
 | Property             | Required | Type                                            | Default         | Description                                                                       |
@@ -37,7 +40,6 @@ Programmatic options:
 | `format`             | No       | `'compact' \| 'pretty' \| 'preserve'`           | `'compact'`     | Output mode. `preserve` is experimental; see [Preserve Format](#preserve-format)  |
 | `dialect`            | No       | `'flow' \| 'flow-detect' \| 'flow-unambiguous'` | `'flow-detect'` | Flow parsing mode                                                                 |
 | `comments`           | No       | `boolean`                                       | `false`         | Preserves ordinary comments in any output mode                                    |
-| `removeEmptyImports` | No       | `boolean`                                       | `true`          | Removes value imports that become empty after Flow type stripping                 |
 | `sourcemap`          | No       | `boolean`                                       | `true`          | Enables or disables FFT's emitted output source map                               |
 | `filename`           | No       | `string`                                        | `'<unknown>'`   | Used in diagnostics and in the emitted source map when you pass a path            |
 | `inputSourceMap`     | No       | `SourceMapLike \| null`                         | none            | Incoming source map from an earlier transform step to merge into FFT's output map |
@@ -67,19 +69,18 @@ package, and:
 
 CLI arguments:
 
-| Argument                                               | Required | Value                                     | Default          | Description                                                                         |
-| ------------------------------------------------------ | -------- | ----------------------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
-| `<input-file>`                                         | Yes      | `path`                                    | n/a              | Source file to transform                                                            |
-| `--format <value>`                                     | No       | `compact`, `pretty`, `preserve`           | `compact`        | Output mode. `preserve` is experimental; see [Preserve Format](#preserve-format)    |
-| `--dialect <value>`                                    | No       | `flow`, `flow-detect`, `flow-unambiguous` | `flow-detect`    | Flow parsing mode                                                                   |
-| `--comments`                                           | No       | flag                                      | `false`          | Preserve ordinary comments in the output                                            |
-| `--remove-empty-imports` / `--no-remove-empty-imports` | No       | flag                                      | `on`             | Remove or preserve value imports that become empty after Flow stripping             |
-| `--source-map` / `--no-source-map`                     | No       | flag                                      | `false`          | Enable or disable FFT's emitted output source map                                   |
-| `--out-file <path>`                                    | No       | `path`                                    | none             | Write transformed code to a file                                                    |
-| `--source-map-file <path>`                             | No       | `path`                                    | `<out-file>.map` | Write the emitted output source map to a specific file and enable source map output |
-| `--input-source-map <path>`                            | No       | `path`                                    | none             | Load an upstream source map JSON file to merge into FFT's emitted output map        |
-| `--react-runtime-target <n>`                           | No       | `18`, `19`                                | `19`             | Only affects Flow `component` lowering                                              |
-| `-h`, `--help`                                         | No       | flag                                      | n/a              | Show help                                                                           |
+| Argument                           | Required | Value                                     | Default          | Description                                                                         |
+| ---------------------------------- | -------- | ----------------------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| `<input-file>`                     | Yes      | `path`                                    | n/a              | Source file to transform                                                            |
+| `--format <value>`                 | No       | `compact`, `pretty`, `preserve`           | `compact`        | Output mode. `preserve` is experimental; see [Preserve Format](#preserve-format)    |
+| `--dialect <value>`                | No       | `flow`, `flow-detect`, `flow-unambiguous` | `flow-detect`    | Flow parsing mode                                                                   |
+| `--comments`                       | No       | flag                                      | `false`          | Preserve ordinary comments in the output                                            |
+| `--source-map` / `--no-source-map` | No       | flag                                      | `false`          | Enable or disable FFT's emitted output source map                                   |
+| `--out-file <path>`                | No       | `path`                                    | none             | Write transformed code to a file                                                    |
+| `--source-map-file <path>`         | No       | `path`                                    | `<out-file>.map` | Write the emitted output source map to a specific file and enable source map output |
+| `--input-source-map <path>`        | No       | `path`                                    | none             | Load an upstream source map JSON file to merge into FFT's emitted output map        |
+| `--react-runtime-target <n>`       | No       | `18`, `19`                                | `19`             | Only affects Flow `component` lowering                                              |
+| `-h`, `--help`                     | No       | flag                                      | n/a              | Show help                                                                           |
 
 ```bash
 fast-flow-transform src/input.js \
@@ -91,6 +92,9 @@ fast-flow-transform src/input.js \
 
 Without `--out-file`, transformed code goes to stdout. Source maps are off by
 default unless you pass `--source-map` or `--source-map-file`.
+
+FFT always removes value imports that become empty after Flow stripping. This
+avoids preserving type-only imports as runtime side-effect imports.
 
 ## Preserve Format
 
@@ -113,7 +117,7 @@ Current limitations:
 
 The adapter entrypoints expose the same canonical transform options where the
 host bundler makes sense of them: `dialect`, `format`, `comments`,
-`removeEmptyImports`, `reactRuntimeTarget`, and `sourcemap`.
+`reactRuntimeTarget`, and `sourcemap`.
 
 Bundler integrations do not all treat `sourcemap` the same way. webpack and
 rspack default to the loader context unless you override them, Parcel follows

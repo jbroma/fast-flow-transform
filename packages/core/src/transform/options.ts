@@ -10,7 +10,6 @@ const DEFAULT_OPTIONS: TransformOptions = Object.freeze({
   comments: false,
   dialect: 'flow-detect',
   format: 'compact',
-  removeEmptyImports: true,
   reactRuntimeTarget: '19',
   sourcemap: true,
 });
@@ -81,10 +80,6 @@ export function parseOptions(
   const sourcemap = validateSourceMapOption(
     options.sourcemap ?? DEFAULT_OPTIONS.sourcemap
   );
-  const removeEmptyImports = validateBooleanOption(
-    'removeEmptyImports',
-    options.removeEmptyImports ?? DEFAULT_OPTIONS.removeEmptyImports
-  );
 
   return {
     comments,
@@ -98,7 +93,6 @@ export function parseOptions(
       'format',
       options.format ?? DEFAULT_OPTIONS.format
     ),
-    removeEmptyImports,
     reactRuntimeTarget: validateStringOption(
       REACT_TARGETS,
       'reactRuntimeTarget',

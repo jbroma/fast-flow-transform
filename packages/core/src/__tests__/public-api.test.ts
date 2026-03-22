@@ -80,7 +80,6 @@ describe('programmatic transform', () => {
       comments: false,
       filename: '<unknown>',
       format: 'compact',
-      removeEmptyImports: true,
       reactRuntimeTarget: '19',
       sourcemap: false,
     });
@@ -215,34 +214,6 @@ describe('programmatic transform', () => {
       comments: false,
       filename: '/tmp/input.js',
       format: 'pretty',
-      removeEmptyImports: true,
-      reactRuntimeTarget: '19',
-      sourcemap: false,
-    });
-  });
-
-  it('forwards removeEmptyImports false to the native binding', async () => {
-    const { bindingTransform } = mockNativeBinding(() =>
-      Promise.resolve({
-        code: "import './types.js';\n",
-      })
-    );
-
-    const { default: transform } = await importTransform();
-    await transform({
-      filename: '/tmp/input.js',
-      removeEmptyImports: false,
-      source: "import { type Node } from './types.js';",
-      sourcemap: false,
-    } as never);
-
-    expect(bindingTransform).toHaveBeenCalledWith({
-      code: "import { type Node } from './types.js';",
-      dialect: 'flow-detect',
-      comments: false,
-      filename: '/tmp/input.js',
-      format: 'compact',
-      removeEmptyImports: false,
       reactRuntimeTarget: '19',
       sourcemap: false,
     });
@@ -277,7 +248,6 @@ describe('programmatic transform', () => {
       comments: true,
       filename: '/tmp/input.js',
       format: 'preserve',
-      removeEmptyImports: true,
       reactRuntimeTarget: '19',
       sourcemap: true,
     });
@@ -304,7 +274,6 @@ describe('programmatic transform', () => {
       comments: true,
       filename: '/tmp/input.js',
       format: 'compact',
-      removeEmptyImports: true,
       reactRuntimeTarget: '19',
       sourcemap: false,
     });

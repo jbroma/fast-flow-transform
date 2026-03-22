@@ -25,14 +25,12 @@ impl Default for ReactRuntimeTarget {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StripFlowOptions {
-    pub remove_empty_imports: bool,
     pub react_runtime_target: ReactRuntimeTarget,
 }
 
 impl Default for StripFlowOptions {
     fn default() -> Self {
         Self {
-            remove_empty_imports: true,
             react_runtime_target: Default::default(),
         }
     }
@@ -64,10 +62,7 @@ impl StripFlow {
     }
 
     fn should_remove_empty_import<'gc>(&self, decl: &'gc ImportDeclaration<'gc>) -> bool {
-        if !self.options.remove_empty_imports
-            || decl.import_kind != ImportKind::Value
-            || decl.specifiers.is_empty()
-        {
+        if decl.import_kind != ImportKind::Value || decl.specifiers.is_empty() {
             return false;
         }
 

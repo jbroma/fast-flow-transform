@@ -26,7 +26,6 @@ interface RawNativeBindingRequest {
   dialect: string;
   filename: string;
   format: string;
-  removeEmptyImports: boolean;
   reactRuntimeTarget: string;
   sourcemap: boolean;
 }
@@ -66,7 +65,6 @@ function normalizeRequest(
     dialect: input.dialect,
     filename: input.filename,
     format: input.format,
-    removeEmptyImports: input.removeEmptyImports,
     reactRuntimeTarget: input.reactRuntimeTarget,
     sourcemap: input.sourcemap,
   };

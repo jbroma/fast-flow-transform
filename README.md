@@ -82,14 +82,14 @@ survive as runtime side-effect imports.
 
 ## Benchmark
 
-![fast-flow-transform benchmark summary](./assets/bench-20260316T183236Z.svg)
+![fast-flow-transform benchmark summary](./assets/bench-20260322T115104Z.svg)
 
 Generated from `bench/fixtures/single-file-flow-preserve.js` with the README
 benchmark workflow. The chart uses 1000 warm iterations per case and reports
 warm `meanMs` only. The SVG footer and JSON record the exact platform, Node
 version, and generation timestamp. Raw timings and cold-start measurements live
 in
-[`assets/bench-20260316T183236Z.json`](./assets/bench-20260316T183236Z.json).
+[`assets/bench-20260322T115104Z.json`](./assets/bench-20260322T115104Z.json).
 
 ## Examples And Docs
 

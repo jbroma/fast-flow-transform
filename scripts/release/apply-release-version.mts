@@ -1,10 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import {
-  appendFileSync,
-  existsSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 
 const CARGO_MANIFEST_PATHS = [
   'crates/fft/Cargo.toml',
@@ -14,7 +9,6 @@ const CARGO_MANIFEST_PATHS = [
   'crates/fft_support/Cargo.toml',
   'crates/hermes/Cargo.toml',
 ];
-const BINDING_ENTRY_PATH = 'packages/core/binding/bindings.cjs';
 
 interface PackageManifest {
   version: string;
@@ -92,30 +86,6 @@ function updateCoreManifest(version: string): void {
   writePackageManifest('packages/core/package.json', manifest);
 }
 
-function rewriteBindingWrapperVersion(source: string, version: string): string {
-  return source
-    .replaceAll(/(bindingPackageVersion !== )'[^']+'/g, `$1'${version}'`)
-    .replaceAll(
-      /(expected )[^ ]+( but got \$\{bindingPackageVersion\})/g,
-      `$1${version}$2`
-    );
-}
-
-function updateBindingWrapper(version: string): void {
-  if (!existsSync(BINDING_ENTRY_PATH)) {
-    return;
-  }
-
-  const source = readFileSync(BINDING_ENTRY_PATH, 'utf8');
-  const nextSource = rewriteBindingWrapperVersion(source, version);
-
-  if (source === nextSource) {
-    return;
-  }
-
-  writeFileSync(BINDING_ENTRY_PATH, nextSource);
-}
-
 function runNapiVersion(): void {
   const result = spawnSync(
     'pnpm',
@@ -162,7 +132,6 @@ function main(): void {
 
   updateCoreManifest(version);
   runNapiVersion();
-  updateBindingWrapper(version);
 
   for (const path of CARGO_MANIFEST_PATHS) {
     updateCargoManifest(path, version);

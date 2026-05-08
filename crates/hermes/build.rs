@@ -21,33 +21,37 @@ fn is_msvc_target() -> bool {
 }
 
 /// Apply `patches/hermes-simple-ilist-empty-bases.patch` to the bundled llvh
-/// `simple_ilist.h` so MSVC actually performs Empty Base Optimization across
-/// the class's two empty bases. Same change being upstreamed at
-/// facebook/hermes#2012; we ship it as a patch file applied at build time
-/// until that PR lands and we can bump the submodule pin past it.
+/// so MSVC actually performs Empty Base Optimization across `simple_ilist`'s
+/// two empty bases. Same change being upstreamed at facebook/hermes#2012; we
+/// ship it as a patch file applied at build time until that PR lands and we
+/// can bump the submodule pin past it.
 ///
-/// Without `__declspec(empty_bases)` MSVC pads each of `simple_ilist`'s two
-/// empty bases with one byte and pointer-aligns the result, shifting the
-/// embedded `Sentinel` member from offset 0 to offset 8. Code that takes
-/// `&simple_ilist` and treats it as `&Sentinel` (such as the Rust FFI iterator
-/// in `crates/hermes/src/parser/node.rs`) then iterates with the wrong head
+/// The patch (a) adds the `LLVM_DECLARE_EMPTY_BASES` macro to llvh's
+/// `Compiler.h` (mirroring the existing `HERMES_EMPTY_BASES` one layer up;
+/// llvh cannot depend on Hermes), and (b) tags `simple_ilist` with that
+/// macro. Without it MSVC pads each of `simple_ilist`'s two empty bases with
+/// one byte and pointer-aligns the result, shifting the embedded `Sentinel`
+/// member from offset 0 to offset 8. Code that takes `&simple_ilist` and
+/// treats it as `&Sentinel` (such as the Rust FFI iterator in
+/// `crates/hermes/src/parser/node.rs`) then iterates with the wrong head
 /// address: linked-list pointers stored by C++ point at `&Sentinel`, but the
 /// Rust side compares against `&simple_ilist`, so the circular list never
-/// terminates and the iterator dereferences the sentinel as if it were a real
-/// node. Manifests as `STATUS_ACCESS_VIOLATION 0xC0000005` during AST
+/// terminates and the iterator dereferences the sentinel as if it were a
+/// real node. Manifests as `STATUS_ACCESS_VIOLATION 0xC0000005` during AST
 /// traversal on Windows. See facebook/hermes#2012 for the full diagnosis.
 ///
 /// Behavior on Hermes submodule bumps:
-/// - Bump that doesn't touch `simple_ilist.h`: idempotency check sees no
-///   `__declspec(empty_bases)`, `git apply` runs cleanly, build proceeds.
+/// - Bump that doesn't touch the patched files: idempotency check sees no
+///   marker, `git apply` runs cleanly, build proceeds.
 /// - Bump that includes the upstream fix (Hermes#2012 merged): idempotency
-///   check sees the attribute already present and returns early. The patch
-///   becomes unnecessary and can be removed at the maintainer's leisure.
-/// - Bump that changes `simple_ilist.h` in some other way: `git apply` fails
-///   with non-zero exit and we panic. Intentional — silently skipping would
-///   produce an unpatched binary that AVs at runtime, which is worse than a
-///   build error. The panic message points the maintainer at the patch file
-///   and at Hermes#2012 so the resolution path is obvious.
+///   check sees `LLVM_DECLARE_EMPTY_BASES simple_ilist` already present and
+///   returns early. The patch becomes unnecessary and can be removed at the
+///   maintainer's leisure.
+/// - Bump that changes the patched files in some other way: `git apply`
+///   fails with non-zero exit and we panic. Intentional — silently skipping
+///   would produce an unpatched binary that AVs at runtime, which is worse
+///   than a build error. The panic message points the maintainer at the
+///   patch file and at Hermes#2012 so the resolution path is obvious.
 ///
 /// Gated on `is_msvc_target()` because GCC and Clang already collapse the
 /// empty bases without the attribute — Linux and macOS builds skip this
@@ -73,9 +77,19 @@ fn ensure_msvc_empty_bases_patch(hermes_root: &Path) {
             err
         )
     });
-    if original.contains("__declspec(empty_bases) simple_ilist") {
-        // Already patched in this checkout, or upstream Hermes has landed
-        // facebook/hermes#2012 and we no longer need this hook.
+    // Idempotency check accepts either marker:
+    //   - `LLVM_DECLARE_EMPTY_BASES simple_ilist` is the macro-based form used
+    //     by the upstreamed facebook/hermes#2012 patch (mirroring the
+    //     HERMES_EMPTY_BASES pattern one layer up).
+    //   - `__declspec(empty_bases) simple_ilist` is the earlier inline form
+    //     this patch originally shipped with; recognized for backward compat
+    //     so existing patched checkouts keep building without a submodule
+    //     re-init.
+    // A match means the file is already patched in this checkout or upstream
+    // Hermes has landed the fix and we no longer need this hook.
+    if original.contains("LLVM_DECLARE_EMPTY_BASES simple_ilist")
+        || original.contains("__declspec(empty_bases) simple_ilist")
+    {
         return;
     }
 
@@ -113,7 +127,9 @@ fn ensure_msvc_empty_bases_patch(hermes_root: &Path) {
         // if the attribute is now present — that's a successful race loss,
         // not a real failure.
         if let Ok(after) = std::fs::read_to_string(&target_path) {
-            if after.contains("__declspec(empty_bases) simple_ilist") {
+            if after.contains("LLVM_DECLARE_EMPTY_BASES simple_ilist")
+                || after.contains("__declspec(empty_bases) simple_ilist")
+            {
                 return;
             }
         }

@@ -23,9 +23,10 @@ fn is_msvc_target() -> bool {
 /// Apply `patches/hermes-simple-ilist-empty-bases.patch` on the MSVC build
 /// path. Mirrors the same hook in `crates/hermes/build.rs`; both build
 /// scripts run independently so each must apply, but the function is
-/// idempotent (the second writer sees the attribute already present and
-/// returns early). See `crates/hermes/build.rs` and facebook/hermes#2012
-/// for the full diagnosis and the bump-behavior contract.
+/// idempotent (the second writer sees `LLVM_DECLARE_EMPTY_BASES simple_ilist`
+/// already present and returns early). See `crates/hermes/build.rs` and
+/// facebook/hermes#2012 for the full diagnosis and the bump-behavior
+/// contract.
 fn ensure_msvc_empty_bases_patch(hermes_root: &Path) {
     if !is_msvc_target() {
         return;
@@ -47,7 +48,13 @@ fn ensure_msvc_empty_bases_patch(hermes_root: &Path) {
             err
         )
     });
-    if original.contains("__declspec(empty_bases) simple_ilist") {
+    // Idempotency check accepts either marker: the macro-based form
+    // `LLVM_DECLARE_EMPTY_BASES simple_ilist` (upstreamed at hermes#2012) or
+    // the earlier inline `__declspec(empty_bases) simple_ilist` form. See
+    // crates/hermes/build.rs for the rationale.
+    if original.contains("LLVM_DECLARE_EMPTY_BASES simple_ilist")
+        || original.contains("__declspec(empty_bases) simple_ilist")
+    {
         return;
     }
 
@@ -81,7 +88,9 @@ fn ensure_msvc_empty_bases_patch(hermes_root: &Path) {
         // between our idempotency check and our `git apply`, the file is now
         // patched and we can skip silently rather than panicking.
         if let Ok(after) = std::fs::read_to_string(&target_path) {
-            if after.contains("__declspec(empty_bases) simple_ilist") {
+            if after.contains("LLVM_DECLARE_EMPTY_BASES simple_ilist")
+                || after.contains("__declspec(empty_bases) simple_ilist")
+            {
                 return;
             }
         }

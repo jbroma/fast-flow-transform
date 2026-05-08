@@ -20,6 +20,94 @@ fn is_msvc_target() -> bool {
     matches!(env::var("CARGO_CFG_TARGET_ENV").as_deref(), Ok("msvc"))
 }
 
+/// Apply `patches/hermes-simple-ilist-empty-bases.patch` on the MSVC build
+/// path. Mirrors the same hook in `crates/hermes/build.rs`; both build
+/// scripts run independently so each must apply, but the function is
+/// idempotent (the second writer sees the attribute already present and
+/// returns early). See `crates/hermes/build.rs` and facebook/hermes#2012
+/// for the full diagnosis and the bump-behavior contract.
+fn ensure_msvc_empty_bases_patch(hermes_root: &Path) {
+    if !is_msvc_target() {
+        return;
+    }
+
+    let target_path = hermes_root.join("external/llvh/include/llvh/ADT/simple_ilist.h");
+    let manifest_dir = PathBuf::from(
+        env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is set by cargo"),
+    );
+    let patch_file = manifest_dir.join("../../patches/hermes-simple-ilist-empty-bases.patch");
+
+    println!("cargo:rerun-if-changed={}", patch_file.display());
+    println!("cargo:rerun-if-changed={}", target_path.display());
+
+    let original = std::fs::read_to_string(&target_path).unwrap_or_else(|err| {
+        panic!(
+            "MSVC build requires a patched llvh simple_ilist.h, but reading {} failed: {}",
+            target_path.display(),
+            err
+        )
+    });
+    if original.contains("__declspec(empty_bases) simple_ilist") {
+        return;
+    }
+
+    if !patch_file.exists() {
+        panic!(
+            "MSVC build expects {} but the file is missing — was patches/ pruned?",
+            patch_file.display()
+        );
+    }
+
+    // Skip canonicalize() — on Windows it returns the `\\?\` extended-length
+    // form which `git apply` rejects with "can't open patch". The path is
+    // already absolute (manifest_dir joined with a relative tail), and git
+    // resolves `..` components fine.
+    let output = std::process::Command::new("git")
+        .arg("apply")
+        .arg("--whitespace=nowarn")
+        .arg(&patch_file)
+        .current_dir(hermes_root)
+        .output()
+        .unwrap_or_else(|err| {
+            panic!(
+                "could not invoke `git apply` for the MSVC simple_ilist patch: {} (is git on PATH?)",
+                err
+            )
+        });
+
+    if !output.status.success() {
+        // Race-safe sibling: see crates/hermes/build.rs for the full reasoning.
+        // If a parallel build script already won the race and applied the patch
+        // between our idempotency check and our `git apply`, the file is now
+        // patched and we can skip silently rather than panicking.
+        if let Ok(after) = std::fs::read_to_string(&target_path) {
+            if after.contains("__declspec(empty_bases) simple_ilist") {
+                return;
+            }
+        }
+
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        panic!(
+            "Applying {} failed.\n\
+             stderr:\n{}\nstdout:\n{}\n\
+             This usually means the bundled Hermes submodule was bumped and\n\
+             external/llvh/include/llvh/ADT/simple_ilist.h no longer matches the\n\
+             patch's expected context. To resolve:\n\
+             \n\
+               1. If the upstream fix (facebook/hermes#2012) has landed in the new\n\
+                  submodule pin, this patch is unnecessary — delete the patch file\n\
+                  and the `ensure_msvc_empty_bases_patch` calls in build.rs.\n\
+             \n\
+               2. Otherwise, regenerate the patch against the new submodule revision\n\
+                  and overwrite patches/hermes-simple-ilist-empty-bases.patch.",
+            patch_file.display(),
+            stderr.trim(),
+            stdout.trim(),
+        );
+    }
+}
+
 fn cmake_profile_dir() -> &'static str {
     let profile = env::var("PROFILE").unwrap_or_default();
     let debug = env::var("DEBUG").unwrap_or_default();
@@ -111,6 +199,8 @@ fn configure_target_specific_cmake(config: &mut cmake::Config) {
 fn main() {
     emit_cpp_runtime_link();
     let hermes_root = detect_hermes_root();
+
+    ensure_msvc_empty_bases_patch(&hermes_root);
 
     println!(
         "cargo:rerun-if-changed={}",

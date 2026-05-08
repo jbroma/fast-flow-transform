@@ -1,0 +1,49 @@
+Subject: [PATCH] Fix: apply __declspec(empty_bases) to simple_ilist for MSVC
+
+Mirrors facebook/hermes#2012. MSVC does not apply Empty Base Optimization
+across multiple empty bases by default; without `__declspec(empty_bases)`
+it pads each empty base with one byte and pointer-aligns the result,
+shifting the embedded `Sentinel` of `simple_ilist` from offset 0 to
+offset 8. That breaks any caller that treats the address of a
+`simple_ilist` as the address of its embedded sentinel — including
+fft's Rust FFI iterator at `crates/hermes/src/parser/node.rs`. GCC and
+Clang collapse the empty bases unconditionally, so the patch is gated
+on `_MSC_VER` and is a no-op on every other compiler.
+
+Applied at build time by `crates/hermes/build.rs` and
+`crates/fft_support/build.rs`. Idempotent: skipped automatically once
+the bundled Hermes is bumped past facebook/hermes#2012 (the
+`__declspec(empty_bases) simple_ilist` substring will already be
+present and the patcher returns early).
+
+diff --git a/external/llvh/include/llvh/ADT/simple_ilist.h b/external/llvh/include/llvh/ADT/simple_ilist.h
+--- a/external/llvh/include/llvh/ADT/simple_ilist.h
++++ b/external/llvh/include/llvh/ADT/simple_ilist.h
+@@ -75,8 +75,27 @@ namespace llvh {
+ /// equivalent to the last.
+ ///
+ /// See \a is_valid_option for steps on adding a new option.
++///
++/// MSVC requires `__declspec(empty_bases)` to actually apply Empty Base
++/// Optimization when a class has more than one empty base. `simple_ilist`
++/// inherits from two empty helpers (`list_base_type` and `SpecificNodeAccess`),
++/// and without this attribute MSVC pads each empty base with a byte and
++/// pointer-aligns the result, shifting the embedded `Sentinel` member from
++/// offset 0 to offset 8. That makes `&simple_ilist` and `&Sentinel` differ by
++/// 8 bytes on MSVC, while GCC/Clang produce the layout where they coincide.
++/// The shift is not visible through pure C++ list usage, but it breaks any
++/// caller that treats the address of a `simple_ilist` as the address of its
++/// sentinel — most notably FFI consumers and any code that compares an
++/// iterator's stored node pointer against `&list` rather than against an
++/// iterator obtained from `list.end()`. Mirrors the LLVM upstream pattern of
++/// `__declspec(empty_bases)` on layout-sensitive containers.
++#if defined(_MSC_VER)
++template <typename T, class... Options>
++class __declspec(empty_bases) simple_ilist
++#else
+ template <typename T, class... Options>
+ class simple_ilist
++#endif
+     : ilist_detail::compute_node_options<T, Options...>::type::list_base_type,
+       ilist_detail::SpecificNodeAccess<
+           typename ilist_detail::compute_node_options<T, Options...>::type> {

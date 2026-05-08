@@ -117,10 +117,13 @@ impl<'parser> Converter<'parser> {
     /// the next location will almost always be in the current line or the next
     /// line.
     pub fn cvt_smloc(&mut self, loc: SMLoc) -> ast::SourceLoc {
-        assert!(
-            loc.is_valid(),
-            "All source locations from Hermes parser must be valid"
-        );
+        // Hermes can hand us an invalid (null-pointer) SMLoc for synthesized
+        // nodes (error recovery, EOF tokens, some Flow constructs). Mirror
+        // generated_cvt's existing fallback for `range.end` rather than
+        // aborting the process.
+        if !loc.is_valid() {
+            return ast::SourceLoc::invalid();
+        }
 
         // Check the cache with the hope that the lookup is within the last line or
         // the next line.

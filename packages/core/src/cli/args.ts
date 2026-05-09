@@ -1,6 +1,14 @@
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 
 import type { TransformOptionsInput } from '../transform/types.js';
+
+// Normalize to POSIX separators. `node:path.resolve` is `path.win32.resolve`
+// on Windows and produces backslashes; tinyglobby/fast-glob and the
+// sourcemap spec's `sources[]` field both expect forward-slash. Without this
+// the CLI's `filename` flows into emitted sourcemaps with backslashes
+// (non-portable) and our test mocks miss because they key on the POSIX form.
+const toPosix =
+  sep === '\\' ? (p: string) => p.replaceAll('\\', '/') : (p: string) => p;
 
 export interface CliCommand {
   inputFile: string;
@@ -65,16 +73,16 @@ const VALUE_FLAG_HANDLERS: Record<string, ValueFlagHandler> = {
     state.rawOptions.format = value;
   },
   '--input-source-map': (state, value, cwd) => {
-    state.inputSourceMapFile = resolve(cwd, value);
+    state.inputSourceMapFile = toPosix(resolve(cwd, value));
   },
   '--out-file': (state, value, cwd) => {
-    state.outputFile = resolve(cwd, value);
+    state.outputFile = toPosix(resolve(cwd, value));
   },
   '--react-runtime-target': (state, value) => {
     state.rawOptions.reactRuntimeTarget = value;
   },
   '--source-map-file': (state, value, cwd) => {
-    state.sourceMapFile = resolve(cwd, value);
+    state.sourceMapFile = toPosix(resolve(cwd, value));
   },
 };
 
@@ -113,7 +121,7 @@ function assignInputFile(
     throw new Error(`Unexpected extra input file: ${argument}`);
   }
 
-  state.inputFile = resolve(cwd, argument);
+  state.inputFile = toPosix(resolve(cwd, argument));
 
   return 0;
 }

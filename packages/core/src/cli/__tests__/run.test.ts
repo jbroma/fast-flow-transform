@@ -2,6 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { runCli } from '../run.js';
 
+// Use a platform-absolute fake cwd so node:path.resolve produces the same
+// shape on Windows (where bare `/repo` is treated as drive-relative and
+// gets the current drive prepended) and POSIX. The CLI internally normalizes
+// to forward-slash, so all expected values use forward-slash regardless of
+// platform.
+const FAKE_CWD = process.platform === 'win32' ? 'C:/repo' : '/repo';
+
 type RawSourceMap = import('source-map').RawSourceMap;
 
 function createMap(file: string): RawSourceMap {
@@ -23,7 +30,7 @@ function createDeps() {
 
   return {
     deps: {
-      cwd: () => '/repo',
+      cwd: () => FAKE_CWD,
       readFile,
       stderr: {
         write(chunk: string) {
@@ -50,7 +57,7 @@ describe('CLI runner', () => {
   it('transforms a file without source maps by default', async () => {
     const { deps, readFile, transform, writeFile } = createDeps();
     readFile.mockImplementation(async (path) => {
-      if (path === '/repo/src/input.js') {
+      if (path === `${FAKE_CWD}/src/input.js`) {
         return 'const answer: number = 42;';
       }
 
@@ -58,7 +65,7 @@ describe('CLI runner', () => {
     });
     transform.mockResolvedValue({
       code: 'const answer = 42;\n',
-      map: createMap('/repo/dist/output.js'),
+      map: createMap(`${FAKE_CWD}/dist/output.js`),
     });
 
     const exitCode = await runCli(
@@ -68,13 +75,13 @@ describe('CLI runner', () => {
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
-      filename: '/repo/src/input.js',
+      filename: `${FAKE_CWD}/src/input.js`,
       source: 'const answer: number = 42;',
       sourcemap: false,
     });
     expect(writeFile).toHaveBeenCalledTimes(1);
     expect(writeFile).toHaveBeenCalledWith(
-      '/repo/dist/output.js',
+      `${FAKE_CWD}/dist/output.js`,
       'const answer = 42;\n'
     );
   });
@@ -82,7 +89,7 @@ describe('CLI runner', () => {
   it('writes code plus sourcemap files when --source-map is enabled', async () => {
     const { deps, readFile, transform, writeFile } = createDeps();
     readFile.mockImplementation(async (path) => {
-      if (path === '/repo/src/input.js') {
+      if (path === `${FAKE_CWD}/src/input.js`) {
         return 'const answer: number = 42;';
       }
 
@@ -90,7 +97,7 @@ describe('CLI runner', () => {
     });
     transform.mockResolvedValue({
       code: 'const answer = 42;\n',
-      map: createMap('/repo/dist/output.js'),
+      map: createMap(`${FAKE_CWD}/dist/output.js`),
     });
 
     const exitCode = await runCli(
@@ -110,20 +117,20 @@ describe('CLI runner', () => {
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
       dialect: 'flow',
-      filename: '/repo/src/input.js',
+      filename: `${FAKE_CWD}/src/input.js`,
       format: 'pretty',
       source: 'const answer: number = 42;',
       sourcemap: true,
     });
     expect(writeFile).toHaveBeenNthCalledWith(
       1,
-      '/repo/dist/output.js',
+      `${FAKE_CWD}/dist/output.js`,
       'const answer = 42;\n//# sourceMappingURL=output.js.map\n'
     );
     expect(writeFile).toHaveBeenNthCalledWith(
       2,
-      '/repo/dist/output.js.map',
-      `${JSON.stringify(createMap('/repo/dist/output.js'), null, 2)}\n`
+      `${FAKE_CWD}/dist/output.js.map`,
+      `${JSON.stringify(createMap(`${FAKE_CWD}/dist/output.js`), null, 2)}\n`
     );
   });
 
@@ -138,7 +145,7 @@ describe('CLI runner', () => {
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
-      filename: '/repo/src/input.js',
+      filename: `${FAKE_CWD}/src/input.js`,
       source: 'const answer: number = 42;',
       sourcemap: false,
     });
@@ -161,7 +168,7 @@ describe('CLI runner', () => {
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
       comments: true,
-      filename: '/repo/src/input.js',
+      filename: `${FAKE_CWD}/src/input.js`,
       format: 'preserve',
       source: 'const answer: number = 42;',
       sourcemap: false,
@@ -182,7 +189,7 @@ describe('CLI runner', () => {
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
       comments: true,
-      filename: '/repo/src/input.js',
+      filename: `${FAKE_CWD}/src/input.js`,
       source: '/* keep */\nconst answer: number = 42;',
       sourcemap: false,
     });
@@ -192,13 +199,13 @@ describe('CLI runner', () => {
 
   it('loads an input sourcemap file and forwards it to transform', async () => {
     const { deps, readFile, transform, writeFile } = createDeps();
-    const inputMap = createMap('/repo/src/input.js');
+    const inputMap = createMap(`${FAKE_CWD}/src/input.js`);
     readFile.mockImplementation(async (path) => {
-      if (path === '/repo/src/input.js') {
+      if (path === `${FAKE_CWD}/src/input.js`) {
         return 'const answer: number = 42;';
       }
 
-      if (path === '/repo/maps/input.js.map') {
+      if (path === `${FAKE_CWD}/maps/input.js.map`) {
         return JSON.stringify(inputMap);
       }
 
@@ -206,7 +213,7 @@ describe('CLI runner', () => {
     });
     transform.mockResolvedValue({
       code: 'const answer = 42;\n',
-      map: createMap('/repo/dist/output.js'),
+      map: createMap(`${FAKE_CWD}/dist/output.js`),
     });
 
     const exitCode = await runCli(
@@ -223,7 +230,7 @@ describe('CLI runner', () => {
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
-      filename: '/repo/src/input.js',
+      filename: `${FAKE_CWD}/src/input.js`,
       inputSourceMap: inputMap,
       source: 'const answer: number = 42;',
       sourcemap: true,

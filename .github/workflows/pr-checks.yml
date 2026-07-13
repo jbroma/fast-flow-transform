@@ -137,3 +137,34 @@ jobs:
 
       - name: Run end-to-end tests
         run: pnpm e2e
+
+  windows-compat:
+    name: windows-compat
+    runs-on: windows-2022
+    env:
+      CMAKE_GENERATOR: Visual Studio 17 2022
+      CMAKE_GENERATOR_PLATFORM: x64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up PR CI
+        uses: ./.github/actions/setup-pr-ci
+
+      - name: Build
+        run: pnpm build
+
+      - name: Run Rust tests
+        run: cargo test --workspace
+
+      - name: Run package tests
+        run: pnpm test
+
+      - name: Run end-to-end tests
+        run: pnpm e2e
+
+      - name: Run CLI end-to-end tests
+        run: pnpm --filter '@fft-tests/cli' e2e

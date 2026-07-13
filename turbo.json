@@ -11,6 +11,7 @@
     },
     "fast-flow-transform#build": {
       "dependsOn": ["^build"],
+      "env": ["CMAKE_GENERATOR", "CMAKE_GENERATOR_PLATFORM"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/Cargo.toml",

@@ -30,6 +30,7 @@ function run(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: PACKAGE_ROOT,
+      shell: process.platform === 'win32',
       stdio: 'inherit',
     });
 

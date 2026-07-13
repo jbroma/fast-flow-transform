@@ -158,7 +158,7 @@ jobs:
         run: pnpm build
 
       - name: Run Rust tests
-        run: cargo test --workspace
+        run: cargo test --release --workspace
 
       - name: Run package tests
         run: pnpm test

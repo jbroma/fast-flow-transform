@@ -81,7 +81,7 @@ describe('cli e2e', () => {
       await writeSuccessFixture(inputFile);
 
       const { stderr } = await runCli(
-        [inputFile, '--out-file', outputFile],
+        [inputFile, '--out-file', outputFile, '--source-map'],
         dir
       );
 
@@ -97,7 +97,9 @@ describe('cli e2e', () => {
       const inputFile = inputFilePath(dir);
       await writeFile(inputFile, '// @flow\nconst value: number = 1;\n');
 
-      await expect(runCli([inputFile], dir)).rejects.toMatchObject({
+      await expect(
+        runCli([inputFile, '--source-map'], dir)
+      ).rejects.toMatchObject({
         code: 1,
         stderr: 'Source maps require --out-file or --source-map-file.\n',
       });

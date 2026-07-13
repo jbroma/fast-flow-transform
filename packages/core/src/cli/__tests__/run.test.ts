@@ -1,8 +1,16 @@
+import { resolve } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { runCli } from '../run.js';
 
 type RawSourceMap = import('source-map').RawSourceMap;
+
+const REPO_ROOT = resolve('/repo');
+const INPUT_FILE = resolve(REPO_ROOT, 'src/input.js');
+const INPUT_MAP_FILE = resolve(REPO_ROOT, 'maps/input.js.map');
+const OUTPUT_FILE = resolve(REPO_ROOT, 'dist/output.js');
+const OUTPUT_MAP_FILE = `${OUTPUT_FILE}.map`;
 
 function createMap(file: string): RawSourceMap {
   return {
@@ -23,7 +31,7 @@ function createDeps() {
 
   return {
     deps: {
-      cwd: () => '/repo',
+      cwd: () => REPO_ROOT,
       readFile,
       stderr: {
         write(chunk: string) {
@@ -50,7 +58,7 @@ describe('CLI runner', () => {
   it('transforms a file without source maps by default', async () => {
     const { deps, readFile, transform, writeFile } = createDeps();
     readFile.mockImplementation(async (path) => {
-      if (path === '/repo/src/input.js') {
+      if (path === INPUT_FILE) {
         return 'const answer: number = 42;';
       }
 
@@ -58,7 +66,7 @@ describe('CLI runner', () => {
     });
     transform.mockResolvedValue({
       code: 'const answer = 42;\n',
-      map: createMap('/repo/dist/output.js'),
+      map: createMap(OUTPUT_FILE),
     });
 
     const exitCode = await runCli(
@@ -68,21 +76,18 @@ describe('CLI runner', () => {
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
-      filename: '/repo/src/input.js',
+      filename: INPUT_FILE,
       source: 'const answer: number = 42;',
       sourcemap: false,
     });
     expect(writeFile).toHaveBeenCalledTimes(1);
-    expect(writeFile).toHaveBeenCalledWith(
-      '/repo/dist/output.js',
-      'const answer = 42;\n'
-    );
+    expect(writeFile).toHaveBeenCalledWith(OUTPUT_FILE, 'const answer = 42;\n');
   });
 
   it('writes code plus sourcemap files when --source-map is enabled', async () => {
     const { deps, readFile, transform, writeFile } = createDeps();
     readFile.mockImplementation(async (path) => {
-      if (path === '/repo/src/input.js') {
+      if (path === INPUT_FILE) {
         return 'const answer: number = 42;';
       }
 
@@ -90,7 +95,7 @@ describe('CLI runner', () => {
     });
     transform.mockResolvedValue({
       code: 'const answer = 42;\n',
-      map: createMap('/repo/dist/output.js'),
+      map: createMap(OUTPUT_FILE),
     });
 
     const exitCode = await runCli(
@@ -110,20 +115,20 @@ describe('CLI runner', () => {
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
       dialect: 'flow',
-      filename: '/repo/src/input.js',
+      filename: INPUT_FILE,
       format: 'pretty',
       source: 'const answer: number = 42;',
       sourcemap: true,
     });
     expect(writeFile).toHaveBeenNthCalledWith(
       1,
-      '/repo/dist/output.js',
+      OUTPUT_FILE,
       'const answer = 42;\n//# sourceMappingURL=output.js.map\n'
     );
     expect(writeFile).toHaveBeenNthCalledWith(
       2,
-      '/repo/dist/output.js.map',
-      `${JSON.stringify(createMap('/repo/dist/output.js'), null, 2)}\n`
+      OUTPUT_MAP_FILE,
+      `${JSON.stringify(createMap(OUTPUT_FILE), null, 2)}\n`
     );
   });
 
@@ -138,7 +143,7 @@ describe('CLI runner', () => {
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
-      filename: '/repo/src/input.js',
+      filename: INPUT_FILE,
       source: 'const answer: number = 42;',
       sourcemap: false,
     });
@@ -161,7 +166,7 @@ describe('CLI runner', () => {
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
       comments: true,
-      filename: '/repo/src/input.js',
+      filename: INPUT_FILE,
       format: 'preserve',
       source: 'const answer: number = 42;',
       sourcemap: false,
@@ -182,7 +187,7 @@ describe('CLI runner', () => {
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
       comments: true,
-      filename: '/repo/src/input.js',
+      filename: INPUT_FILE,
       source: '/* keep */\nconst answer: number = 42;',
       sourcemap: false,
     });
@@ -192,13 +197,13 @@ describe('CLI runner', () => {
 
   it('loads an input sourcemap file and forwards it to transform', async () => {
     const { deps, readFile, transform, writeFile } = createDeps();
-    const inputMap = createMap('/repo/src/input.js');
+    const inputMap = createMap(INPUT_FILE);
     readFile.mockImplementation(async (path) => {
-      if (path === '/repo/src/input.js') {
+      if (path === INPUT_FILE) {
         return 'const answer: number = 42;';
       }
 
-      if (path === '/repo/maps/input.js.map') {
+      if (path === INPUT_MAP_FILE) {
         return JSON.stringify(inputMap);
       }
 
@@ -206,7 +211,7 @@ describe('CLI runner', () => {
     });
     transform.mockResolvedValue({
       code: 'const answer = 42;\n',
-      map: createMap('/repo/dist/output.js'),
+      map: createMap(OUTPUT_FILE),
     });
 
     const exitCode = await runCli(
@@ -223,7 +228,7 @@ describe('CLI runner', () => {
 
     expect(exitCode).toBe(0);
     expect(transform).toHaveBeenCalledWith({
-      filename: '/repo/src/input.js',
+      filename: INPUT_FILE,
       inputSourceMap: inputMap,
       source: 'const answer: number = 42;',
       sourcemap: true,

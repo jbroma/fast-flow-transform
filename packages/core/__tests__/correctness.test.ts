@@ -1,9 +1,16 @@
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 
 import fft from '../src/index.js';
+
+// `import.meta.dirname` is OS-native (backslash on Windows), so `resolve()`
+// also returns backslash on Windows. Snapshot fixture paths and CLI args
+// must be POSIX-style — sourcemap `sources[]` and tinyglobby's include
+// matchers expect forward-slash.
+const toPosix =
+  sep === '\\' ? (p: string) => p.replaceAll('\\', '/') : (p: string) => p;
 
 type Format = 'compact' | 'pretty' | 'preserve';
 interface SnapshotCase {
@@ -18,11 +25,11 @@ interface SnapshotCase {
 }
 
 function outputsDir(): string {
-  return resolve(import.meta.dirname, 'outputs');
+  return toPosix(resolve(import.meta.dirname, 'outputs'));
 }
 
 function inputsDir(): string {
-  return resolve(import.meta.dirname, 'inputs');
+  return toPosix(resolve(import.meta.dirname, 'inputs'));
 }
 
 const FULL_FIXTURE = 'source.flow';

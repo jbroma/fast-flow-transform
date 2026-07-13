@@ -1,11 +1,10 @@
-import { resolve } from 'node:path';
-
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: [resolve(import.meta.dirname, 'parcel.e2e.test.ts')],
+    // Keep this relative because Vitest glob matching does not accept absolute Windows paths.
+    include: ['parcel.e2e.test.ts'],
   },
 });

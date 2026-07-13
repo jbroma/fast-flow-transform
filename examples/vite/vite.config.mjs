@@ -2,10 +2,10 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import fastFlowTransformVite from 'fast-flow-transform/vite';
-import { defineConfig, transformWithEsbuild } from 'vite';
+import { defineConfig, normalizePath, transformWithEsbuild } from 'vite';
 
 const PACKAGE_ROOT = dirname(fileURLToPath(import.meta.url));
-const SRC_ROOT = resolve(PACKAGE_ROOT, 'src');
+const SRC_ROOT = normalizePath(resolve(PACKAGE_ROOT, 'src'));
 const OUTDIR = resolve(PACKAGE_ROOT, 'dist');
 const JSX_FILTER = /\.[cm]?jsx?$/;
 
